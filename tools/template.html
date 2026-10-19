@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>問路小達人 · Pregunta el camino</title>
+<style>
+:root{--bg:#f6f4ee;--card:#fffefa;--ink:#2b2b2b;--muted:#8a867c;--line:#dcd8cd;--road:#e7e3d9;--ok:#6f8f72;--bad:#b5736a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input{font:inherit;color:inherit;touch-action:manipulation}
+#app{max-width:520px;margin:0 auto;padding:12px 14px calc(18px + env(safe-area-inset-bottom))}
+.screen{display:none}.screen.on{display:block}
+.hidden{display:none!important}
+h1{font-size:26px;margin:14px 0 2px;letter-spacing:.06em;font-weight:600}
+.sub{color:var(--muted);margin:0 0 4px;font-size:15px}
+.muted{color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.lbl{font-size:12px;color:var(--muted);margin:14px 0 6px}
+input.name{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);font-size:16px}
+input.name.err{border-color:var(--bad)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer}
+.chip.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.levels{display:grid;gap:9px;margin-top:16px}
+.lv{display:flex;align-items:center;gap:12px;text-align:left;border:1.5px solid var(--ink);background:var(--card);border-radius:16px;padding:12px 14px;cursor:pointer;width:100%}
+.lv:active{background:var(--ink);color:#fff}
+.lv .n{font-size:24px;font-weight:600;width:28px;text-align:center}
+.lv .t{font-size:16px;font-weight:600}
+.lv .d{font-size:12.5px;color:var(--muted)}
+.lv:active .d{color:#ddd}
+.lv .z{margin-left:auto;font-size:13px;color:var(--muted);white-space:nowrap}
+.btn{border:1.5px solid var(--ink);background:var(--ink);color:#fff;border-radius:14px;padding:11px 16px;font-size:15px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.block{width:100%;margin-top:10px}
+.mini{border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:6px 10px;font-size:13px;cursor:pointer}
+.top{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.topmid{text-align:center;line-height:1.25}
+.topmid b{font-size:14px;display:block}
+.topmid span{font-size:12px;color:var(--muted)}
+#score{font-size:13px;min-width:70px;text-align:right}
+.bar{height:3px;background:var(--line);border-radius:3px;margin:8px 0 10px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ink);width:0;transition:width .3s}
+.zh{font-size:19px;line-height:1.75;letter-spacing:.03em}
+.pyl{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:3px}
+.trl{font-size:13px;color:#5d5a52;line-height:1.5;margin-top:4px}
+.tools{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.tools .mini{padding:5px 8px;font-size:12.5px}
+.tog.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.mapwrap{position:relative;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px}
+.maphead{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 2px}
+.mapname{font-size:12px;color:var(--muted)}
+#btn-vocab{padding:3px 10px}
+#map{width:100%;height:auto;max-height:42vh;display:block;margin:0 auto}
+#map.shake{animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.road{stroke:var(--road);stroke-width:24;stroke-linecap:butt;fill:none}
+.cw{fill:#f8f6f0}
+.mid{stroke:#d5d0c3;stroke-width:1;stroke-dasharray:5 6;fill:none}
+.bld rect{fill:#fffefa;stroke:#d3cec0;stroke-width:1.2}
+.bld.hl rect{fill:#edf3ec;stroke:var(--ok);stroke-width:2.6}
+.bn{font-size:15px;font-weight:600;fill:var(--ink)}
+.bn.sm{font-size:13px}
+.bp{font-size:8.2px;fill:var(--muted)}
+.nd{fill:#bdb8aa}
+.trail{fill:none;stroke:#a8a396;stroke-width:3;stroke-dasharray:2 6;stroke-linecap:round;stroke-linejoin:round}
+.rt-bad{fill:none;stroke:var(--bad);stroke-width:5;stroke-dasharray:7 6;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+.rt-ok{fill:none;stroke:var(--ok);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+.startring{fill:none;stroke:var(--ink);stroke-width:1.2;stroke-dasharray:3 3}
+#av,#avr{transition:transform .38s ease}
+#av.nt,#avr.nt{transition:none}
+.avc{fill:var(--ink)}.avt{fill:var(--ink)}
+.hint{font-size:12.5px;color:var(--muted);margin:8px 2px 0;line-height:1.5}
+.hint b{color:var(--ink);font-weight:600}
+#controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.cbtn{background:var(--card);border:1.5px solid var(--ink);border-radius:14px;padding:6px 4px;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer}
+.cbtn:active{background:var(--ink);color:#fff}
+.cbtn .ic{font-size:21px;line-height:1}
+.cbtn .cn{font-size:17px;font-weight:600}
+.cbtn .pyb{font-size:11px;color:var(--muted);display:none}
+body.showpy .cbtn .pyb{display:block}
+.cbtn .sb{font-size:11px;color:var(--muted)}
+.cbtn:active .pyb,.cbtn:active .sb{color:#ddd}
+.row2{display:grid;grid-template-columns:1fr 1.5fr;gap:8px;margin-top:8px}
+.row2 .btn{padding:10px}
+#controls.off,.row2.off{opacity:.35;pointer-events:none}
+#feedback{margin-top:10px}
+.fb{border-radius:16px;border:1.5px solid var(--line);background:var(--card);padding:12px 14px}
+.fb.ok{border-color:var(--ok)}.fb.bad{border-color:var(--bad)}
+.fb h3{margin:0 0 4px;font-size:16px}
+.leg{font-size:12.5px;display:flex;gap:14px;margin:4px 0 8px;color:#5d5a52}
+.leg i{display:inline-block;width:18px;height:0;border-top:3px solid;vertical-align:middle;margin-right:5px}
+.leg i.b{border-color:var(--bad);border-top-style:dashed}.leg i.g{border-color:var(--ok)}
+.fbbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fbbtns.one{grid-template-columns:1fr}
+#vocab{margin-top:8px}
+#vocab .g{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:13px}
+#vocab .g div span{color:var(--muted);font-size:11.5px;display:block}
+#vocab h4{margin:8px 0 4px;font-size:12px;color:var(--muted);font-weight:500}
+.big{font-size:42px;font-weight:600;margin:10px 0 2px}
+.res li{display:flex;gap:8px;font-size:13px;line-height:1.5;margin:6px 0;list-style:none}
+.res{padding:0;margin:10px 0}
+.res .m{width:18px;flex:none;text-align:center;font-weight:700}
+.res .m.ok{color:var(--ok)}.res .m.bad{color:var(--bad)}
+.tabs{display:flex;gap:6px;margin:10px 0}
+.tabs .chip{flex:1;text-align:center;padding:7px 4px}
+table.lb{width:100%;border-collapse:collapse;font-size:14px}
+table.lb td,table.lb th{padding:8px 4px;border-bottom:1px solid var(--line);text-align:left}
+table.lb th{font-size:12px;color:var(--muted);font-weight:500}
+table.lb td:nth-child(1){width:30px;color:var(--muted)}
+table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table.lb th:nth-child(4){text-align:right}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+.toast.on{opacity:.95}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ============ START ============ -->
+<section id="s-start" class="screen on">
+  <h1 id="ttl">問路小達人</h1>
+  <p class="sub" id="ttlsub"></p>
+  <p class="muted" id="tag"></p>
+
+  <div class="lbl" id="l-name"></div>
+  <input id="name" class="name" maxlength="14" autocomplete="off">
+
+  <div class="lbl" id="l-script"></div>
+  <div class="chips" id="c-script"></div>
+
+  <div class="lbl" id="l-lang"></div>
+  <div class="chips" id="c-lang"></div>
+
+  <div class="lbl" id="l-rate"></div>
+  <div class="chips" id="c-rate"></div>
+
+  <div class="lbl" id="l-show"></div>
+  <div class="chips" id="c-show"></div>
+
+  <div class="lbl" id="l-level"></div>
+  <div class="levels" id="levels"></div>
+
+  <button class="btn ghost block" id="btn-board"></button>
+</section>
+
+<!-- ============ GAME ============ -->
+<section id="s-game" class="screen">
+  <div class="top">
+    <button class="mini" id="btn-restart"></button>
+    <div class="topmid"><b id="lvname"></b><span id="prog"></span></div>
+    <div id="score"></div>
+  </div>
+  <div class="bar"><i id="barfill"></i></div>
+
+  <div class="card" id="sentcard">
+    <div class="zh" id="zh"></div>
+    <div class="pyl" id="pyl"></div>
+    <div class="trl" id="trl"></div>
+    <div class="tools">
+      <button class="mini" id="btn-say"></button>
+      <button class="mini tog" id="btn-py">Pinyin</button>
+      <button class="mini tog" id="btn-tr"></button>
+      <button class="mini" id="btn-rate"></button>
+    </div>
+  </div>
+
+  <div class="mapwrap">
+    <div class="maphead"><div class="mapname" id="mapname"></div><button class="mini" id="btn-vocab">📖</button></div>
+    <svg id="map" xmlns="http://www.w3.org/2000/svg" role="img"></svg>
+  </div>
+  <div class="card hidden" id="vocab"></div>
+  <div class="hint" id="hint"></div>
+
+  <div id="controls">
+    <button class="cbtn" id="b-L"></button>
+    <button class="cbtn" id="b-S"></button>
+    <button class="cbtn" id="b-R"></button>
+  </div>
+  <div class="row2" id="row2">
+    <button class="btn ghost" id="b-reset"></button>
+    <button class="btn" id="b-go"></button>
+  </div>
+  <div id="feedback" class="hidden"></div>
+</section>
+
+<!-- ============ RESULT ============ -->
+<section id="s-result" class="screen">
+  <h1 id="r-title"></h1>
+  <div class="card">
+    <div class="muted" id="r-level"></div>
+    <div class="big" id="r-score"></div>
+    <div class="muted" id="r-time"></div>
+    <div class="muted" id="r-saved"></div>
+  </div>
+  <ul class="res" id="r-list"></ul>
+  <div class="fbbtns">
+    <button class="btn" id="r-again"></button>
+    <button class="btn ghost" id="r-board"></button>
+  </div>
+  <button class="btn ghost block" id="r-home"></button>
+</section>
+
+<!-- ============ BOARD ============ -->
+<section id="s-board" class="screen">
+  <h1 id="b-title"></h1>
+  <p class="muted" id="b-note"></p>
+  <div class="tabs" id="b-tabs"></div>
+  <div class="card"><table class="lb" id="b-table"></table></div>
+  <button class="btn ghost block" id="b-back"></button>
+</section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   問路小達人 · Pregunta el camino
+   Single-file game. Questions are plain data (DATA.questions) generated by
+   build/gen_questions.py — add or edit questions by editing that data.
+   ===================================================================== */
+const DATA = /*__DATA__*/{};
+
+/* ---------- optional services (fill in to enable) ---------- */
+const FIREBASE_CONFIG = null;   // paste the Firebase web config object here to share the leaderboard
+const LB_PREFIX = 'askDirections_L';   // Firestore collections: askDirections_L1 … L4
+const GA_ID = '';               // GA4 measurement id, e.g. 'G-XXXXXXXXXX'
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const SP = 100;                          // distance between intersections (svg units)
+const DXS = [0, 1, 0, -1], DYS = [-1, 0, 1, 0];   // N E S W
+const ROUNDS = 8;
+const RATES = { slow: 0.45, normal: 0.7, fast: 0.95 };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function track(name, params) {
+  try { if (window.gtag) window.gtag('event', name, params || {}); } catch (e) {}
+}
+if (GA_ID) {
+  const s = document.createElement('script');
+  s.async = true; s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+  document.head.appendChild(s);
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function () { window.dataLayer.push(arguments); };
+  window.gtag('js', new Date()); window.gtag('config', GA_ID);
+}
+
+/* ---------- text ---------- */
+const UI = {
+  es: {
+    titleSub: 'Pregunta el camino',
+    tag: 'Escucha las indicaciones y camina hasta el destino.',
+    name: 'Tu nombre', namePh: 'Escribe tu nombre', nameNeed: 'Escribe tu nombre para empezar.',
+    script: 'Caracteres', lang: 'Idioma', rate: 'Velocidad de la voz', show: 'Ayudas',
+    slow: 'Lenta', normal: 'Normal', fast: 'Rápida', pinyin: 'Pinyin', trans: 'Traducción',
+    level: 'Elige un nivel',
+    lv: ['Direcciones', 'Esquinas y cruzar', 'Posiciones', 'Reto combinado'],
+    lvd: ['Recto, izquierda y derecha', 'Contar esquinas y cruzar la calle', 'Izquierda, derecha, enfrente, al lado', 'Indicaciones largas, todo junto'],
+    board: 'Clasificación', restart: '↻ Reiniciar',
+    q: 'Pregunta {n}/{N}', pts: '{s} puntos',
+    listen: '🔊 Escuchar', left: 'Izquierda', straight: 'Recto', right: 'Derecha',
+    reset: '↺ Reintentar', arrived: '✓ ¡Llegué!', noRoad: 'No hay camino adelante.',
+    ok: '¡Correcto! +10', bad: 'Casi. Mira la ruta correcta.',
+    badFace: 'Llegaste al lugar correcto, pero miras hacia otro lado.',
+    yourRoute: 'Tu ruta', rightRoute: 'Ruta correcta',
+    watch: '▶ Ver la ruta', next: 'Siguiente →', finish: 'Ver resultado',
+    hint1: '{straight} = avanzar hasta la siguiente esquina.',
+    hint2: 'Las esquinas se cuentan desde donde estás. {cross} = seguir recto al otro lado, sin girar.',
+    hint3: 'Mira el mapa: ¿qué edificio queda a tu izquierda o a tu derecha mientras caminas?',
+    hint4: 'Combina todo lo aprendido. ¡Tú puedes!',
+    result: 'Resultado', score: '{c} de {N} correctas', time: 'Tiempo: {t} s',
+    again: 'Jugar de nuevo', home: 'Cambiar de nivel',
+    best: 'Mejor puntuación de cada jugador (top 15).',
+    localNote: 'Clasificación de este dispositivo (Firebase aún no está conectado).',
+    empty: 'Todavía no hay puntuaciones.', player: 'Jugador', pts2: 'Puntos', sec: 'Seg.',
+    saved: 'Puntuación guardada.', savedLocal: 'Puntuación guardada en este dispositivo.',
+    vocab: 'Vocabulario', vocabDir: 'Direcciones', vocabPlaces: 'Lugares del mapa',
+    back: 'Volver', map: 'Mapa',
+  },
+  en: {
+    titleSub: 'Ask the Way',
+    tag: 'Listen to the directions and walk to the destination.',
+    name: 'Your name', namePh: 'Type your name', nameNeed: 'Type your name to start.',
+    script: 'Characters', lang: 'Language', rate: 'Voice speed', show: 'Helpers',
+    slow: 'Slow', normal: 'Normal', fast: 'Fast', pinyin: 'Pinyin', trans: 'Translation',
+    level: 'Choose a level',
+    lv: ['Directions', 'Intersections & crossing', 'Positions', 'Challenge'],
+    lvd: ['Straight, left and right', 'Count intersections, cross the street', 'Left, right, across, next to', 'Longer directions, all together'],
+    board: 'Leaderboard', restart: '↻ Restart',
+    q: 'Question {n}/{N}', pts: '{s} points',
+    listen: '🔊 Listen', left: 'Left', straight: 'Straight', right: 'Right',
+    reset: '↺ Try again', arrived: "✓ I'm here!", noRoad: 'No road ahead.',
+    ok: 'Correct! +10', bad: 'Not quite. Here is the correct route.',
+    badFace: "Right place, but you're facing the wrong way.",
+    yourRoute: 'Your route', rightRoute: 'Correct route',
+    watch: '▶ Watch the route', next: 'Next →', finish: 'See result',
+    hint1: '{straight} = walk to the next intersection.',
+    hint2: 'Count intersections from where you stand. {cross} = keep going straight across, no turn.',
+    hint3: 'Check the map: which building is on your left or right as you walk?',
+    hint4: 'Combine everything you have learned. You can do it!',
+    result: 'Result', score: '{c} of {N} correct', time: 'Time: {t} s',
+    again: 'Play again', home: 'Change level',
+    best: "Each player's best score (top 15).",
+    localNote: "This device's leaderboard (Firebase is not connected yet).",
+    empty: 'No scores yet.', player: 'Player', pts2: 'Score', sec: 'Sec.',
+    saved: 'Score saved.', savedLocal: 'Score saved on this device.',
+    vocab: 'Vocabulary', vocabDir: 'Directions', vocabPlaces: 'Places on the map',
+    back: 'Back', map: 'Map',
+  },
+};
+const WORDS = {
+  tw: { left: '左轉', straight: '直走', right: '右轉', cross: '過馬路' },
+  cn: { left: '左转', straight: '直走', right: '右转', cross: '过马路' },
+};
+const WPY = { left: 'zuǒ zhuǎn', straight: 'zhí zǒu', right: 'yòu zhuǎn', cross: 'guò mǎ lù' };
+const WTR = {
+  es: { left: 'girar a la izquierda', straight: 'seguir recto', right: 'girar a la derecha', cross: 'cruzar la calle' },
+  en: { left: 'turn left', straight: 'go straight', right: 'turn right', cross: 'cross the street' },
+};
+
+/* ---------- state ---------- */
+const S = {
+  name: '', script: 'tw', lang: 'es', pinyin: false, trans: true, rate: 'normal',
+  level: 1, qs: [], qi: 0, q: null, correct: 0, results: [], totalMs: 0, qStart: 0,
+  pos: null, ang: 0, path: [], actions: [], locked: false, busy: false, reveal: null,
+};
+const DEVICE = (() => {
+  try {
+    let id = localStorage.getItem('askdir_device');
+    if (!id) { id = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('askdir_device', id); }
+    return id;
+  } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
+})();
+
+function loadSettings() {
+  try {
+    const o = JSON.parse(localStorage.getItem('askdir_settings') || '{}');
+    ['name', 'script', 'lang', 'pinyin', 'trans', 'rate'].forEach(k => { if (o[k] !== undefined) S[k] = o[k]; });
+  } catch (e) {}
+  const p = new URLSearchParams(location.search);
+  if (p.get('name')) S.name = p.get('name').slice(0, 14);
+  if (['tw', 'cn'].includes(p.get('script'))) S.script = p.get('script');
+  if (['es', 'en'].includes(p.get('lang'))) S.lang = p.get('lang');
+}
+function saveSettings() {
+  try {
+    localStorage.setItem('askdir_settings', JSON.stringify({
+      name: S.name, script: S.script, lang: S.lang, pinyin: S.pinyin, trans: S.trans, rate: S.rate,
+    }));
+  } catch (e) {}
+}
+const T = (k, v) => {
+  let s = (UI[S.lang] || UI.es)[k];
+  if (s === undefined) return k;
+  if (typeof s !== 'string') return s;
+  if (v) for (const x in v) s = s.replace('{' + x + '}', v[x]);
+  return s;
+};
+const W = k => WORDS[S.script][k];
+let toastTimer;
+function toast(msg) {
+  const el = $('#toast'); el.textContent = msg; el.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), 1700);
+}
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  window.scrollTo(0, 0);
+  if (id !== 's-game') stopSpeech();
+}
+
+/* ---------- speech ---------- */
+let voices = [];
+function loadVoices() { try { voices = speechSynthesis.getVoices() || []; } catch (e) { voices = []; } }
+if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function stopSpeech() { try { speechSynthesis.cancel(); } catch (e) {} }
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-TW'; u.rate = RATES[S.rate] || 0.7;
+    const v = voices.find(v => /zh[-_]TW/i.test(v.lang)) || voices.find(v => /^zh/i.test(v.lang));
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+/* ---------- start screen ---------- */
+function chips(sel, items, cur, pick) {
+  const el = $(sel); el.innerHTML = '';
+  items.forEach(it => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (it.on !== undefined ? (it.on ? ' on' : '') : (it.v === cur ? ' on' : ''));
+    b.textContent = it.label;
+    b.onclick = () => pick(it.v);
+    el.appendChild(b);
+  });
+}
+function renderStart() {
+  document.documentElement.lang = S.lang;
+  $('#ttl').textContent = S.script === 'tw' ? '問路小達人' : '问路小达人';
+  $('#ttlsub').textContent = T('titleSub');
+  $('#tag').textContent = T('tag');
+  $('#l-name').textContent = T('name');
+  $('#name').placeholder = T('namePh'); $('#name').value = S.name;
+  $('#l-script').textContent = T('script');
+  chips('#c-script', [{ v: 'tw', label: '繁體' }, { v: 'cn', label: '简体' }], S.script, v => { S.script = v; saveSettings(); renderStart(); });
+  $('#l-lang').textContent = T('lang');
+  chips('#c-lang', [{ v: 'es', label: 'Español' }, { v: 'en', label: 'English' }], S.lang, v => { S.lang = v; saveSettings(); renderStart(); });
+  $('#l-rate').textContent = T('rate');
+  chips('#c-rate', ['slow', 'normal', 'fast'].map(v => ({ v, label: T(v) })), S.rate, v => { S.rate = v; saveSettings(); renderStart(); speak(S.script === 'tw' ? '直走，再右轉。' : '直走，再右转。'); });
+  $('#l-show').textContent = T('show');
+  chips('#c-show', [
+    { v: 'py', label: T('pinyin'), on: S.pinyin },
+    { v: 'tr', label: T('trans'), on: S.trans },
+  ], null, v => { if (v === 'py') S.pinyin = !S.pinyin; else S.trans = !S.trans; saveSettings(); renderStart(); });
+  $('#l-level').textContent = T('level');
+  const lv = $('#levels'); lv.innerHTML = '';
+  const hints = [W('straight') + ' · ' + W('left') + ' · ' + W('right'), '第N個路口 · ' + W('cross'), '左/右手邊 · 對面 · 旁邊', '…'];
+  const hintsCn = [hints[0], '第N个路口 · ' + W('cross'), '左/右手边 · 对面 · 旁边', '…'];
+  for (let i = 0; i < 4; i++) {
+    const b = document.createElement('button'); b.className = 'lv';
+    b.innerHTML = '<span class="n">' + (i + 1) + '</span><span><span class="t"></span><br><span class="d"></span></span><span class="z"></span>';
+    b.querySelector('.t').textContent = T('lv')[i];
+    b.querySelector('.d').textContent = T('lvd')[i];
+    b.querySelector('.z').textContent = (S.script === 'tw' ? hints : hintsCn)[i];
+    b.onclick = () => startGame(i + 1);
+    lv.appendChild(b);
+  }
+  $('#btn-board').textContent = '🏆 ' + T('board');
+}
+
+/* ---------- game ---------- */
+function pickQuestions(level) {
+  const pool = DATA.questions.filter(q => q.level === level);
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  return pool.slice(0, ROUNDS);
+}
+function startGame(level) {
+  S.name = $('#name').value.trim();
+  if (!S.name) { $('#name').classList.add('err'); $('#name').focus(); toast(T('nameNeed')); return; }
+  $('#name').classList.remove('err');
+  saveSettings();
+  S.level = level; S.qs = pickQuestions(level); S.qi = 0; S.correct = 0; S.results = []; S.totalMs = 0;
+  show('s-game');
+  applyGameLabels();
+  loadQuestion();
+  track('game_start', { level });
+}
+function applyGameLabels() {
+  $('#btn-restart').textContent = T('restart');
+  $('#lvname').textContent = T('lv')[S.level - 1];
+  $('#btn-say').textContent = T('listen');
+  $('#btn-tr').textContent = T('trans');
+  $('#btn-py').classList.toggle('on', S.pinyin);
+  $('#btn-tr').classList.toggle('on', S.trans);
+  $('#btn-rate').textContent = '⏱ ' + T(S.rate);
+  document.body.classList.toggle('showpy', S.pinyin);
+  const mk = (id, ic, key) => {
+    $(id).innerHTML = '<span class="ic">' + ic + '</span><span class="cn">' + W(key) + '</span><span class="pyb">' + WPY[key] + '</span><span class="sb">' + T(key) + '</span>';
+  };
+  mk('#b-L', '↰', 'left'); mk('#b-S', '↑', 'straight'); mk('#b-R', '↱', 'right');
+  $('#b-reset').textContent = T('reset');
+  $('#b-go').textContent = T('arrived');
+  const h = T('hint' + S.level, { straight: '<b>' + W('straight') + '</b>', cross: '<b>' + W('cross') + '</b>' });
+  $('#hint').innerHTML = h;
+}
+function renderSentence() {
+  const q = S.q;
+  const zh = $('#zh'); zh.lang = S.script === 'tw' ? 'zh-TW' : 'zh-CN';
+  zh.textContent = S.script === 'tw' ? q.tw : q.cn;
+  $('#pyl').textContent = q.py; $('#pyl').classList.toggle('hidden', !S.pinyin);
+  $('#trl').textContent = S.lang === 'es' ? q.es : q.en; $('#trl').classList.toggle('hidden', !S.trans);
+  const m = DATA.maps[q.map];
+  $('#mapname').textContent = T('map') + ': ' + (S.script === 'tw' ? m.tw : m.cn) + ' · ' + (S.lang === 'es' ? m.es : m.en);
+  $('#prog').textContent = T('q', { n: S.qi + 1, N: S.qs.length });
+  $('#score').textContent = T('pts', { s: S.correct * 10 });
+  $('#barfill').style.width = (S.qi / S.qs.length * 100) + '%';
+}
+function loadQuestion() {
+  const q = S.qs[S.qi]; S.q = q;
+  S.pos = { x: q.start[0], y: q.start[1], d: q.start[2] };
+  S.ang = q.start[2] * 90; S.path = [[S.pos.x, S.pos.y]]; S.actions = [];
+  S.locked = false; S.busy = false; S.reveal = null;
+  $('#feedback').classList.add('hidden'); $('#feedback').innerHTML = '';
+  $('#controls').classList.remove('off'); $('#row2').classList.remove('off');
+  $('#vocab').classList.add('hidden');
+  renderSentence(); renderMap(); redraw();
+  S.qStart = Date.now();
+  setTimeout(() => speak(q.tw), 300);
+}
+
+/* ---------- map drawing ---------- */
+function labelSvg(cx, cy, key) {
+  const b = DATA.buildings[key];
+  const name = S.script === 'tw' ? b.tw : b.cn;
+  let s = '<text class="bn' + (name.length >= 4 ? ' sm' : '') + '" x="' + cx + '" y="' + (S.pinyin ? cy - 3 : cy + 5) + '" text-anchor="middle">' + name + '</text>';
+  if (S.pinyin) {
+    const sy = b.py.split(' '), n = sy.length;
+    const lines = n > 2 ? [sy.slice(0, Math.ceil(n / 2)).join(' '), sy.slice(Math.ceil(n / 2)).join(' ')] : [b.py];
+    lines.forEach((ln, i) => { s += '<text class="bp" x="' + cx + '" y="' + (cy + 10 + i * 9) + '" text-anchor="middle">' + ln + '</text>'; });
+  }
+  return s;
+}
+function renderMap() {
+  const q = S.q, m = DATA.maps[q.map];
+  const svg = $('#map');
+  svg.setAttribute('viewBox', '-34 -34 368 368');
+  let h = '';
+  for (let i = 0; i < 4; i++) {
+    h += '<line class="road" x1="-20" y1="' + i * SP + '" x2="320" y2="' + i * SP + '"/>';
+    h += '<line class="road" x1="' + i * SP + '" y1="-20" x2="' + i * SP + '" y2="320"/>';
+  }
+  for (let i = 0; i < 4; i++) {
+    h += '<line class="mid" x1="-20" y1="' + i * SP + '" x2="320" y2="' + i * SP + '"/>';
+    h += '<line class="mid" x1="' + i * SP + '" y1="-20" x2="' + i * SP + '" y2="320"/>';
+  }
+  // crosswalks on every arm of every intersection
+  for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
+    for (let d = 0; d < 4; d++) {
+      const nx = x + DXS[d], ny = y + DYS[d];
+      if (nx < 0 || nx > 3 || ny < 0 || ny > 3) continue;
+      for (const off of [17, 23, 29]) {
+        const cx = x * SP + DXS[d] * off, cy = y * SP + DYS[d] * off;
+        if (DXS[d] !== 0) h += '<rect class="cw" x="' + (cx - 1.6) + '" y="' + (cy - 9) + '" width="3.2" height="18"/>';
+        else h += '<rect class="cw" x="' + (cx - 9) + '" y="' + (cy - 1.6) + '" width="18" height="3.2"/>';
+      }
+    }
+  }
+  for (let by = 0; by < 3; by++) for (let bx = 0; bx < 3; bx++) {
+    const key = m.blocks[by][bx], cx = bx * SP + 50, cy = by * SP + 50;
+    h += '<g class="bld" data-k="' + key + '"><rect x="' + (cx - 35) + '" y="' + (cy - 35) + '" width="70" height="70" rx="9"/>' + labelSvg(cx, cy, key) + '</g>';
+  }
+  for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) h += '<circle class="nd" cx="' + x * SP + '" cy="' + y * SP + '" r="2.6"/>';
+  h += '<circle class="startring" cx="' + q.start[0] * SP + '" cy="' + q.start[1] * SP + '" r="17"/>';
+  h += '<g id="routes"></g><polyline class="trail" id="trail" points=""/>';
+  h += '<g id="av"><g id="avr"><circle class="avc" r="11"/><path class="avt" d="M0 -22 L7 -11 L-7 -11 Z"/><circle r="3.4" fill="#fffefa"/></g></g>';
+  svg.innerHTML = h;
+}
+function setAvatar(instant) {
+  const av = $('#av'), avr = $('#avr'); if (!av) return;
+  if (instant) { av.classList.add('nt'); avr.classList.add('nt'); }
+  av.style.transform = 'translate(' + S.pos.x * SP + 'px,' + S.pos.y * SP + 'px)';
+  avr.style.transform = 'rotate(' + S.ang + 'deg)';
+  if (instant) { void av.getBoundingClientRect(); av.classList.remove('nt'); avr.classList.remove('nt'); }
+}
+function pts(path) { return path.map(p => p[0] * SP + ',' + p[1] * SP).join(' '); }
+function drawTrail() { const t = $('#trail'); if (t) t.setAttribute('points', S.path.length > 1 ? pts(S.path) : ''); }
+function drawReveal() {
+  const g = $('#routes'); if (!g) return;
+  g.innerHTML = '';
+  if (!S.reveal) return;
+  const mk = (cls, path) => '<polyline class="' + cls + '" points="' + pts(path) + '"/>';
+  let h = '';
+  if (!S.reveal.ok && S.reveal.student.length > 1) h += mk('rt-bad', S.reveal.student);
+  h += mk('rt-ok', S.q.path);
+  g.innerHTML = h;
+  const b = document.querySelector('.bld[data-k="' + S.q.target + '"]');
+  if (b) b.classList.add('hl');
+}
+function redraw() { setAvatar(true); drawTrail(); drawReveal(); }
+
+/* ---------- moving ---------- */
+function applyAction(pos, a) {
+  if (a === 'L') return { x: pos.x, y: pos.y, d: (pos.d + 3) % 4 };
+  if (a === 'R') return { x: pos.x, y: pos.y, d: (pos.d + 1) % 4 };
+  const nx = pos.x + DXS[pos.d], ny = pos.y + DYS[pos.d];
+  if (nx < 0 || nx > 3 || ny < 0 || ny > 3) return null;
+  return { x: nx, y: ny, d: pos.d };
+}
+function act(a) {
+  if (S.locked || S.busy || !S.q) return;
+  if (S.actions.length >= 40) { toast('…'); return; }
+  const np = applyAction(S.pos, a);
+  if (!np) {
+    const m = $('#map'); m.classList.remove('shake'); void m.getBoundingClientRect(); m.classList.add('shake');
+    toast(T('noRoad')); return;
+  }
+  S.pos = np; S.actions.push(a);
+  if (a === 'L') S.ang -= 90; else if (a === 'R') S.ang += 90; else S.path.push([np.x, np.y]);
+  setAvatar(false); drawTrail();
+}
+function resetPos() {
+  if (S.locked || S.busy) return;
+  const q = S.q;
+  S.pos = { x: q.start[0], y: q.start[1], d: q.start[2] };
+  S.ang = q.start[2] * 90; S.path = [[S.pos.x, S.pos.y]]; S.actions = [];
+  setAvatar(true); drawTrail();
+}
+function submit() {
+  if (S.locked || S.busy || !S.q) return;
+  const q = S.q, p = S.pos;
+  const sameNode = p.x === q.end[0] && p.y === q.end[1];
+  const ok = sameNode && p.d === q.end[2];
+  S.locked = true;
+  S.totalMs += Math.min(Date.now() - S.qStart, 120000);
+  if (ok) S.correct++;
+  S.results.push({ ok, q });
+  S.reveal = { ok, student: S.path.slice() };
+  $('#controls').classList.add('off'); $('#row2').classList.add('off');
+  $('#score').textContent = T('pts', { s: S.correct * 10 });
+  drawReveal(); stopSpeech();
+  const last = S.qi >= S.qs.length - 1;
+  const fb = $('#feedback');
+  let html = '<div class="fb ' + (ok ? 'ok' : 'bad') + '"><h3>' + (ok ? T('ok') : (sameNode ? T('badFace') : T('bad'))) + '</h3>';
+  if (!ok) html += '<div class="leg"><span><i class="b"></i>' + T('yourRoute') + '</span><span><i class="g"></i>' + T('rightRoute') + '</span></div>';
+  html += '<div class="fbbtns' + (ok ? ' one' : '') + '">';
+  if (!ok) html += '<button class="btn ghost" id="fb-watch">' + T('watch') + '</button>';
+  html += '<button class="btn" id="fb-next">' + (last ? T('finish') : T('next')) + '</button></div></div>';
+  fb.innerHTML = html; fb.classList.remove('hidden');
+  const w = $('#fb-watch'); if (w) w.onclick = replay;
+  $('#fb-next').onclick = nextQuestion;
+  track('answer', { level: S.level, id: q.id, correct: ok ? 1 : 0 });
+  setTimeout(() => fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+}
+async function replay() {
+  if (S.busy) return;
+  S.busy = true;
+  const q = S.q;
+  S.pos = { x: q.start[0], y: q.start[1], d: q.start[2] }; S.ang = q.start[2] * 90;
+  S.path = [[S.pos.x, S.pos.y]]; setAvatar(true); drawTrail();
+  await sleep(450);
+  for (const a of q.actions) {
+    const np = applyAction(S.pos, a); if (!np) break;
+    S.pos = np;
+    if (a === 'L') S.ang -= 90; else if (a === 'R') S.ang += 90; else S.path.push([np.x, np.y]);
+    setAvatar(false); drawTrail();
+    await sleep(a === 'S' ? 700 : 480);
+  }
+  S.busy = false;
+}
+function nextQuestion() {
+  if (S.busy) return;
+  S.qi++;
+  if (S.qi >= S.qs.length) finish(); else loadQuestion();
+}
+
+/* ---------- leaderboard ---------- */
+let FB = null;
+async function initFirebase() {
+  if (!FIREBASE_CONFIG || FB) return FB;
+  try {
+    const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+    const [A, Au, F] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
+    const app = A.initializeApp(FIREBASE_CONFIG);
+    const auth = Au.getAuth(app);
+    try { await Au.signInAnonymously(auth); } catch (e) {}
+    FB = { db: F.getFirestore(app), F };
+  } catch (e) { FB = null; }
+  return FB;
+}
+function localLB() { try { return JSON.parse(localStorage.getItem('askdir_lb') || '{}'); } catch (e) { return {}; } }
+function better(a, b) { return !b || a.score > b.score || (a.score === b.score && a.time < b.time); }
+async function saveScore(level, score, time) {
+  const rec = { name: S.name, score, time, level };
+  let remote = false;
+  const lb = localLB(); if (better(rec, lb['L' + level])) lb['L' + level] = rec;
+  try { localStorage.setItem('askdir_lb', JSON.stringify(lb)); } catch (e) {}
+  const fb = await initFirebase();
+  if (fb) {
+    try {
+      const { F, db } = fb;
+      const ref = F.doc(db, LB_PREFIX + level, DEVICE);
+      const snap = await F.getDoc(ref);
+      if (!snap.exists() || better(rec, snap.data())) await F.setDoc(ref, { ...rec, updatedAt: F.serverTimestamp() });
+      remote = true;
+    } catch (e) { remote = false; }
+  }
+  return remote;
+}
+async function fetchBoard(level) {
+  const fb = await initFirebase();
+  if (fb) {
+    try {
+      const { F, db } = fb;
+      const snap = await F.getDocs(F.query(F.collection(db, LB_PREFIX + level), F.orderBy('score', 'desc'), F.limit(30)));
+      const rows = snap.docs.map(d => d.data());
+      rows.sort((a, b) => b.score - a.score || a.time - b.time);
+      return { rows: rows.slice(0, 15), remote: true };
+    } catch (e) {}
+  }
+  const r = localLB()['L' + level];
+  return { rows: r ? [r] : [], remote: false };
+}
+
+/* ---------- result & board screens ---------- */
+async function finish() {
+  const score = S.correct * 10, secs = Math.round(S.totalMs / 1000);
+  $('#barfill').style.width = '100%';
+  show('s-result');
+  $('#r-title').textContent = T('result');
+  $('#r-level').textContent = T('lv')[S.level - 1];
+  $('#r-score').textContent = score;
+  $('#r-time').textContent = T('score', { c: S.correct, N: S.qs.length }) + ' · ' + T('time', { t: secs });
+  $('#r-saved').textContent = '';
+  const ul = $('#r-list'); ul.innerHTML = '';
+  S.results.forEach(r => {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="m ' + (r.ok ? 'ok' : 'bad') + '">' + (r.ok ? '✓' : '✗') + '</span><span lang="' + (S.script === 'tw' ? 'zh-TW' : 'zh-CN') + '"></span>';
+    li.lastChild.textContent = S.script === 'tw' ? r.q.tw : r.q.cn;
+    ul.appendChild(li);
+  });
+  $('#r-again').textContent = T('again');
+  $('#r-board').textContent = '🏆 ' + T('board');
+  $('#r-home').textContent = T('home');
+  track('game_finish', { level: S.level, score, secs });
+  const remote = await saveScore(S.level, score, secs);
+  $('#r-saved').textContent = remote ? T('saved') : T('savedLocal');
+}
+let boardLevel = 1;
+async function openBoard(level) {
+  boardLevel = level || S.level || 1;
+  show('s-board');
+  $('#b-title').textContent = '🏆 ' + T('board');
+  $('#b-back').textContent = T('back');
+  const tabs = $('#b-tabs'); tabs.innerHTML = '';
+  for (let i = 1; i <= 4; i++) {
+    const b = document.createElement('button'); b.className = 'chip' + (i === boardLevel ? ' on' : '');
+    b.textContent = T('lv')[i - 1]; b.style.fontSize = '12px';
+    b.onclick = () => openBoard(i); tabs.appendChild(b);
+  }
+  const t = $('#b-table'); t.innerHTML = '';
+  $('#b-note').textContent = '…';
+  const { rows, remote } = await fetchBoard(boardLevel);
+  $('#b-note').textContent = remote ? T('best') : T('localNote');
+  if (!rows.length) { t.innerHTML = '<tr><td style="border:0;color:var(--muted)">' + T('empty') + '</td></tr>'; return; }
+  let h = '<tr><th>#</th><th>' + T('player') + '</th><th>' + T('pts2') + '</th><th>' + T('sec') + '</th></tr>';
+  rows.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    h += '<tr><td>' + (i + 1) + '</td><td></td><td>' + r.score + '</td><td>' + r.time + '</td></tr>';
+  });
+  t.innerHTML = h;
+  [...t.querySelectorAll('tr')].slice(1).forEach((tr, i) => { tr.children[1].textContent = rows[i].name; });
+}
+
+/* ---------- vocabulary panel ---------- */
+function toggleVocab() {
+  const v = $('#vocab');
+  if (!v.classList.contains('hidden')) { v.classList.add('hidden'); return; }
+  const m = DATA.maps[S.q.map];
+  const item = (zh, py, tr) => '<div><b></b>' + (S.pinyin ? '<span class="p"></span>' : '') + '<span class="t"></span></div>';
+  let h = '<h4>' + T('vocabDir') + '</h4><div class="g" id="vg1"></div><h4>' + T('vocabPlaces') + '</h4><div class="g" id="vg2"></div>';
+  v.innerHTML = h;
+  const fill = (id, rows) => {
+    const g = $(id);
+    rows.forEach(r => {
+      const d = document.createElement('div');
+      const b = document.createElement('b'); b.textContent = r[0]; d.appendChild(b);
+      if (S.pinyin) { const p = document.createElement('span'); p.textContent = r[1]; d.appendChild(p); }
+      const t = document.createElement('span'); t.textContent = r[2]; d.appendChild(t);
+      g.appendChild(d);
+    });
+  };
+  fill('#vg1', ['straight', 'left', 'right', 'cross'].map(k => [W(k), WPY[k], WTR[S.lang][k]]));
+  const keys = [];
+  m.blocks.forEach(r => r.forEach(k => keys.push(k)));
+  fill('#vg2', keys.map(k => { const b = DATA.buildings[k]; return [S.script === 'tw' ? b.tw : b.cn, b.py, b[S.lang]]; }));
+  v.classList.remove('hidden');
+}
+
+/* ---------- wiring ---------- */
+function bind() {
+  $('#b-L').onclick = () => act('L');
+  $('#b-S').onclick = () => act('S');
+  $('#b-R').onclick = () => act('R');
+  $('#b-reset').onclick = resetPos;
+  $('#b-go').onclick = submit;
+  $('#btn-say').onclick = () => speak(S.q.tw);
+  $('#btn-py').onclick = () => { S.pinyin = !S.pinyin; saveSettings(); applyGameLabels(); renderSentence(); renderMap(); redraw(); if (!$('#vocab').classList.contains('hidden')) { $('#vocab').classList.add('hidden'); toggleVocab(); } };
+  $('#btn-tr').onclick = () => { S.trans = !S.trans; saveSettings(); applyGameLabels(); renderSentence(); };
+  $('#btn-rate').onclick = () => { const o = ['slow', 'normal', 'fast']; S.rate = o[(o.indexOf(S.rate) + 1) % 3]; saveSettings(); $('#btn-rate').textContent = '⏱ ' + T(S.rate); speak(S.q.tw); };
+  $('#btn-vocab').onclick = toggleVocab;
+  $('#btn-restart').onclick = () => { stopSpeech(); startGame(S.level); };
+  $('#btn-board').onclick = () => openBoard(1);
+  $('#r-again').onclick = () => startGame(S.level);
+  $('#r-board').onclick = () => openBoard(S.level);
+  $('#r-home').onclick = () => { renderStart(); show('s-start'); };
+  $('#b-back').onclick = () => { renderStart(); show('s-start'); };
+  $('#name').addEventListener('input', () => $('#name').classList.remove('err'));
+  document.addEventListener('keydown', e => {
+    if (!$('#s-game').classList.contains('on') || e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowLeft') act('L'); else if (e.key === 'ArrowRight') act('R'); else if (e.key === 'ArrowUp') { e.preventDefault(); act('S'); }
+    else if (e.key === 'Enter') { if (!S.locked) submit(); else if ($('#fb-next')) nextQuestion(); }
+  });
+}
+loadSettings(); bind(); renderStart();
+window.__askdir = { S, DATA, act, submit, startGame, nextQuestion, resetPos };
+</script>
+</body>
+</html>
