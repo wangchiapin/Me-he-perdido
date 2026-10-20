@@ -279,7 +279,7 @@ const UI = {
     hint4: 'Combina todo lo aprendido. ¡Tú puedes!',
     result: 'Resultado', score: '{c} de {N} correctas', time: 'Tiempo: {t} s',
     again: 'Jugar de nuevo', home: 'Cambiar de nivel',
-    best: 'Mejor puntuación de cada jugador (top 15).',
+    best: 'Mejor puntuación de cada jugador (top 10).',
     localNote: 'Clasificación de este dispositivo (Firebase aún no está conectado).',
     empty: 'Todavía no hay puntuaciones.', player: 'Jugador', pts2: 'Puntos', sec: 'Seg.',
     saved: 'Puntuación guardada.', savedLocal: 'Puntuación guardada en este dispositivo.',
@@ -310,7 +310,7 @@ const UI = {
     hint4: 'Combine everything you have learned. You can do it!',
     result: 'Result', score: '{c} of {N} correct', time: 'Time: {t} s',
     again: 'Play again', home: 'Change level',
-    best: "Each player's best score (top 15).",
+    best: "Each player's best score (top 10).",
     localNote: "This device's leaderboard (Firebase is not connected yet).",
     empty: 'No scores yet.', player: 'Player', pts2: 'Score', sec: 'Sec.',
     saved: 'Score saved.', savedLocal: 'Score saved on this device.',
@@ -341,7 +341,7 @@ const UI = {
     hint4: '把學過的全部用上，你可以的！',
     result: '結果', score: '答對 {c}/{N} 題', time: '時間：{t} 秒',
     again: '再玩一次', home: '換關卡',
-    best: '每位玩家的最高分（前 15 名）。',
+    best: '每位玩家的最高分（前 10 名）。',
     localNote: '這台裝置上的排行榜。',
     empty: '還沒有分數。', player: '玩家', pts2: '分數', sec: '秒',
     saved: '分數已儲存。', savedLocal: '分數已存在這台裝置。',
@@ -520,7 +520,7 @@ function speak(text) {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'zh-TW'; u.rate = RATE_VALUE[S.rate] || RATE_VALUE.normal;
-    const v = voices.find(v => /zh[-_]TW/i.test(v.lang)) || voices.find(v => /^zh/i.test(v.lang));
+    const v = voices.find(v => /zh[-_]TW/i.test(v.lang)) || voices.find(v => /^zh/i.test(v.lang) && !/^(yue|zh[-_]hk)/i.test(v.lang));   // 排除廣東話
     if (v) u.voice = v;
     speechSynthesis.speak(u);
   } catch (e) {}
@@ -828,7 +828,7 @@ async function fetchBoard(level) {
       const snap = await F.getDocs(F.query(F.collection(db, LB_PREFIX + level), F.orderBy('score', 'desc'), F.limit(30)));
       const rows = snap.docs.map(d => d.data());
       rows.sort((a, b) => b.score - a.score || a.time - b.time);
-      return { rows: rows.slice(0, 15), remote: true };
+      return { rows: rows.slice(0, 10), remote: true };
     } catch (e) {}
   }
   const r = localLB()['L' + level];
