@@ -219,7 +219,14 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
 const DATA = /*__DATA__*/{};
 
 /* ---------- optional services (fill in to enable) ---------- */
-const FIREBASE_CONFIG = null;   // paste the Firebase web config object here to share the leaderboard
+const FIREBASE_CONFIG = {      // 連到 memorma-24dab（和翻牌記憶、收納小達人共用專案）
+  apiKey: "AIzaSyC_YSDn2OH6_GKKwCq0d8QFNl3fYXzTC60",
+  authDomain: "memorma-24dab.firebaseapp.com",
+  projectId: "memorma-24dab",
+  storageBucket: "memorma-24dab.firebasestorage.app",
+  messagingSenderId: "806709458465",
+  appId: "1:806709458465:web:f0d12acb2f911f2f165560"
+};
 const LB_PREFIX = 'askDirections_L';   // Firestore collections: askDirections_L1 … L4
 const GA_ID = '';               // GA4 measurement id, e.g. 'G-XXXXXXXXXX'
 
@@ -787,8 +794,9 @@ async function initFirebase() {
     const [A, Au, F] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
     const app = A.initializeApp(FIREBASE_CONFIG);
     const auth = Au.getAuth(app);
-    try { await Au.signInAnonymously(auth); } catch (e) {}
-    FB = { db: F.getFirestore(app), F };
+    let uid = null;
+    try { uid = (await Au.signInAnonymously(auth)).user.uid; } catch (e) {}
+    FB = { db: F.getFirestore(app), F, uid };
   } catch (e) { FB = null; }
   return FB;
 }
@@ -802,10 +810,11 @@ async function saveScore(level, score, time) {
   const fb = await initFirebase();
   if (fb) {
     try {
-      const { F, db } = fb;
-      const ref = F.doc(db, LB_PREFIX + level, DEVICE);
+      const { F, db, uid } = fb;
+      if (!uid) throw new Error('no auth');
+      const ref = F.doc(db, LB_PREFIX + level, uid);
       const snap = await F.getDoc(ref);
-      if (!snap.exists() || better(rec, snap.data())) await F.setDoc(ref, { ...rec, updatedAt: F.serverTimestamp() });
+      if (!snap.exists() || better(rec, snap.data())) await F.setDoc(ref, { name: rec.name, score: rec.score, time: rec.time, level: rec.level, updatedAt: F.serverTimestamp() });
       remote = true;
     } catch (e) { remote = false; }
   }
