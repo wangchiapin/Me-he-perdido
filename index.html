@@ -42,7 +42,7 @@ input.name.err{border-color:var(--bad)}
 .bar{height:3px;background:var(--line);border-radius:3px;margin:8px 0 10px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--ink);width:0;transition:width .3s}
 .zh{font-size:19px;line-height:1.75;letter-spacing:.03em}
-.pyl{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:3px}
+.pyl{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:3px;white-space:pre-line}
 .trl{font-size:13px;color:#5d5a52;line-height:1.5;margin-top:4px}
 .tools{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
 .tools .mini{padding:5px 8px;font-size:12.5px}
@@ -77,8 +77,7 @@ input.name.err{border-color:var(--bad)}
 .cbtn:active{background:var(--ink);color:#fff}
 .cbtn .ic{font-size:21px;line-height:1}
 .cbtn .cn{font-size:17px;font-weight:600}
-.cbtn .pyb{font-size:11px;color:var(--muted);display:none}
-body.showpy .cbtn .pyb{display:block}
+.cbtn .pyb{font-size:11px;color:var(--muted);white-space:pre-line;text-align:center;line-height:1.25}
 .cbtn .sb{font-size:11px;color:var(--muted)}
 .cbtn:active .pyb,.cbtn:active .sb{color:#ddd}
 .row2{display:grid;grid-template-columns:1fr 1.5fr;gap:8px;margin-top:8px}
@@ -95,7 +94,7 @@ body.showpy .cbtn .pyb{display:block}
 .fbbtns.one{grid-template-columns:1fr}
 #vocab{margin-top:8px}
 #vocab .g{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:13px}
-#vocab .g div span{color:var(--muted);font-size:11.5px;display:block}
+#vocab .g div span{color:var(--muted);font-size:11.5px;display:block;white-space:pre-line}
 #vocab h4{margin:8px 0 4px;font-size:12px;color:var(--muted);font-weight:500}
 .big{font-size:42px;font-weight:600;margin:10px 0 2px}
 .res li{display:flex;gap:8px;font-size:13px;line-height:1.5;margin:6px 0;list-style:none}
@@ -131,11 +130,11 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
   <div class="lbl" id="l-lang"></div>
   <div class="chips" id="c-lang"></div>
 
+  <div class="lbl" id="l-phon"></div>
+  <div class="chips" id="c-phon"></div>
+
   <div class="lbl" id="l-rate"></div>
   <div class="chips" id="c-rate"></div>
-
-  <div class="lbl" id="l-show"></div>
-  <div class="chips" id="c-show"></div>
 
   <div class="lbl" id="l-level"></div>
   <div class="levels" id="levels"></div>
@@ -158,8 +157,7 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
     <div class="trl" id="trl"></div>
     <div class="tools">
       <button class="mini" id="btn-say"></button>
-      <button class="mini tog" id="btn-py">Pinyin</button>
-      <button class="mini tog" id="btn-tr"></button>
+      <button class="mini tog" id="btn-py"></button>
       <button class="mini" id="btn-rate"></button>
     </div>
   </div>
@@ -230,7 +228,10 @@ const $ = s => document.querySelector(s);
 const SP = 100;                          // distance between intersections (svg units)
 const DXS = [0, 1, 0, -1], DYS = [-1, 0, 1, 0];   // N E S W
 const ROUNDS = 8;
-const RATES = { slow: 0.45, normal: 0.7, fast: 0.95 };
+const RATE_VALUE = { slow: 0.45, normal: 0.65, fast: 0.85 };   // family standard
+const SETTINGS_KEY = 'hanziGames.settings';                  // shared by all the games
+const OWN_KEY = 'askdir_settings';                           // this game only: player name
+const SET_OPTS = { script: ['trad', 'simp'], lang: ['es', 'en', 'zh'], phon: ['pinyin', 'zhuyin', 'both', 'off'], rate: ['slow', 'normal', 'fast'] };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function track(name, params) {
@@ -251,8 +252,9 @@ const UI = {
     titleSub: 'Pregunta el camino',
     tag: 'Escucha las indicaciones y camina hasta el destino.',
     name: 'Tu nombre', namePh: 'Escribe tu nombre', nameNeed: 'Escribe tu nombre para empezar.',
-    script: 'Caracteres', lang: 'Idioma', rate: 'Velocidad de la voz', show: 'Ayudas',
-    slow: 'Lenta', normal: 'Normal', fast: 'Rápida', pinyin: 'Pinyin', trans: 'Traducción',
+    script: 'Caracteres', lang: 'Idioma', phon: 'Pronunciación', rate: 'Velocidad de la voz',
+    slow: 'Lenta', normal: 'Normal', fast: 'Rápida',
+    ph_pinyin: 'Pinyin', ph_zhuyin: 'Zhuyin 注音', ph_both: 'Pinyin + zhuyin', ph_off: 'Ninguna',
     level: 'Elige un nivel',
     lv: ['Direcciones', 'Esquinas y cruzar', 'Posiciones', 'Reto combinado'],
     lvd: ['Recto, izquierda y derecha', 'Contar esquinas y cruzar la calle', 'Izquierda, derecha, enfrente, al lado', 'Indicaciones largas, todo junto'],
@@ -281,8 +283,9 @@ const UI = {
     titleSub: 'Ask the Way',
     tag: 'Listen to the directions and walk to the destination.',
     name: 'Your name', namePh: 'Type your name', nameNeed: 'Type your name to start.',
-    script: 'Characters', lang: 'Language', rate: 'Voice speed', show: 'Helpers',
-    slow: 'Slow', normal: 'Normal', fast: 'Fast', pinyin: 'Pinyin', trans: 'Translation',
+    script: 'Characters', lang: 'Language', phon: 'Pronunciation', rate: 'Voice speed',
+    slow: 'Slow', normal: 'Normal', fast: 'Fast',
+    ph_pinyin: 'Pinyin', ph_zhuyin: 'Zhuyin 注音', ph_both: 'Pinyin + zhuyin', ph_off: 'None',
     level: 'Choose a level',
     lv: ['Directions', 'Intersections & crossing', 'Positions', 'Challenge'],
     lvd: ['Straight, left and right', 'Count intersections, cross the street', 'Left, right, across, next to', 'Longer directions, all together'],
@@ -307,20 +310,56 @@ const UI = {
     vocab: 'Vocabulary', vocabDir: 'Directions', vocabPlaces: 'Places on the map',
     back: 'Back', map: 'Map',
   },
+  zh: {
+    titleSub: '問路、指路',
+    tag: '聽指路的話，走到目的地。',
+    name: '你的名字', namePh: '請輸入名字', nameNeed: '請先輸入名字。',
+    script: '字體', lang: '語言', phon: '讀音', rate: '語音速度',
+    slow: '慢', normal: '中', fast: '快',
+    ph_pinyin: '拼音', ph_zhuyin: '注音', ph_both: '拼音＋注音', ph_off: '不顯示',
+    level: '選擇關卡',
+    lv: ['方向', '路口與過馬路', '位置', '綜合挑戰'],
+    lvd: ['直走、左轉、右轉', '數路口、過馬路', '左邊、右邊、對面、旁邊', '比較長的指路，全部一起用'],
+    board: '排行榜', restart: '↻ 重來',
+    q: '第 {n}/{N} 題', pts: '{s} 分',
+    listen: '🔊 聽', left: '', straight: '', right: '',
+    reset: '↺ 重走', arrived: '✓ 我到了！', noRoad: '前面沒有路。',
+    ok: '答對了！+10', bad: '差一點。看看正確的路線。',
+    badFace: '地點對了，但是面向的方向不對。',
+    yourRoute: '你的路線', rightRoute: '正確路線',
+    watch: '▶ 看路線', next: '下一題 →', finish: '看結果',
+    hint1: '{straight}＝走到下一個路口。',
+    hint2: '路口從你站的地方開始數。{cross}＝直接走到馬路對面，不轉彎。',
+    hint3: '看地圖：走的時候，左手邊或右手邊是哪一棟建築？',
+    hint4: '把學過的全部用上，你可以的！',
+    result: '結果', score: '答對 {c}/{N} 題', time: '時間：{t} 秒',
+    again: '再玩一次', home: '換關卡',
+    best: '每位玩家的最高分（前 15 名）。',
+    localNote: '這台裝置上的排行榜。',
+    empty: '還沒有分數。', player: '玩家', pts2: '分數', sec: '秒',
+    saved: '分數已儲存。', savedLocal: '分數已存在這台裝置。',
+    vocab: '詞彙', vocabDir: '方向', vocabPlaces: '地圖上的地點',
+    back: '返回', map: '地圖',
+  },
 };
+// simplified-character version of the Chinese-only UI (made from the traditional one)
+const S2T = { '問': '问', '聽': '听', '機': '机', '選': '选', '關': '关', '數': '数', '過': '过', '馬': '马', '綜': '综', '戰': '战', '邊': '边', '對': '对', '長': '长', '個': '个', '較': '较', '話': '话', '點': '点', '區': '区', '請': '请', '輸': '输', '體': '体', '語': '语', '讀': '读', '顯': '显', '鍵': '键', '點': '点', '榜': '榜', '題': '题', '裝': '装', '儲': '储', '這': '这', '臺': '台', '還': '还', '詞': '词', '彙': '汇', '圖': '图', '麼': '么', '線': '线', '錯': '错', '面': '面', '開': '开', '結': '结', '時': '时', '間': '间', '換': '换', '會': '会', '們': '们', '學': '学', '全': '全', '樣': '样', '幾': '几', '雙': '双', '當': '当', '築': '筑', '麼': '么', '別': '别', '對': '对', '應': '应', '給': '给', '蓋': '盖', '運': '运', '動': '动', '現': '现', '後': '后', '來': '来', '終': '终', '離': '离', '轉': '转', '帶': '带', '張': '张', '燈': '灯', '見': '见', '買': '买', '賣': '卖', '總': '总', '業': '业', '傳': '传', '極': '极', '處': '处', '準': '准', '須': '须', '標': '标', '導': '导', '歷': '历', '錄': '录', '無': '无', '難': '难', '電': '电', '腦': '脑', '為': '为', '與': '与', '確': '确', '鐘': '钟', '覺': '觉', '實': '实', '麵': '面', '館': '馆', '藥': '药', '書': '书', '車': '车', '買': '买', '軌': '轨', '號': '号', '單': '单', '務': '务', '員': '员', '辦': '办', '歡': '欢', '迎': '迎', '遊': '游', '戲': '戏', '樓': '楼', '層': '层', '導': '导', '檢': '检', '測': '测', '試': '试', '驗': '验', '紀': '纪', '錄': '录', '據': '据', '統': '统', '計': '计', '劃': '划', '設': '设', '備': '备', '類': '类', '種': '种', '終': '终', '義': '义', '網': '网', '頁': '页', '絡': '络', '連': '连', '續': '续', '擊': '击', '碼': '码', '終': '终', '則': '则', '規': '规', '範': '范', '圍': '围', '盡': '尽', '與': '与' };
+const zhSimp = o => { const r = {}; for (const k in o) r[k] = typeof o[k] === 'string' ? [...o[k]].map(c => S2T[c] || c).join('') : o[k].map(x => [...x].map(c => S2T[c] || c).join('')); return r; };
+UI.zhs = zhSimp(UI.zh);
 const WORDS = {
-  tw: { left: '左轉', straight: '直走', right: '右轉', cross: '過馬路' },
-  cn: { left: '左转', straight: '直走', right: '右转', cross: '过马路' },
+  trad: { left: '左轉', straight: '直走', right: '右轉', cross: '過馬路' },
+  simp: { left: '左转', straight: '直走', right: '右转', cross: '过马路' },
 };
 const WPY = { left: 'zuǒ zhuǎn', straight: 'zhí zǒu', right: 'yòu zhuǎn', cross: 'guò mǎ lù' };
 const WTR = {
+  zh: { left: '', straight: '', right: '', cross: '' },
   es: { left: 'girar a la izquierda', straight: 'seguir recto', right: 'girar a la derecha', cross: 'cruzar la calle' },
   en: { left: 'turn left', straight: 'go straight', right: 'turn right', cross: 'cross the street' },
 };
 
 /* ---------- state ---------- */
 const S = {
-  name: '', script: 'tw', lang: 'es', pinyin: false, trans: true, rate: 'normal',
+  name: '', script: 'trad', lang: 'es', phon: 'pinyin', rate: 'normal',
   level: 1, qs: [], qi: 0, q: null, correct: 0, results: [], totalMs: 0, qStart: 0,
   pos: null, ang: 0, path: [], actions: [], locked: false, busy: false, reveal: null,
 };
@@ -332,25 +371,120 @@ const DEVICE = (() => {
   } catch (e) { return 'd' + Math.random().toString(36).slice(2); }
 })();
 
-function loadSettings() {
+/* ---------- shared settings (same key in every game of the family) ---------- */
+function readShared() {
+  const out = { script: 'trad', lang: 'es', phon: 'pinyin', rate: 'normal' };
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); } catch (e) {}
+  if (saved && typeof saved === 'object') {
+    Object.keys(SET_OPTS).forEach(k => { if (SET_OPTS[k].includes(saved[k])) out[k] = saved[k]; });
+  }
+  return out;
+}
+function writeShared() {
   try {
-    const o = JSON.parse(localStorage.getItem('askdir_settings') || '{}');
-    ['name', 'script', 'lang', 'pinyin', 'trans', 'rate'].forEach(k => { if (o[k] !== undefined) S[k] = o[k]; });
+    let cur = {};
+    try { cur = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') || {}; } catch (e) {}
+    if (typeof cur !== 'object' || Array.isArray(cur)) cur = {};
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(Object.assign(cur, { v: 1, script: S.script, lang: S.lang, phon: S.phon, rate: S.rate })));
+  } catch (e) {}
+}
+// first run: no shared key yet -> bring over the old askdir_settings values (the old key keeps name etc.)
+function migrateLegacy() {
+  try {
+    if (localStorage.getItem(SETTINGS_KEY) !== null) return;
+    const raw = localStorage.getItem(OWN_KEY);
+    if (!raw) return;
+    const o = JSON.parse(raw) || {};
+    const m = {};
+    if (o.script === 'tw') m.script = 'trad'; else if (o.script === 'cn') m.script = 'simp';
+    if (o.lang === 'es' || o.lang === 'en') m.lang = o.lang;
+    if (o.pinyin === true) m.phon = 'pinyin'; else if (o.pinyin === false) m.phon = 'off';
+    if (SET_OPTS.rate.includes(o.rate)) m.rate = o.rate;
+    const base = Object.assign({ script: 'trad', lang: 'es', phon: 'pinyin', rate: 'normal' }, m);
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(Object.assign({ v: 1 }, base)));
+    ['script', 'lang', 'pinyin', 'trans', 'rate'].forEach(k => delete o[k]);   // keep only game-only data (name)
+    localStorage.setItem(OWN_KEY, JSON.stringify(o));
+  } catch (e) {}
+}
+function loadSettings() {
+  migrateLegacy();
+  Object.assign(S, readShared());
+  try {
+    const o = JSON.parse(localStorage.getItem(OWN_KEY) || '{}') || {};
+    if (typeof o.name === 'string') S.name = o.name;
   } catch (e) {}
   const p = new URLSearchParams(location.search);
   if (p.get('name')) S.name = p.get('name').slice(0, 14);
-  if (['tw', 'cn'].includes(p.get('script'))) S.script = p.get('script');
-  if (['es', 'en'].includes(p.get('lang'))) S.lang = p.get('lang');
+  const sc = p.get('script');
+  if (sc === 'tw' || sc === 'trad') S.script = 'trad'; else if (sc === 'cn' || sc === 'simp') S.script = 'simp';
+  if (['es', 'en', 'zh'].includes(p.get('lang'))) S.lang = p.get('lang');
 }
 function saveSettings() {
+  writeShared();
   try {
-    localStorage.setItem('askdir_settings', JSON.stringify({
-      name: S.name, script: S.script, lang: S.lang, pinyin: S.pinyin, trans: S.trans, rate: S.rate,
-    }));
+    let o = {};
+    try { o = JSON.parse(localStorage.getItem(OWN_KEY) || '{}') || {}; } catch (e) {}
+    o.name = S.name;
+    localStorage.setItem(OWN_KEY, JSON.stringify(o));
   } catch (e) {}
 }
+const isZh = () => S.lang === 'zh';          // Chinese-only: no Spanish/English, no translations
+const showTrans = () => !isZh();             // translation is shown iff lang != 'zh'
+
+/* pinyin (tone marks) -> zhuyin; same converter as the other games */
+const ZY = (function () {
+  var INI = {b:'ㄅ',p:'ㄆ',m:'ㄇ',f:'ㄈ',d:'ㄉ',t:'ㄊ',n:'ㄋ',l:'ㄌ',g:'ㄍ',k:'ㄎ',h:'ㄏ',j:'ㄐ',q:'ㄑ',x:'ㄒ',zh:'ㄓ',ch:'ㄔ',sh:'ㄕ',r:'ㄖ',z:'ㄗ',c:'ㄘ',s:'ㄙ'};
+  var FIN = {a:'ㄚ',o:'ㄛ',e:'ㄜ',ê:'ㄝ',ai:'ㄞ',ei:'ㄟ',ao:'ㄠ',ou:'ㄡ',an:'ㄢ',en:'ㄣ',ang:'ㄤ',eng:'ㄥ',er:'ㄦ',
+    i:'ㄧ',ia:'ㄧㄚ',io:'ㄧㄛ',ie:'ㄧㄝ',iao:'ㄧㄠ',iu:'ㄧㄡ',iou:'ㄧㄡ',ian:'ㄧㄢ',in:'ㄧㄣ',iang:'ㄧㄤ',ing:'ㄧㄥ',
+    u:'ㄨ',ua:'ㄨㄚ',uo:'ㄨㄛ',uai:'ㄨㄞ',ui:'ㄨㄟ',uei:'ㄨㄟ',uan:'ㄨㄢ',un:'ㄨㄣ',uen:'ㄨㄣ',uang:'ㄨㄤ',ong:'ㄨㄥ',ueng:'ㄨㄥ',
+    v:'ㄩ',ve:'ㄩㄝ',van:'ㄩㄢ',vn:'ㄩㄣ',iong:'ㄩㄥ'};
+  var MARK = ['', '', 'ˊ', 'ˇ', 'ˋ'];
+  function one(syl) {
+    var s = syl.normalize('NFD'), tone = 5;
+    if (/̄/.test(s)) tone = 1; else if (/́/.test(s)) tone = 2; else if (/̌/.test(s)) tone = 3; else if (/̀/.test(s)) tone = 4;
+    s = s.replace(/ü/g, 'v').replace(/Ü/g, 'v').replace(/[̀-ͯ]/g, '').replace(/ü/g, 'v').toLowerCase();
+    if (!/^[a-zê]+$/.test(s)) return syl;
+    var ini = '', rest = s, m;
+    if (s === 'n' || s === 'm') { var zz = s === 'n' ? 'ㄣ' : 'ㄇㄨ'; return tone === 5 ? '˙' + zz : zz + MARK[tone]; }
+    if (s === 'er' || s === 'r') { rest = 'er'; }
+    else if ((m = s.match(/^(zh|ch|sh|[bpmfdtnlgkhjqxrzcs])/))) { ini = m[1]; rest = s.slice(ini.length); }
+    else if (s[0] === 'y') {
+      rest = s.slice(1);
+      if (/^u/.test(rest)) rest = rest.replace(/^u/, 'v');
+      else if (rest === 'i' || rest === 'in' || rest === 'ing') rest = rest;
+      else rest = 'i' + rest;
+    } else if (s[0] === 'w') {
+      rest = s.slice(1);
+      rest = (rest === 'u') ? 'u' : 'u' + rest;
+    }
+    if (ini && /^[jqx]$/.test(ini)) rest = rest.replace(/^u/, 'v');
+    if (/^(zh|ch|sh|r|z|c|s)$/.test(ini) && rest === 'i') rest = '';
+    var f = rest === '' ? '' : FIN[rest];
+    if (f === undefined) return syl;
+    var z = (ini ? INI[ini] : '') + f;
+    return tone === 5 ? '˙' + z : z + MARK[tone];
+  }
+  // space-separated pinyin syllables; trailing punctuation (, .) is kept
+  function conv(py) {
+    return String(py || '').trim().split(/\s+/).filter(Boolean).map(function (t) {
+      var m = t.match(/^([^,.;:!?]*)(.*)$/);
+      return one(m[1]) + m[2];
+    }).join(' ');
+  }
+  return { one: one, conv: conv };
+})();
+// phonetic lines to show under Chinese text, according to the shared 'phon' setting
+function phLines(py) {
+  const out = [];
+  if (S.phon === 'pinyin' || S.phon === 'both') out.push(py);
+  if (S.phon === 'zhuyin' || S.phon === 'both') out.push(ZY.conv(py));
+  return out;
+}
+const phText = py => phLines(py).join('\n');
 const T = (k, v) => {
-  let s = (UI[S.lang] || UI.es)[k];
+  const tbl = S.lang === 'zh' ? (S.script === 'simp' ? UI.zhs : UI.zh) : (UI[S.lang] || UI.es);
+  let s = tbl[k];
   if (s === undefined) return k;
   if (typeof s !== 'string') return s;
   if (v) for (const x in v) s = s.replace('{' + x + '}', v[x]);
@@ -378,7 +512,7 @@ function speak(text) {
   try {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'zh-TW'; u.rate = RATES[S.rate] || 0.7;
+    u.lang = 'zh-TW'; u.rate = RATE_VALUE[S.rate] || RATE_VALUE.normal;
     const v = voices.find(v => /zh[-_]TW/i.test(v.lang)) || voices.find(v => /^zh/i.test(v.lang));
     if (v) u.voice = v;
     speechSynthesis.speak(u);
@@ -397,33 +531,30 @@ function chips(sel, items, cur, pick) {
   });
 }
 function renderStart() {
-  document.documentElement.lang = S.lang;
-  $('#ttl').textContent = S.script === 'tw' ? '問路小達人' : '问路小达人';
+  document.documentElement.lang = isZh() ? (S.script === 'trad' ? 'zh-TW' : 'zh-CN') : S.lang;
+  $('#ttl').textContent = S.script === 'trad' ? '問路小達人' : '问路小达人';
   $('#ttlsub').textContent = T('titleSub');
   $('#tag').textContent = T('tag');
   $('#l-name').textContent = T('name');
   $('#name').placeholder = T('namePh'); $('#name').value = S.name;
   $('#l-script').textContent = T('script');
-  chips('#c-script', [{ v: 'tw', label: '繁體' }, { v: 'cn', label: '简体' }], S.script, v => { S.script = v; saveSettings(); renderStart(); });
+  chips('#c-script', [{ v: 'trad', label: '繁體' }, { v: 'simp', label: '简体' }], S.script, v => { S.script = v; saveSettings(); renderStart(); });
   $('#l-lang').textContent = T('lang');
-  chips('#c-lang', [{ v: 'es', label: 'Español' }, { v: 'en', label: 'English' }], S.lang, v => { S.lang = v; saveSettings(); renderStart(); });
+  chips('#c-lang', [{ v: 'es', label: isZh() ? (S.script === 'trad' ? '西班牙文' : '西班牙文') : 'Español' }, { v: 'en', label: isZh() ? '英文' : 'English' }, { v: 'zh', label: S.script === 'trad' ? '中文' : '中文' }], S.lang, v => { S.lang = v; saveSettings(); renderStart(); });
+  $('#l-phon').textContent = T('phon');
+  chips('#c-phon', SET_OPTS.phon.map(v => ({ v, label: T('ph_' + v) })), S.phon, v => { S.phon = v; saveSettings(); renderStart(); });
   $('#l-rate').textContent = T('rate');
-  chips('#c-rate', ['slow', 'normal', 'fast'].map(v => ({ v, label: T(v) })), S.rate, v => { S.rate = v; saveSettings(); renderStart(); speak(S.script === 'tw' ? '直走，再右轉。' : '直走，再右转。'); });
-  $('#l-show').textContent = T('show');
-  chips('#c-show', [
-    { v: 'py', label: T('pinyin'), on: S.pinyin },
-    { v: 'tr', label: T('trans'), on: S.trans },
-  ], null, v => { if (v === 'py') S.pinyin = !S.pinyin; else S.trans = !S.trans; saveSettings(); renderStart(); });
+  chips('#c-rate', ['slow', 'normal', 'fast'].map(v => ({ v, label: T(v) })), S.rate, v => { S.rate = v; saveSettings(); renderStart(); speak(S.script === 'trad' ? '直走，再右轉。' : '直走，再右转。'); });
   $('#l-level').textContent = T('level');
   const lv = $('#levels'); lv.innerHTML = '';
-  const hints = [W('straight') + ' · ' + W('left') + ' · ' + W('right'), '第N個路口 · ' + W('cross'), '左/右手邊 · 對面 · 旁邊', '…'];
-  const hintsCn = [hints[0], '第N个路口 · ' + W('cross'), '左/右手边 · 对面 · 旁边', '…'];
+  const hints = [W('straight') + ' · ' + W('left') + ' · ' + W('right'), '第二個路口 · ' + W('cross'), '左/右手邊 · 對面 · 旁邊', '…'];
+  const hintsCn = [hints[0], '第二个路口 · ' + W('cross'), '左/右手边 · 对面 · 旁边', '…'];
   for (let i = 0; i < 4; i++) {
     const b = document.createElement('button'); b.className = 'lv';
     b.innerHTML = '<span class="n">' + (i + 1) + '</span><span><span class="t"></span><br><span class="d"></span></span><span class="z"></span>';
     b.querySelector('.t').textContent = T('lv')[i];
     b.querySelector('.d').textContent = T('lvd')[i];
-    b.querySelector('.z').textContent = (S.script === 'tw' ? hints : hintsCn)[i];
+    b.querySelector('.z').textContent = (S.script === 'trad' ? hints : hintsCn)[i];
     b.onclick = () => startGame(i + 1);
     lv.appendChild(b);
   }
@@ -451,13 +582,15 @@ function applyGameLabels() {
   $('#btn-restart').textContent = T('restart');
   $('#lvname').textContent = T('lv')[S.level - 1];
   $('#btn-say').textContent = T('listen');
-  $('#btn-tr').textContent = T('trans');
-  $('#btn-py').classList.toggle('on', S.pinyin);
-  $('#btn-tr').classList.toggle('on', S.trans);
+  $('#btn-py').textContent = T('ph_' + S.phon);
+  $('#btn-py').classList.toggle('on', S.phon !== 'off');
   $('#btn-rate').textContent = '⏱ ' + T(S.rate);
-  document.body.classList.toggle('showpy', S.pinyin);
   const mk = (id, ic, key) => {
-    $(id).innerHTML = '<span class="ic">' + ic + '</span><span class="cn">' + W(key) + '</span><span class="pyb">' + WPY[key] + '</span><span class="sb">' + T(key) + '</span>';
+    const b = $(id);
+    b.innerHTML = '<span class="ic">' + ic + '</span><span class="cn"></span><span class="pyb"></span><span class="sb"></span>';
+    b.querySelector('.cn').textContent = W(key);
+    b.querySelector('.pyb').textContent = phText(WPY[key]);
+    b.querySelector('.sb').textContent = isZh() ? '' : T(key);
   };
   mk('#b-L', '↰', 'left'); mk('#b-S', '↑', 'straight'); mk('#b-R', '↱', 'right');
   $('#b-reset').textContent = T('reset');
@@ -467,12 +600,12 @@ function applyGameLabels() {
 }
 function renderSentence() {
   const q = S.q;
-  const zh = $('#zh'); zh.lang = S.script === 'tw' ? 'zh-TW' : 'zh-CN';
-  zh.textContent = S.script === 'tw' ? q.tw : q.cn;
-  $('#pyl').textContent = q.py; $('#pyl').classList.toggle('hidden', !S.pinyin);
-  $('#trl').textContent = S.lang === 'es' ? q.es : q.en; $('#trl').classList.toggle('hidden', !S.trans);
+  const zh = $('#zh'); zh.lang = S.script === 'trad' ? 'zh-TW' : 'zh-CN';
+  zh.textContent = S.script === 'trad' ? q.tw : q.cn;
+  $('#pyl').textContent = phText(q.py); $('#pyl').classList.toggle('hidden', S.phon === 'off');
+  $('#trl').textContent = S.lang === 'es' ? q.es : (S.lang === 'en' ? q.en : ''); $('#trl').classList.toggle('hidden', !showTrans());
   const m = DATA.maps[q.map];
-  $('#mapname').textContent = T('map') + ': ' + (S.script === 'tw' ? m.tw : m.cn) + ' · ' + (S.lang === 'es' ? m.es : m.en);
+  $('#mapname').textContent = T('map') + ': ' + (S.script === 'trad' ? m.tw : m.cn) + (showTrans() ? ' · ' + (S.lang === 'es' ? m.es : m.en) : '');
   $('#prog').textContent = T('q', { n: S.qi + 1, N: S.qs.length });
   $('#score').textContent = T('pts', { s: S.correct * 10 });
   $('#barfill').style.width = (S.qi / S.qs.length * 100) + '%';
@@ -493,13 +626,18 @@ function loadQuestion() {
 /* ---------- map drawing ---------- */
 function labelSvg(cx, cy, key) {
   const b = DATA.buildings[key];
-  const name = S.script === 'tw' ? b.tw : b.cn;
-  let s = '<text class="bn' + (name.length >= 4 ? ' sm' : '') + '" x="' + cx + '" y="' + (S.pinyin ? cy - 3 : cy + 5) + '" text-anchor="middle">' + name + '</text>';
-  if (S.pinyin) {
+  const name = S.script === 'trad' ? b.tw : b.cn;
+  // phonetic lines (pinyin and/or zhuyin), each split in two when the name has more than 2 syllables
+  const lines = [];
+  if (S.phon !== 'off') {
     const sy = b.py.split(' '), n = sy.length;
-    const lines = n > 2 ? [sy.slice(0, Math.ceil(n / 2)).join(' '), sy.slice(Math.ceil(n / 2)).join(' ')] : [b.py];
-    lines.forEach((ln, i) => { s += '<text class="bp" x="' + cx + '" y="' + (cy + 10 + i * 9) + '" text-anchor="middle">' + ln + '</text>'; });
+    const cut = n > 2 ? Math.ceil(n / 2) : n;
+    if (S.phon === 'pinyin' || S.phon === 'both') { lines.push(sy.slice(0, cut).join(' ')); if (cut < n) lines.push(sy.slice(cut).join(' ')); }
+    if (S.phon === 'zhuyin' || S.phon === 'both') { lines.push(ZY.conv(sy.slice(0, cut).join(' '))); if (cut < n) lines.push(ZY.conv(sy.slice(cut).join(' '))); }
   }
+  const ny = cy + 5 - lines.length * 4.5;
+  let s = '<text class="bn' + (name.length >= 4 ? ' sm' : '') + '" x="' + cx + '" y="' + ny + '" text-anchor="middle">' + name + '</text>';
+  lines.forEach((ln, i) => { s += '<text class="bp" x="' + cx + '" y="' + (ny + 13 + i * 9) + '" text-anchor="middle">' + ln + '</text>'; });
   return s;
 }
 function renderMap() {
@@ -596,10 +734,17 @@ function submit() {
   S.totalMs += Math.min(Date.now() - S.qStart, 120000);
   if (ok) S.correct++;
   S.results.push({ ok, q });
-  S.reveal = { ok, student: S.path.slice() };
+  S.reveal = { ok, sameNode, student: S.path.slice() };
   $('#controls').classList.add('off'); $('#row2').classList.add('off');
   $('#score').textContent = T('pts', { s: S.correct * 10 });
   drawReveal(); stopSpeech();
+  renderFeedback();
+  track('answer', { level: S.level, id: q.id, correct: ok ? 1 : 0 });
+  setTimeout(() => $('#feedback').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+}
+function renderFeedback() {
+  if (!S.reveal) return;
+  const ok = S.reveal.ok, sameNode = S.reveal.sameNode;
   const last = S.qi >= S.qs.length - 1;
   const fb = $('#feedback');
   let html = '<div class="fb ' + (ok ? 'ok' : 'bad') + '"><h3>' + (ok ? T('ok') : (sameNode ? T('badFace') : T('bad'))) + '</h3>';
@@ -610,8 +755,6 @@ function submit() {
   fb.innerHTML = html; fb.classList.remove('hidden');
   const w = $('#fb-watch'); if (w) w.onclick = replay;
   $('#fb-next').onclick = nextQuestion;
-  track('answer', { level: S.level, id: q.id, correct: ok ? 1 : 0 });
-  setTimeout(() => fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
 }
 async function replay() {
   if (S.busy) return;
@@ -688,24 +831,30 @@ async function finish() {
   const score = S.correct * 10, secs = Math.round(S.totalMs / 1000);
   $('#barfill').style.width = '100%';
   show('s-result');
+  S.savedRemote = null; S.resSecs = secs;
+  paintResult();
+  track('game_finish', { level: S.level, score, secs });
+  const remote = await saveScore(S.level, score, secs);
+  S.savedRemote = remote;
+  paintResult();
+}
+function paintResult() {
+  const score = S.correct * 10;
   $('#r-title').textContent = T('result');
   $('#r-level').textContent = T('lv')[S.level - 1];
   $('#r-score').textContent = score;
-  $('#r-time').textContent = T('score', { c: S.correct, N: S.qs.length }) + ' · ' + T('time', { t: secs });
-  $('#r-saved').textContent = '';
+  $('#r-time').textContent = T('score', { c: S.correct, N: S.qs.length }) + ' · ' + T('time', { t: S.resSecs });
+  $('#r-saved').textContent = S.savedRemote === null ? '' : (S.savedRemote ? T('saved') : T('savedLocal'));
   const ul = $('#r-list'); ul.innerHTML = '';
   S.results.forEach(r => {
     const li = document.createElement('li');
-    li.innerHTML = '<span class="m ' + (r.ok ? 'ok' : 'bad') + '">' + (r.ok ? '✓' : '✗') + '</span><span lang="' + (S.script === 'tw' ? 'zh-TW' : 'zh-CN') + '"></span>';
-    li.lastChild.textContent = S.script === 'tw' ? r.q.tw : r.q.cn;
+    li.innerHTML = '<span class="m ' + (r.ok ? 'ok' : 'bad') + '">' + (r.ok ? '✓' : '✗') + '</span><span lang="' + (S.script === 'trad' ? 'zh-TW' : 'zh-CN') + '"></span>';
+    li.lastChild.textContent = S.script === 'trad' ? r.q.tw : r.q.cn;
     ul.appendChild(li);
   });
   $('#r-again').textContent = T('again');
   $('#r-board').textContent = '🏆 ' + T('board');
   $('#r-home').textContent = T('home');
-  track('game_finish', { level: S.level, score, secs });
-  const remote = await saveScore(S.level, score, secs);
-  $('#r-saved').textContent = remote ? T('saved') : T('savedLocal');
 }
 let boardLevel = 1;
 async function openBoard(level) {
@@ -738,25 +887,40 @@ function toggleVocab() {
   const v = $('#vocab');
   if (!v.classList.contains('hidden')) { v.classList.add('hidden'); return; }
   const m = DATA.maps[S.q.map];
-  const item = (zh, py, tr) => '<div><b></b>' + (S.pinyin ? '<span class="p"></span>' : '') + '<span class="t"></span></div>';
-  let h = '<h4>' + T('vocabDir') + '</h4><div class="g" id="vg1"></div><h4>' + T('vocabPlaces') + '</h4><div class="g" id="vg2"></div>';
-  v.innerHTML = h;
+  v.innerHTML = '<h4>' + T('vocabDir') + '</h4><div class="g" id="vg1"></div><h4>' + T('vocabPlaces') + '</h4><div class="g" id="vg2"></div>';
   const fill = (id, rows) => {
     const g = $(id);
     rows.forEach(r => {
       const d = document.createElement('div');
       const b = document.createElement('b'); b.textContent = r[0]; d.appendChild(b);
-      if (S.pinyin) { const p = document.createElement('span'); p.textContent = r[1]; d.appendChild(p); }
-      const t = document.createElement('span'); t.textContent = r[2]; d.appendChild(t);
+      const ph = phText(r[1]);
+      if (ph) { const p = document.createElement('span'); p.textContent = ph; d.appendChild(p); }
+      if (showTrans()) { const t = document.createElement('span'); t.textContent = r[2]; d.appendChild(t); }
       g.appendChild(d);
     });
   };
-  fill('#vg1', ['straight', 'left', 'right', 'cross'].map(k => [W(k), WPY[k], WTR[S.lang][k]]));
+  fill('#vg1', ['straight', 'left', 'right', 'cross'].map(k => [W(k), WPY[k], (WTR[S.lang] || {})[k]]));
   const keys = [];
   m.blocks.forEach(r => r.forEach(k => keys.push(k)));
-  fill('#vg2', keys.map(k => { const b = DATA.buildings[k]; return [S.script === 'tw' ? b.tw : b.cn, b.py, b[S.lang]]; }));
+  fill('#vg2', keys.map(k => { const b = DATA.buildings[k]; return [S.script === 'trad' ? b.tw : b.cn, b.py, b[S.lang]]; }));
   v.classList.remove('hidden');
 }
+// re-draw whatever screen is showing after the settings changed (e.g. in another tab)
+function refreshAll() {
+  if ($('#s-start').classList.contains('on')) { S.name = $('#name').value; renderStart(); }
+  else if ($('#s-game').classList.contains('on') && S.q) {
+    const vopen = !$('#vocab').classList.contains('hidden');
+    applyGameLabels(); renderSentence(); renderMap(); redraw(); renderFeedback();
+    $('#vocab').classList.add('hidden'); if (vopen) toggleVocab();
+  }
+  else if ($('#s-result').classList.contains('on')) paintResult();
+  else if ($('#s-board').classList.contains('on')) openBoard(boardLevel);
+}
+window.addEventListener('storage', e => {
+  if (e.key !== null && e.key !== SETTINGS_KEY) return;
+  Object.assign(S, readShared());
+  refreshAll();
+});
 
 /* ---------- wiring ---------- */
 function bind() {
@@ -766,8 +930,7 @@ function bind() {
   $('#b-reset').onclick = resetPos;
   $('#b-go').onclick = submit;
   $('#btn-say').onclick = () => speak(S.q.tw);
-  $('#btn-py').onclick = () => { S.pinyin = !S.pinyin; saveSettings(); applyGameLabels(); renderSentence(); renderMap(); redraw(); if (!$('#vocab').classList.contains('hidden')) { $('#vocab').classList.add('hidden'); toggleVocab(); } };
-  $('#btn-tr').onclick = () => { S.trans = !S.trans; saveSettings(); applyGameLabels(); renderSentence(); };
+  $('#btn-py').onclick = () => { const o = SET_OPTS.phon; S.phon = o[(o.indexOf(S.phon) + 1) % o.length]; saveSettings(); refreshAll(); };
   $('#btn-rate').onclick = () => { const o = ['slow', 'normal', 'fast']; S.rate = o[(o.indexOf(S.rate) + 1) % 3]; saveSettings(); $('#btn-rate').textContent = '⏱ ' + T(S.rate); speak(S.q.tw); };
   $('#btn-vocab').onclick = toggleVocab;
   $('#btn-restart').onclick = () => { stopSpeech(); startGame(S.level); };

@@ -37,15 +37,18 @@ Notas de vocabulario:
 
 ## Ayudas y ajustes
 
-- Caracteres: **繁體** o **简体**
-- Idioma de la interfaz y la traducción: **Español** o **English**
-- **Pinyin** (apagado por defecto) con lecturas de Taiwán
-- **Traducción** (encendida por defecto)
-- Velocidad de la voz: lenta, normal o rápida
+Los ajustes se guardan en la clave compartida `hanziGames.settings` (la misma en todos los juegos de la familia): `{v:1, script, lang, phon, rate}`. Si cambias algo aquí, los otros juegos lo ven (y al revés).
+
+- Caracteres: **繁體** o **简体** (por defecto, tradicional)
+- Idioma: **Español**, **English** o **中文** (solo chino: toda la interfaz y el vocabulario en chino, sin traducciones). La traducción se muestra solo si el idioma no es chino; ya no hay un interruptor aparte.
+- Pronunciación: **Pinyin** (por defecto, con lecturas de Taiwán), **注音 zhuyin**, **ambos** o **ninguna**
+- Velocidad de la voz: lenta (0.45), normal (0.65) o rápida (0.85); siempre voz `zh-TW`
 - 📖 Vocabulario del mapa
 
+El nombre del jugador y la clasificación local siguen guardados solo en este juego (`askdir_settings`, `askdir_lb`). Los ajustes antiguos de `askdir_settings` se pasan a la clave compartida la primera vez.
+
 Se puede abrir con parámetros para saltarse la pantalla de inicio, por ejemplo:
-`index.html?name=Ana&script=tw&lang=es` (`script`: `tw` o `cn`; `lang`: `es` o `en`).
+`index.html?name=Ana&script=trad&lang=es` (`script`: `trad`/`tw` o `simp`/`cn`; `lang`: `es`, `en` o `zh`).
 
 ## Mapas
 
@@ -59,7 +62,9 @@ Tres mapas sencillos: **便利商店街** (calle comercial), **車站前** (fren
 
 - 聽一段指路的話，用「直走、左轉、右轉」三個按鈕讓小人走，走到目的地按「我到了」。
 - 共 4 個關卡：方向詞 → 路口與過馬路 → 位置詞（對面、旁邊）→ 綜合挑戰。
-- 可選繁體／簡體、西班牙文／英文、拼音（台灣讀音）、三種語音速度。
+- 設定和其他遊戲共用（localStorage 的 `hanziGames.settings`）：繁體／簡體；語言可選西班牙文、英文或「中文」（純中文介面，不顯示翻譯）；讀音可選拼音（台灣讀音，預設）、注音、拼音＋注音或不顯示；語音速度慢 0.45／中 0.65／快 0.85。
+- 只有語言不是「中文」時才會顯示翻譯，沒有另外的翻譯開關。
+- 網址參數：`?name=名字&script=trad|simp（或 tw|cn）&lang=es|en|zh`。
 - 每一題的指路句、拼音、翻譯、路線和答案都由同一份資料產生，不會互相對不上。
 
 ## Para quien mantiene el proyecto
