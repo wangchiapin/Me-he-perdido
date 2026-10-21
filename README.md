@@ -13,7 +13,7 @@ Escuchas una indicación, caminas por un mapa y llegas al destino.
 
 1. Escribe tu nombre y elige un nivel.
 2. Escucha la indicación (o léela). Puedes volver a oírla las veces que quieras con 🔊.
-3. Mueve al personaje con tres botones: **直走** (recto), **左轉** (izquierda), **右轉** (derecha).
+3. Mueve al personaje con los botones: **直走** (recto), **左轉** (izquierda), **右轉** (derecha) y, desde el nivel 2, **過馬路** (cruzar la calle; hay que pulsarlo en la esquina donde lo dice la indicación).
 4. Cuando creas que llegaste, pulsa **¡Llegué!**
 5. Si te equivocas, el juego te muestra tu ruta y la ruta correcta, y puedes ver cómo se camina.
 
@@ -33,7 +33,7 @@ Cada ronda tiene 8 preguntas y cada acierto vale 10 puntos. Hay clasificación p
 Notas de vocabulario:
 - **直走** = avanzar hasta la siguiente esquina.
 - Las esquinas se cuentan desde donde estás parado.
-- **過馬路** = seguir recto al otro lado de la calle, sin girar.
+- **過馬路** = cruzar la calle siguiendo recto; se pulsa el botón de cruzar y luego se avanza.
 
 ## Ayudas y ajustes
 
@@ -43,16 +43,20 @@ Los ajustes se guardan en la clave compartida `hanziGames.settings` (la misma en
 - Idioma: **Español**, **English** o **中文** (solo chino: toda la interfaz y el vocabulario en chino, sin traducciones). La traducción se muestra solo si el idioma no es chino; ya no hay un interruptor aparte.
 - Pronunciación: **Pinyin** (por defecto, con lecturas de Taiwán), **注音 zhuyin**, **ambos** o **ninguna**
 - Velocidad de la voz: lenta (0.45), normal (0.65) o rápida (0.85); siempre voz `zh-TW`
-- 📖 Vocabulario del mapa
+- **Texto** (encendido por defecto): apágalo para practicar solo con el oído (🎧)
+- **Por partes**: la indicación se escucha en trozos cortos con «Parte siguiente»
+- **Mapa**: elige uno de los 6 mapas o aleatorio
+- 📖 Vocabulario del mapa y palabras útiles (先、然後、再、最後…)
+- Fotos opcionales: si pones `photos/<clave>.jpg` (p. ej. `bank.jpg`) se muestra al terminar cada pregunta
 
-El nombre del jugador y la clasificación local siguen guardados solo en este juego (`askdir_settings`, `askdir_lb`). Los ajustes antiguos de `askdir_settings` se pasan a la clave compartida la primera vez.
+El nombre del jugador, el mapa elegido, «Texto» y «Por partes» y la clasificación local se guardan solo en este juego (`askdir_settings`, `askdir_lb`). Los ajustes antiguos de `askdir_settings` se pasan a la clave compartida la primera vez.
 
 Se puede abrir con parámetros para saltarse la pantalla de inicio, por ejemplo:
 `index.html?name=Ana&script=trad&lang=es` (`script`: `trad`/`tw` o `simp`/`cn`; `lang`: `es`, `en` o `zh`).
 
 ## Mapas
 
-Tres mapas sencillos: **便利商店街** (calle comercial), **車站前** (frente a la estación) y **夜市** (mercado nocturno), con 27 lugares en total.
+Seis mapas sencillos: **便利商店街** (calle comercial), **車站前** (frente a la estación), **夜市** (mercado nocturno), **校園附近** (cerca de la escuela), **醫院附近** (cerca del hospital) y **捷運站出口** (salida del metro), con 31 lugares en total.
 
 ---
 
@@ -60,7 +64,8 @@ Tres mapas sencillos: **便利商店街** (calle comercial), **車站前** (fren
 
 這是一個練習「問路、指路」的小遊戲，給說西班牙語的華語學習者使用。
 
-- 聽一段指路的話，用「直走、左轉、右轉」三個按鈕讓小人走，走到目的地按「我到了」。
+- 聽一段指路的話，用「直走、左轉、右轉、過馬路」按鈕讓小人走，走到目的地按「我到了」。
+- 新功能：只聽不看（隱藏文字）、分段聽、可選地圖、真正的「過馬路」按鈕、6 張地圖、可放自己的街景照片。
 - 共 4 個關卡：方向詞 → 路口與過馬路 → 位置詞（對面、旁邊）→ 綜合挑戰。
 - 設定和其他遊戲共用（localStorage 的 `hanziGames.settings`）：繁體／簡體；語言可選西班牙文、英文或「中文」（純中文介面，不顯示翻譯）；讀音可選拼音（台灣讀音，預設）、注音、拼音＋注音或不顯示；語音速度慢 0.45／中 0.65／快 0.85。
 - 只有語言不是「中文」時才會顯示翻譯，沒有另外的翻譯開關。
@@ -93,3 +98,5 @@ python3 build.py              # escribe ../index.html
 
 Para agregar un edificio o un mapa, edita los diccionarios `B` y `MAPS` en `tools/gen_questions.py`.
 Cada edificio lleva escritura tradicional y simplificada, pinyin con lectura de Taiwán, y traducción al español y al inglés.
+
+Pruebas automáticas: `python3 tools/test/test_game.py` (requiere `pip install playwright` y Chromium).
