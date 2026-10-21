@@ -88,19 +88,8 @@ MAPS = {
             ['bank', 'laundry', 'salon']]),
 }
 
-MAPS['rb'] = dict(
-    tw='圓環', cn='圆环', es='Rotondas', en='Roundabouts', closed=[], rb=[(1, 1), (2, 2)], ynodes=[],
-    blocks=[['school', 'bakery', 'park'], ['cafe', 'bank', 'conv'], ['book', 'pharmacy', 'post']])
-MAPS['y'] = dict(
-    tw='Y字路口', cn='Y字路口', es='Bifurcaciones en Y', en='Y-Junctions', closed=[(1, 0, 1, 1), (2, 1, 2, 2), (0, 2, 1, 2)],
-    rb=[], ynodes=[(1, 1), (2, 2), (1, 2)],
-    blocks=[['bus', 'noodle', 'temple'], ['drink', 'market', 'bento'], ['clinic', 'library', 'cinema']])
-MAPS['mix'] = dict(
-    tw='圓環與Y字路口', cn='圆环与Y字路口', es='Rotonda y bifurcación', en='Roundabout and Y', closed=[(2, 0, 2, 1)], rb=[(1, 2)], ynodes=[(2, 1)],
-    blocks=[['hotel', 'restaurant', 'breakfast'], ['hospital', 'dept', 'laundry'], ['salon', 'fruit', 'police']])
 for _m in MAPS.values():
     _m.setdefault('rb', []); _m.setdefault('ynodes', [])
-SPECIAL = ('rb', 'y', 'mix')
 BASIC = ('street', 'station', 'night', 'campus', 'hospital', 'metro')
 
 # ---------- phrase pieces ----------
@@ -123,6 +112,7 @@ ORD2 = {
     1: dict(tw='第一個', cn='第一个', py='dì yī ge', es='la primera', en='the first'),
     2: dict(tw='第二個', cn='第二个', py='dì èr ge', es='la segunda', en='the second'),
     3: dict(tw='第三個', cn='第三个', py='dì sān ge', es='la tercera', en='the third'),
+    4: dict(tw='第四個', cn='第四个', py='dì sì ge', es='la cuarta', en='the fourth'),
 }
 CON = [
     ('先', '先', 'xiān', 'primero', 'first'),
@@ -369,15 +359,10 @@ PATTERNS = {
     4: [['go', 'turn', 'pass', 'go'], ['pass', 'go', 'cross', 'go'], ['turn', 'go', 'cross', 'go', 'turn', 'go'],
         ['go', 'turn', 'go', 'pass', 'go'], ['pass', 'go', 'turn', 'go']],
 }
-PATTERNS[5] = {
-    'rb':  [['torb', 'round', 'go1'], ['torb', 'round', 'go1'], ['go', 'torb', 'round', 'go'], ['torb', 'round', 'turn', 'go1'], ['turn', 'torb', 'round', 'go1']],
-    'y':   [['toy', 'fork', 'go1'], ['toy', 'fork', 'go1'], ['go', 'toy', 'fork', 'go'], ['toy', 'fork', 'turn', 'go1'], ['turn', 'toy', 'fork', 'go1']],
-    'mix': [['torb', 'round', 'go1'], ['toy', 'fork', 'go1'], ['torb', 'round', 'toy', 'fork', 'go1'], ['toy', 'fork', 'torb', 'round', 'go1'], ['go', 'torb', 'round', 'go1']],
-}
 MAX_MOVES = {1: 4, 2: 5, 3: 6, 4: 8, 5: 6}
 
 def try_build(level, mp, rng):
-    pat = rng.choice(PATTERNS[level][mp] if level == 5 else PATTERNS[level])
+    pat = rng.choice(PATTERNS[level])
     x, y, d = rng.randrange(W), rng.randrange(H), rng.randrange(4)
     if (x, y) in MAPS[mp]['rb']:
         return None
@@ -501,15 +486,109 @@ def try_build(level, mp, rng):
         target=tkey, side=side, parts=parts,
     )
 
-def main(per=12, seed=20261020):
+# ---------- level 5: the non-grid real-street map ----------
+import graph_engine as GE
+GPATTERNS = [
+    ['go1', 'turn', 'go1'], ['go1', 'turn', 'go1'], ['turn', 'go1', 'turn', 'go1'], ['go1', 'turn', 'go1', 'turn', 'go1'],
+    ['torb', 'round', 'go1'], ['torb', 'round', 'go1'], ['go1', 'torb', 'round', 'go1'], ['torb', 'round', 'turn', 'go1'],
+    ['turn', 'torb', 'round', 'go1'], ['toy', 'fork', 'go1'], ['go1', 'toy', 'fork', 'go1'], ['turn', 'toy', 'fork', 'go1'],
+    ['pass', 'go'], ['go', 'turn', 'go'], ['go', 'pass', 'go'], ['turn', 'pass', 'go'],
+    ['go', 'cross', 'go'], ['go', 'cross', 'go', 'turn', 'go'], ['go', 'turn', 'go', 'cross', 'go'],
+]
+
+def try_build_graph(rng):
+    pat = rng.choice(GPATTERNS)
+    n = rng.choice([k for k, v in GE.NODES.items() if v['kind'] != 'rb'])
+    e = rng.choice(GE.INC[n])
+    sim = GE.GSim(n, e)
+    steps, named, total, prev = [], [], 0, None
+    for kind in pat:
+        if kind == 'go1':
+            if not sim.move(): return None
+            steps.append(dict(kind='go1')); total += 1
+        elif kind == 'go':
+            k = rng.choice([1, 1, 2])
+            for _ in range(k):
+                if not sim.move() or GE.deg(sim.node) < 3: return None
+            total += k
+            steps.append(dict(kind='go', n=k, next=(len(steps) > 0 and k == 1 and rng.random() < 0.5)))
+        elif kind == 'turn':
+            t = rng.choice('LR')
+            if not sim.turn(t): return None
+            steps.append(dict(kind='turn', t=t))
+        elif kind in ('torb', 'toy'):
+            if not sim.move(): return None
+            if kind == 'torb' and not sim.at_rb(): return None
+            if kind == 'toy' and not sim.at_y_from_stem(): return None
+            total += 1; steps.append(dict(kind=kind))
+        elif kind == 'round':
+            if prev != 'torb': return None
+            k = rng.choice([1, 2, 3, 4])
+            if not sim.roundabout(k): return None
+            total += 1; steps.append(dict(kind='round', k=k))
+        elif kind == 'fork':
+            if prev != 'toy': return None
+            t = rng.choice('LR')
+            if not sim.turn(t) or not sim.move(): return None
+            total += 1; steps.append(dict(kind='fork', t=t))
+        elif kind == 'cross':
+            if prev != 'go' or not sim.cross(): return None
+            steps.append(dict(kind='cross'))
+        elif kind == 'pass':
+            side = rng.choice('LR'); k = rng.choice([1, 1, 2])
+            for _ in range(k):
+                if not sim.move(): return None
+            ed, frm = sim.last
+            fl = GE.flank(ed, frm)
+            bkey = fl[0] if side == 'L' else fl[1]
+            if not bkey: return None
+            opp = fl[1] if side == 'L' else fl[0]
+            t = rng.choice('LR')
+            if not sim.turn(t): return None
+            okey = opp if (opp and rng.random() < 0.55) else None
+            total += k; named += [bkey] + ([okey] if okey else [])
+            steps.append(dict(kind='pass', side=side, b=bkey, opp=okey, turn=t))
+        if kind in ('go1', 'go', 'turn', 'pass', 'fork', 'cross') and (sim.at_rb() or sim.at_y_from_stem()):
+            return None
+        prev = kind if kind != 'go1' else 'go'
+    if pat[-1] not in ('go', 'go1') or sim.last is None: return None
+    if total < 2 or total > MAX_MOVES[5] or sim.node == n: return None
+    ed, frm = sim.last
+    fl = GE.flank(ed, frm)
+    sides = [s_ for s_, v in zip('LR', fl) if v]
+    if not sides: return None
+    side = rng.choice(sides)
+    tkey = fl[0] if side == 'L' else fl[1]
+    other = fl[1] if side == 'L' else fl[0]
+    extra = ('opp', other) if (other and rng.random() < 0.5) else None
+    if tkey in named or (extra and extra[1] in named): return None
+    cons = assign_connectors(steps, 5)
+    clauses = [render_step(st, cons[i], 5, rng) for i, st in enumerate(steps)]
+    parts = make_parts(clauses, final_clause(tkey, side, extra))
+    return dict(level=5, map='real', graph=True, start=[n, e], end=[sim.node, sim.via], actions=sim.actions,
+                path=[[round(x, 1), round(y, 1)] for x, y in sim.path], crosses=sim.crosses,
+                target=tkey, side=side, parts=parts)
+
+def graph_map_data():
+    svg, bpos, vb, cwd = GE.build_drawing()
+    return dict(tw=GRAPH_TW['tw'], cn=GRAPH_TW['cn'], es=GRAPH_TW['es'], en=GRAPH_TW['en'], graph=True,
+                blocks=[], closed=[], rb=[], ynodes=[], svg=svg, bpos=bpos, vb=vb, cwd=cwd,
+                nodes={k: [round(v['p'][0], 1), round(v['p'][1], 1), v['kind'], v['stem']] for k, v in GE.NODES.items()},
+                edges={k: dict(a=v['a'], b=v['b'], pts=[[round(x, 1), round(y, 1)] for x, y in v['pts']], L=v['L'], R=v['R']) for k, v in GE.EDGES.items()})
+
+from graph_map import GRAPH as _G
+GRAPH_TW = dict(tw=_G['tw'], cn=_G['cn'], es=_G['es'], en=_G['en'])
+
+def main(per=12, per5=72, seed=20261020):
     rng = random.Random(seed)
     out = []
+    GE.build_drawing()          # drops building slots that have no room (so the sentences never name them)
     for level in (1, 2, 3, 4, 5):
-        for mp in (SPECIAL if level == 5 else BASIC):
-            seen, made, tries = set(), 0, 0
-            while made < per and tries < 30000:
+        for mp in (('real',) if level == 5 else BASIC):
+            seen, made, tries, want = set(), 0, 0, (per5 if level == 5 else per)
+            while made < want and tries < 60000:
                 tries += 1
-                q = try_build(level, mp, rng)
+                q = try_build_graph(rng) if level == 5 else try_build(level, mp, rng)
                 if not q:
                     continue
                 key = ''.join(p['tw'] for p in q['parts'])
@@ -519,7 +598,7 @@ def main(per=12, seed=20261020):
                 made += 1
                 q['id'] = '%s-L%d-%02d' % (mp, level, made)
                 out.append(q)
-            if made < per:
+            if made < want:
                 print('WARN: only %d for %s L%d' % (made, mp, level), file=sys.stderr)
     return out
 
@@ -528,6 +607,7 @@ if __name__ == '__main__':
     data = dict(buildings={k: dict(tw=v['tw'], cn=v['cn'], py=v['py'], es=v['es'], en=v['en']) for k, v in B.items()},
                 maps={k: dict(tw=v['tw'], cn=v['cn'], es=v['es'], en=v['en'], blocks=v['blocks'], closed=[list(c) for c in v['closed']], rb=[list(c) for c in v['rb']], ynodes=[list(c) for c in v['ynodes']]) for k, v in MAPS.items()},
                 questions=qs)
+    data['maps']['real'] = graph_map_data()
     with open('questions.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
     print('questions:', len(qs))

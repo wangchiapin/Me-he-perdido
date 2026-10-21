@@ -52,7 +52,8 @@ input.name.err{border-color:var(--bad)}
 .mapwrap{position:relative;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px}
 .maphead{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 2px}
 .mapname{font-size:12px;color:var(--muted)}
-#btn-vocab{padding:3px 10px}
+#btn-vocab,#btn-cam{padding:3px 10px}
+#map.big{max-height:62vh}
 #map{width:100%;height:auto;max-height:42vh;display:block;margin:0 auto}
 #map.shake{animation:shake .3s}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
@@ -80,10 +81,10 @@ input.name.err{border-color:var(--bad)}
 #controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
 #controls.c4{grid-template-columns:repeat(4,1fr);gap:6px}
 #controls.c4 .cn{font-size:16px}
-#exits{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
-#exits .cbtn{min-height:48px;flex-direction:row;gap:6px}
+#exits{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
+#exits .cbtn{min-height:52px;gap:2px}
 #exits.off{opacity:.35;pointer-events:none}
-#exits .cn{font-size:14px}
+#exits .cn{font-size:13px;text-align:center}
 .cbtn{background:var(--card);border:1.5px solid var(--ink);border-radius:14px;padding:6px 4px;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer}
 .cbtn:active{background:var(--ink);color:#fff}
 .cbtn .ic{font-size:21px;line-height:1}
@@ -188,7 +189,7 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
   </div>
 
   <div class="mapwrap">
-    <div class="maphead"><div class="mapname" id="mapname"></div><button class="mini" id="btn-vocab">📖</button></div>
+    <div class="maphead"><div class="mapname" id="mapname"></div><span><button class="mini hidden" id="btn-cam"></button> <button class="mini" id="btn-vocab">📖</button></span></div>
     <svg id="map" xmlns="http://www.w3.org/2000/svg" role="img"></svg>
   </div>
   <div class="card hidden" id="vocab"></div>
@@ -204,6 +205,7 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
     <button class="cbtn" id="b-1"></button>
     <button class="cbtn" id="b-2"></button>
     <button class="cbtn" id="b-3"></button>
+    <button class="cbtn" id="b-4"></button>
   </div>
   <div class="row2" id="row2">
     <button class="btn ghost" id="b-reset"></button>
@@ -342,8 +344,8 @@ const UI = {
     slow: 'Lenta', normal: 'Normal', fast: 'Rápida',
     ph_pinyin: 'Pinyin', ph_zhuyin: 'Zhuyin 注音', ph_both: 'Pinyin + zhuyin', ph_off: 'Ninguna',
     level: 'Elige un nivel',
-    lv: ['Direcciones', 'Esquinas y cruzar', 'Posiciones', 'Reto combinado', 'Cruces especiales'],
-    lvd: ['Recto, izquierda y derecha', 'Contar esquinas y cruzar la calle', 'Izquierda, derecha, enfrente, al lado', 'Indicaciones largas, todo junto', 'Rotondas y bifurcaciones en Y'],
+    lv: ['Nivel 1', 'Nivel 2', 'Nivel 3', 'Nivel 4', 'Nivel 5'],
+    lvd: ['Recto, izquierda y derecha', 'Contar esquinas y cruzar la calle', 'Izquierda, derecha, enfrente, al lado', 'Indicaciones largas, todo junto', 'Barrio real: calles en diagonal, rotonda y Y'],
     board: 'Clasificación', restart: '↻ Reiniciar',
     q: 'Pregunta {n}/{N}', pts: '{s} puntos',
     listen: '🔊 Escuchar', left: 'Izquierda', straight: 'Recto', right: 'Derecha',
@@ -356,7 +358,7 @@ const UI = {
     hint2: 'Las esquinas se cuentan desde donde estás. Cuando oigas {cross}, pulsa el botón de cruzar al llegar a esa esquina.',
     hint3: 'Mira el mapa: ¿qué edificio queda a tu izquierda o a tu derecha mientras caminas? Si oyes {cross}, pulsa el botón de cruzar.',
     hint4: 'Combina todo lo aprendido. ¡Tú puedes!',
-    hint5: 'Rotonda: se circula en sentido contrario a las agujas del reloj; la primera salida es la primera calle a tu derecha. Pulsa el botón de la salida. Y: 靠左/靠右 = pulsa girar y luego recto.',
+    hint5: 'Rotonda: se circula en sentido contrario a las agujas del reloj; la 1.ª salida es la primera calle después de por donde entraste. Pulsa el botón de la salida. Y: 靠左/靠右 = pulsa girar y luego recto. Con 🔍 / 🗺 acercas o alejas el mapa.',
     result: 'Resultado', score: '{c} de {N} correctas', time: 'Tiempo: {t} s',
     again: 'Jugar de nuevo', home: 'Cambiar de nivel',
     best: 'Mejor puntuación de cada jugador (top 10).',
@@ -366,7 +368,7 @@ const UI = {
     vocab: 'Vocabulario', vocabDir: 'Direcciones', vocabPlaces: 'Lugares del mapa',
     back: 'Volver', map: 'Mapa',
     mapAny: 'Aleatorio', show: 'Ayudas', showText: 'Texto', parts: 'Por partes', cross: 'Cruzar',
-    pickExit: 'Estás en la rotonda: elige una salida.', noExit: 'No hay tanta salida.', notRb: 'Aquí no hay rotonda.', ex1: '1.ª salida', ex2: '2.ª salida', ex3: '3.ª salida',
+    pickExit: 'Estás en la rotonda: elige una salida.', noExit: 'No hay tanta salida.', notRb: 'Aquí no hay rotonda.', ex1: '1.ª salida', ex2: '2.ª salida', ex3: '3.ª salida', ex4: '4.ª salida', camFollow: '🔍 Seguir', camAll: '🗺 Mapa',
     alreadyCrossed: 'Ya cruzaste aquí.', noStreet: 'Aquí no hay calle que cruzar.', listenOnly: 'Solo escucha: pulsa 🔊', partN: 'Parte {n}/{N}', nextPart: '▶ Parte siguiente',
     badCross: 'Llegaste al lugar correcto, pero no cruzaste la calle donde decía la indicación.', vocabWords: 'Palabras útiles',
   },
@@ -378,8 +380,8 @@ const UI = {
     slow: 'Slow', normal: 'Normal', fast: 'Fast',
     ph_pinyin: 'Pinyin', ph_zhuyin: 'Zhuyin 注音', ph_both: 'Pinyin + zhuyin', ph_off: 'None',
     level: 'Choose a level',
-    lv: ['Directions', 'Intersections & crossing', 'Positions', 'Challenge', 'Special junctions'],
-    lvd: ['Straight, left and right', 'Count intersections, cross the street', 'Left, right, across, next to', 'Longer directions, all together', 'Roundabouts and Y-junctions'],
+    lv: ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5'],
+    lvd: ['Straight, left and right', 'Count intersections, cross the street', 'Left, right, across, next to', 'Longer directions, all together', 'Real streets: diagonals, roundabout, Y-fork'],
     board: 'Leaderboard', restart: '↻ Restart',
     q: 'Question {n}/{N}', pts: '{s} points',
     listen: '🔊 Listen', left: 'Left', straight: 'Straight', right: 'Right',
@@ -392,7 +394,7 @@ const UI = {
     hint2: 'Count intersections from where you stand. When you hear {cross}, press the cross button at that intersection.',
     hint3: 'Check the map: which building is on your left or right as you walk? If you hear {cross}, press the cross button.',
     hint4: 'Combine everything you have learned. You can do it!',
-    hint5: 'Roundabout: traffic goes counter-clockwise; the first exit is the first street on your right. Press the exit button. Y-junction: 靠左/靠右 = press turn, then straight.',
+    hint5: 'Roundabout: traffic goes counter-clockwise; the 1st exit is the first street after the one you came in by. Press the exit button. Y-junction: 靠左/靠右 = press turn, then straight. Use 🔍 / 🗺 to zoom the map.',
     result: 'Result', score: '{c} of {N} correct', time: 'Time: {t} s',
     again: 'Play again', home: 'Change level',
     best: "Each player's best score (top 10).",
@@ -402,7 +404,7 @@ const UI = {
     vocab: 'Vocabulary', vocabDir: 'Directions', vocabPlaces: 'Places on the map',
     back: 'Back', map: 'Map',
     mapAny: 'Random', show: 'Helpers', showText: 'Text', parts: 'In parts', cross: 'Cross',
-    pickExit: 'You are in the roundabout: pick an exit.', noExit: 'There is no such exit.', notRb: 'There is no roundabout here.', ex1: '1st exit', ex2: '2nd exit', ex3: '3rd exit',
+    pickExit: 'You are in the roundabout: pick an exit.', noExit: 'There is no such exit.', notRb: 'There is no roundabout here.', ex1: '1st exit', ex2: '2nd exit', ex3: '3rd exit', ex4: '4th exit', camFollow: '🔍 Follow', camAll: '🗺 Full map',
     alreadyCrossed: 'You already crossed here.', noStreet: 'There is no street to cross here.', listenOnly: 'Listening only: press 🔊', partN: 'Part {n}/{N}', nextPart: '▶ Next part',
     badCross: "Right place, but you didn't cross the street where the directions said.", vocabWords: 'Useful words',
   },
@@ -414,8 +416,8 @@ const UI = {
     slow: '慢', normal: '中', fast: '快',
     ph_pinyin: '拼音', ph_zhuyin: '注音', ph_both: '拼音＋注音', ph_off: '不顯示',
     level: '選擇關卡',
-    lv: ['方向', '路口與過馬路', '位置', '綜合挑戰', '特殊路口'],
-    lvd: ['直走、左轉、右轉', '數路口、過馬路', '左邊、右邊、對面、旁邊', '比較長的指路，全部一起用', '圓環、Y字路口'],
+    lv: ['第一級', '第二級', '第三級', '第四級', '第五級'],
+    lvd: ['直走、左轉、右轉', '數路口、過馬路', '左邊、右邊、對面、旁邊', '比較長的指路，全部一起用', '真實街區：斜路、圓環、Y字路口'],
     board: '排行榜', restart: '↻ 重來',
     q: '第 {n}/{N} 題', pts: '{s} 分',
     listen: '🔊 聽', left: '', straight: '', right: '',
@@ -428,7 +430,7 @@ const UI = {
     hint2: '路口從你站的地方開始數。聽到{cross}時，走到那個路口按「過馬路」按鈕。',
     hint3: '看地圖：走的時候，左手邊或右手邊是哪一棟建築？聽到{cross}要按「過馬路」。',
     hint4: '把學過的全部用上，你可以的！',
-    hint5: '圓環是逆時針繞：第一個出口就是右手邊第一條路，按下面的出口按鈕。Y字路口：靠左／靠右＝按左轉或右轉，再按直走。',
+    hint5: '圓環是逆時針繞：第一個出口就是從你進來的路開始，逆時針數的第一條路，按下面的出口按鈕。Y字路口：靠左／靠右＝按左轉或右轉，再按直走。地圖可以用 🔍 / 🗺 放大或看全圖。',
     result: '結果', score: '答對 {c}/{N} 題', time: '時間：{t} 秒',
     again: '再玩一次', home: '換關卡',
     best: '每位玩家的最高分（前 10 名）。',
@@ -438,7 +440,7 @@ const UI = {
     vocab: '詞彙', vocabDir: '方向', vocabPlaces: '地圖上的地點',
     back: '返回', map: '地圖',
     mapAny: '隨機', show: '輔助', showText: '顯示文字', parts: '分段聽', cross: '',
-    pickExit: '你在圓環裡，請選出口。', noExit: '沒有這個出口。', notRb: '這裡沒有圓環。', ex1: '第一個出口', ex2: '第二個出口', ex3: '第三個出口',
+    pickExit: '你在圓環裡，請選出口。', noExit: '沒有這個出口。', notRb: '這裡沒有圓環。', ex1: '第一個出口', ex2: '第二個出口', ex3: '第三個出口', ex4: '第四個出口', camFollow: '🔍 跟隨', camAll: '🗺 全圖',
     alreadyCrossed: '這裡已經過馬路了。', noStreet: '這裡沒有馬路可以過。', listenOnly: '只聽不看：請按 🔊', partN: '第 {n}/{N} 段', nextPart: '▶ 下一段',
     badCross: '地點對了，但是沒有在指路說的地方過馬路。', vocabWords: '常用詞',
   },
@@ -480,7 +482,7 @@ const WTR = {
 const S = {
   name: '', script: 'trad', lang: 'es', phon: 'pinyin', rate: 'normal', map: 'any', showText: true, partMode: false,
   level: 1, qs: [], qi: 0, q: null, correct: 0, results: [], totalMs: 0, qStart: 0,
-  pos: null, ang: 0, path: [], actions: [], crosses: [], cr: false, partIdx: 0, locked: false, busy: false, reveal: null,
+  cam: 'follow', pos: null, ang: 0, path: [], actions: [], crosses: [], cr: false, partIdx: 0, locked: false, busy: false, reveal: null,
 };
 const DEVICE = (() => {
   try {
@@ -736,7 +738,7 @@ function applyGameLabels() {
   $('#b-C').classList.toggle('hidden', S.level < 2);
   $('#controls').classList.toggle('c4', S.level >= 2);
   $('#exits').classList.toggle('hidden', S.level < 5);
-  [1, 2, 3].forEach(k => { $('#b-' + k).innerHTML = '<span class="ic">⟳</span><span class="cn"></span>'; $('#b-' + k).querySelector('.cn').textContent = T('ex' + k); });
+  [1, 2, 3, 4].forEach(k => { $('#b-' + k).innerHTML = '<span class="ic">⟳</span><span class="cn"></span>'; $('#b-' + k).querySelector('.cn').textContent = T('ex' + k); });
   $('#b-reset').textContent = T('reset');
   $('#b-go').textContent = T('arrived');
   const h = T('hint' + S.level, { straight: '<b>' + W('straight') + '</b>', cross: '<b>' + W('cross') + '</b>' });
@@ -766,8 +768,7 @@ function renderSentence() {
 }
 function loadQuestion() {
   const q = S.qs[S.qi]; S.q = q;
-  S.pos = { x: q.start[0], y: q.start[1], d: q.start[2] };
-  S.ang = q.start[2] * 90; S.path = [[S.pos.x, S.pos.y]]; S.actions = []; S.crosses = []; S.cr = false; S.partIdx = 0;
+  initPos(q); S.actions = []; S.crosses = []; S.cr = false; S.partIdx = 0;
   S.locked = false; S.busy = false; S.reveal = null;
   $('#feedback').classList.add('hidden'); $('#feedback').innerHTML = '';
   $('#controls').classList.remove('off'); $('#row2').classList.remove('off');
@@ -801,6 +802,8 @@ function labelSvg(cx, cy, key) {
   return s;
 }
 function renderMap() {
+  if (S.q.graph) return renderGraph();
+  $('#map').classList.remove('big'); $('#btn-cam').classList.add('hidden');
   const q = S.q, m = DATA.maps[q.map];
   const svg = $('#map');
   svg.setAttribute('viewBox', '-34 -34 368 368');
@@ -903,13 +906,18 @@ function renderMap() {
 function setAvatar(instant) {
   const av = $('#av'), avr = $('#avr'); if (!av) return;
   if (instant) { av.classList.add('nt'); avr.classList.add('nt'); }
-  const off = S.cr ? 24 : 0, base = nodeXY(S.q.map, S.pos.x, S.pos.y);
-  av.style.transform = 'translate(' + (base[0] + DXS[S.pos.d] * off) + 'px,' + (base[1] + DYS[S.pos.d] * off) + 'px)';
+  let ax, ay;
+  if (S.q.graph) { [ax, ay] = gAvatarXY(); }
+  else { const off = S.cr ? 24 : 0, base = nodeXY(S.q.map, S.pos.x, S.pos.y); ax = base[0] + DXS[S.pos.d] * off; ay = base[1] + DYS[S.pos.d] * off; }
+  S.axy = [ax, ay];
+  av.style.transform = 'translate(' + ax + 'px,' + ay + 'px)';
   avr.style.transform = 'rotate(' + S.ang + 'deg)';
   if (instant) { void av.getBoundingClientRect(); av.classList.remove('nt'); avr.classList.remove('nt'); }
+  if (S.q.graph) setCam(instant);
 }
-function pts(path) { return path.map(p => nodeXY(S.q.map, p[0], p[1]).join(',')).join(' '); }
+function pts(path) { return S.q.graph ? path.map(p => p.join(',')).join(' ') : path.map(p => nodeXY(S.q.map, p[0], p[1]).join(',')).join(' '); }
 function crossMark(c, cls) {
+  if (S.q.graph) return gCrossMark(c, cls);
   const cx = c[0] * SP + DXS[c[2]] * 23, cy = c[1] * SP + DYS[c[2]] * 23;
   return DXS[c[2]] !== 0
     ? '<line class="' + cls + '" x1="' + cx + '" y1="' + (cy - 11) + '" x2="' + cx + '" y2="' + (cy + 11) + '"/>'
@@ -985,7 +993,7 @@ function applyAction(pos, a) {
   return { x, y, d: pos.d, nodes };
 }
 function updateExits() {
-  const on = S.level >= 5 && S.q && isRb(S.q.map, S.pos.x, S.pos.y) && !S.locked;
+  const on = S.level >= 5 && S.q && (S.q.graph ? gM().nodes[S.pos.n][2] === 'rb' : isRb(S.q.map, S.pos.x, S.pos.y)) && !S.locked;
   $('#exits').classList.toggle('off', !on);
 }
 function shakeMap(msg) {
@@ -995,6 +1003,7 @@ function shakeMap(msg) {
 function act(a) {
   if (S.locked || S.busy || !S.q) return;
   if (S.actions.length >= 40) { toast('…'); return; }
+  if (S.q.graph) return gAct(a);
   if (a === 'C') {
     if (S.level < 2) return;
     if (isRb(S.q.map, S.pos.x, S.pos.y)) { toast(T('pickExit')); return; }
@@ -1025,18 +1034,156 @@ function act(a) {
   if (a === 'L') S.ang -= 90; else if (a === 'R') S.ang += 90; else np.nodes.forEach(n => S.path.push(n));
   setAvatar(false); drawTrail(); updateExits();
 }
+
+/* ---------- level 5: the road-graph map (not a grid) ---------- */
+const gM = () => DATA.maps[S.q.map];
+const gBrg = (p, q) => Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI;
+const gAd = (a, b) => { const d = ((b - a + 180) % 360 + 360) % 360 - 180; return d === -180 ? 180 : d; };
+function gInc(m, n) { m._inc = m._inc || {}; return m._inc[n] || (m._inc[n] = Object.keys(m.edges).filter(e => m.edges[e].a === n || m.edges[e].b === n)); }
+const gOth = (m, e, n) => m.edges[e].a === n ? m.edges[e].b : m.edges[e].a;
+const gOpts = (m, e, frm) => m.edges[e].a === frm ? m.edges[e].pts : m.edges[e].pts.slice().reverse();
+const gOb = (m, n, e) => { const p = gOpts(m, e, n); return gBrg(p[0], p[1]); };
+function gArr(m, e, to) { const p = gOpts(m, e, gOth(m, e, to)); return gBrg(p[p.length - 2], p[p.length - 1]); }
+function initPos(q) {
+  if (q.graph) {
+    const m = DATA.maps[q.map], n = q.start[0], e = q.start[1], h = gOb(m, n, e);
+    S.pos = { n, face: e, via: null, h }; S.ang = h + 90; S.path = [m.nodes[n].slice(0, 2)];
+  } else {
+    S.pos = { x: q.start[0], y: q.start[1], d: q.start[2] };
+    S.ang = q.start[2] * 90; S.path = [[S.pos.x, S.pos.y]];
+  }
+}
+function gWalk(m, pos, e) {      // walk along road e to its other end
+  const to = gOth(m, e, pos.n), p = gOpts(m, e, pos.n), h = gArr(m, e, to);
+  let face = null;
+  if (m.nodes[to][2] !== 'rb') {
+    let best = null;
+    gInc(m, to).forEach(x => { if (x === e) return; const d = Math.abs(gAd(h, gOb(m, to, x))); if (d <= 25 && (!best || d < best[0])) best = [d, x]; });
+    if (best) face = best[1];
+  }
+  return { n: to, face, via: e, h, nodes: p.slice(1) };
+}
+function gTurnTo(m, pos, t) {    // the road on that side of where you are facing (20°..160°)
+  let best = null;
+  gInc(m, pos.n).forEach(e => {
+    const d = gAd(pos.h, gOb(m, pos.n, e)), a = t === 'R' ? d : -d;
+    if (a > 20 && a < 160 && (!best || a < best[0])) best = [a, e];
+  });
+  return best ? best[1] : null;
+}
+function gExits(m, n, entry) {   // exits counter-clockwise from the road you came in by
+  const eb = gOb(m, n, entry);
+  return gInc(m, n).filter(e => e !== entry).sort((a, b) => ((eb - gOb(m, n, a)) % 360 + 360) % 360 - ((eb - gOb(m, n, b)) % 360 + 360) % 360);
+}
+function gApply(a) {             // new position after one action, or null if it can't be done
+  const m = gM(), pos = S.pos, rb = m.nodes[pos.n][2] === 'rb';
+  if (/[1-4]/.test(a)) {
+    if (!rb) return null;
+    const ex = gExits(m, pos.n, pos.via);
+    return +a <= ex.length ? gWalk(m, pos, ex[+a - 1]) : null;
+  }
+  if (rb) return null;
+  if (a === 'S') return pos.face ? gWalk(m, pos, pos.face) : null;
+  if (a === 'L' || a === 'R') { const e = gTurnTo(m, pos, a); return e ? { n: pos.n, face: e, via: pos.via, h: gOb(m, pos.n, e), nodes: [] } : null; }
+  return null;
+}
+function gSetPos(np) {
+  const dh = gAd(S.ang - 90, np.h);
+  S.ang += dh;
+  S.pos = { n: np.n, face: np.face, via: np.via, h: np.h };
+  np.nodes.forEach(p => S.path.push(p));
+}
+function gAvatarXY() {
+  const m = gM(), p = S.pos, b = m.nodes[p.n];
+  if (!S.cr || !p.face) return [b[0], b[1]];
+  const o = gOpts(m, p.face, p.n), dx = o[1][0] - o[0][0], dy = o[1][1] - o[0][1], l = Math.hypot(dx, dy), off = (m.cwd[p.n] || 30) + 14;
+  return [b[0] + dx / l * off, b[1] + dy / l * off];
+}
+function gCrossMark(c, cls) {
+  const m = gM(), n = c[0], e = c[1], o = gOpts(m, e, n), nd = m.nodes[n];
+  const d = (m.cwd[n] || 30) + (nd[2] === 'y' && e !== nd[3] ? 6 : 0);
+  const dx = o[1][0] - o[0][0], dy = o[1][1] - o[0][1], l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l;
+  const cx = o[0][0] + ux * d, cy = o[0][1] + uy * d, nx = -uy * 14, ny = ux * 14;
+  return '<line class="' + cls + '" x1="' + (cx - nx) + '" y1="' + (cy - ny) + '" x2="' + (cx + nx) + '" y2="' + (cy + ny) + '"/>';
+}
+function gAct(a) {
+  const m = gM(), pos = S.pos, rb = m.nodes[pos.n][2] === 'rb';
+  if (a === 'C') {
+    if (S.level < 2) return;
+    if (rb) { toast(T('pickExit')); return; }
+    if (S.cr) { toast(T('alreadyCrossed')); return; }
+    if (!pos.face) { shakeMap(T('noRoad')); return; }
+    if (gInc(m, pos.n).length < 3) { toast(T('noStreet')); return; }
+    S.cr = true; S.crosses.push([pos.n, pos.face]); S.actions.push('C');
+    setAvatar(false); drawTrail(); return;
+  }
+  if (/[1-4]/.test(a)) {
+    if (!rb) { toast(T('notRb')); return; }
+    const np = gApply(a);
+    if (!np) { toast(T('noExit')); return; }
+    gSetPos(np); S.actions.push(a); S.cr = false;
+    setAvatar(false); drawTrail(); updateExits(); return;
+  }
+  if (rb) { toast(T('pickExit')); return; }
+  const np = gApply(a);
+  if (!np) { shakeMap(T('noRoad')); return; }
+  gSetPos(np); S.actions.push(a); S.cr = false;
+  setAvatar(false); drawTrail(); updateExits();
+}
+/* camera: follows the avatar (zoomed in) or shows the whole map */
+let camCur = null, camRaf = 0;
+function camTarget() {
+  const m = gM(), vb = m.vb;
+  if (S.cam === 'all' || S.locked || !S.axy) return vb.slice();
+  const w = vb[2] * 0.56, h = vb[3] * 0.56;
+  const x = Math.min(Math.max(S.axy[0] - w / 2, vb[0]), vb[0] + vb[2] - w), y = Math.min(Math.max(S.axy[1] - h / 2, vb[1]), vb[1] + vb[3] - h);
+  return [x, y, w, h];
+}
+function setCam(instant) {
+  const t = camTarget(), svg = $('#map');
+  const put = b => svg.setAttribute('viewBox', b.map(v => v.toFixed(1)).join(' '));
+  cancelAnimationFrame(camRaf);
+  if (instant || !camCur) { camCur = t; put(t); return; }
+  const from = camCur.slice(), t0 = performance.now();
+  const step = now => {
+    const k = Math.min(1, (now - t0) / 380), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    camCur = from.map((v, i) => v + (t[i] - v) * e); put(camCur);
+    if (k < 1) camRaf = requestAnimationFrame(step);
+  };
+  camRaf = requestAnimationFrame(step);
+}
+function updateCamBtn() {
+  const b = $('#btn-cam'); b.classList.toggle('hidden', !(S.q && S.q.graph));
+  b.textContent = T(S.cam === 'all' ? 'camFollow' : 'camAll');
+}
+function renderGraph() {
+  const q = S.q, m = gM(), svg = $('#map');
+  svg.classList.add('big');
+  let h = m.svg.replace('>圓環<', '>' + (S.script === 'trad' ? '圓環' : '圆环') + '<');
+  Object.keys(m.bpos).forEach(k => {
+    const cx = m.bpos[k][0], cy = m.bpos[k][1];
+    h += '<g class="bld" data-k="' + k + '"><rect x="' + (cx - 35) + '" y="' + (cy - 35) + '" width="70" height="70" rx="9"/>' + labelSvg(cx, cy, k) + '</g>';
+  });
+  const sp = m.nodes[q.start[0]];
+  h += '<circle class="startring" cx="' + sp[0] + '" cy="' + sp[1] + '" r="17"/>';
+  h += '<g id="routes"></g><g id="cwm"></g><polyline class="trail" id="trail" points=""/>';
+  h += '<g id="av"><g id="avr"><circle class="avc" r="11"/><path class="avt" d="M0 -22 L7 -11 L-7 -11 Z"/><circle r="3.4" fill="#fffefa"/></g></g>';
+  svg.innerHTML = h;
+  S.axy = null; camCur = null;
+  svg.setAttribute('viewBox', m.vb.join(' '));
+  updateCamBtn();
+}
 function resetPos() {
   if (S.locked || S.busy) return;
   const q = S.q;
-  S.pos = { x: q.start[0], y: q.start[1], d: q.start[2] };
-  S.ang = q.start[2] * 90; S.path = [[S.pos.x, S.pos.y]]; S.actions = []; S.crosses = []; S.cr = false;
+  initPos(q); S.actions = []; S.crosses = []; S.cr = false;
   setAvatar(true); drawTrail(); updateExits();
 }
 function submit() {
   if (S.locked || S.busy || !S.q) return;
   const q = S.q, p = S.pos;
-  const sameNode = p.x === q.end[0] && p.y === q.end[1];
-  const faceOK = p.d === q.end[2];
+  const sameNode = q.graph ? p.n === q.end[0] : (p.x === q.end[0] && p.y === q.end[1]);
+  const faceOK = q.graph ? p.via === q.end[1] : p.d === q.end[2];
   const crossOK = JSON.stringify(S.crosses) === JSON.stringify(q.crosses);
   const ok = sameNode && faceOK && crossOK;
   S.locked = true;
@@ -1047,6 +1194,7 @@ function submit() {
   $('#controls').classList.add('off'); $('#row2').classList.add('off');
   renderSentence();
   drawTrail(); drawReveal(); stopSpeech(); updateExits();
+  if (q.graph) setCam(false);
   renderFeedback();
   track('answer', { level: S.level, id: q.id, correct: ok ? 1 : 0 });
   setTimeout(() => $('#feedback').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
@@ -1072,10 +1220,10 @@ async function replay() {
   if (S.busy) return;
   S.busy = true;
   const q = S.q;
-  S.pos = { x: q.start[0], y: q.start[1], d: q.start[2] }; S.ang = q.start[2] * 90; S.cr = false;
-  S.path = [[S.pos.x, S.pos.y]]; setAvatar(true); drawTrail();
+  initPos(q); S.cr = false; setAvatar(true); drawTrail();
   await sleep(450);
   for (const a of q.actions) {
+    if (q.graph) { const gp = gApply(a); if (!gp) break; if (a === 'C') { S.cr = true; } else { gSetPos(gp); S.cr = false; } setAvatar(false); drawTrail(); await sleep(a === 'C' ? 650 : (a === 'S' || /[1-4]/.test(a) ? 700 : 480)); continue; }
     if (a === 'C') { S.cr = true; setAvatar(false); await sleep(650); continue; }
     const np = applyAction(S.pos, a); if (!np) break;
     const delta = (np.d - S.pos.d + 4) % 4;
@@ -1246,6 +1394,8 @@ function bind() {
   $('#b-S').onclick = () => act('S');
   $('#b-R').onclick = () => act('R');
   $('#b-C').onclick = () => act('C');
+  [1, 2, 3, 4].forEach(k => { $('#b-' + k).onclick = () => act(String(k)); });
+  $('#btn-cam').onclick = () => { S.cam = S.cam === 'all' ? 'follow' : 'all'; updateCamBtn(); setCam(false); };
   $('#btn-npart').onclick = nextPart;
   $('#btn-tx').onclick = () => { S.showText = !S.showText; saveSettings(); refreshAll(); };
   $('#btn-pt').onclick = () => { S.partMode = !S.partMode; S.partIdx = 0; saveSettings(); refreshAll(); if (S.partMode) speakCurrent(); };

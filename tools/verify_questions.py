@@ -15,14 +15,15 @@ def han_count(s):
 def py_count(s):
     return len(re.findall(r"[A-Za-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]+", s))
 
-closed = {m: [({(c[0], c[1]), (c[2], c[3])}) for c in maps[m]['closed']] for m in maps}
+GM = {m: v for m, v in maps.items() if not v.get('graph')}
+closed = {m: [({(c[0], c[1]), (c[2], c[3])}) for c in GM[m]['closed']] for m in GM}
 def is_open(m, x, y, d):
     nx, ny = x + DX[d], y + DY[d]
     return 0 <= nx < W and 0 <= ny < H and {(x, y), (nx, ny)} not in closed[m]
 def deg(m, x, y): return sum(is_open(m, x, y, d) for d in range(4))
 
-# every map: connected, no isolated node
-for m in maps:
+# every grid map: connected, no isolated node
+for m in GM:
     seen, stack = {(0, 0)}, [(0, 0)]
     while stack:
         x, y = stack.pop()
@@ -32,12 +33,78 @@ for m in maps:
                 if p not in seen: seen.add(p); stack.append(p)
     if len(seen) != W * H: errs.append((m, 'road map not connected'))
 
+
+import math
+G = maps['real']; GN, GE = G['nodes'], G['edges']
+INC = {n: [e for e, v in GE.items() if n in (v['a'], v['b'])] for n in GN}
+def _p(e, frm): p = GE[e]['pts']; return p if GE[e]['a'] == frm else p[::-1]
+def _oth(e, n): return GE[e]['b'] if GE[e]['a'] == n else GE[e]['a']
+def _b(p, q): return math.degrees(math.atan2(q[1] - p[1], q[0] - p[0]))
+def _ad(a, b):
+    d = (b - a + 180) % 360 - 180
+    return 180 if d == -180 else d
+def _ob(n, e): p = _p(e, n); return _b(p[0], p[1])
+def _fl(e, frm): return (GE[e]['L'], GE[e]['R']) if GE[e]['a'] == frm else (GE[e]['R'], GE[e]['L'])
+def check_graph(q):
+    n, face = q['start']; via = None; h = _ob(n, face)
+    path = [GN[n][:2]]; crosses = []; last = None; ys = 0
+    def walk(e):
+        nonlocal n, via, h, face, last, ys
+        frm = n; p = _p(e, frm); path.extend(p[1:]); n = _oth(e, frm); via = e; last = (e, frm)
+        h = _b(p[-2], p[-1]); face = None
+        if GN[n][2] == 'y' and via == GN[n][3]: ys += 1
+        if GN[n][2] != 'rb':
+            c = [(abs(_ad(h, _ob(n, x))), x) for x in INC[n] if x != e and abs(_ad(h, _ob(n, x))) <= 25]
+            if c: face = min(c)[1]
+    for a in q['actions']:
+        if a == 'S':
+            if face is None or GN[n][2] == 'rb': return 'S with no road ahead'
+            walk(face)
+        elif a in 'LR':
+            if GN[n][2] == 'rb': return 'turn inside roundabout'
+            c = [e for e in INC[n] if (20 < _ad(h, _ob(n, e)) < 160 if a == 'R' else -160 < _ad(h, _ob(n, e)) < -20)]
+            if len(c) != 1: return 'ambiguous or missing turn'
+            face = c[0]; h = _ob(n, face)
+        elif a == 'C':
+            if face is None or GN[n][2] == 'rb' or len(INC[n]) < 3: return 'bad crossing'
+            crosses.append([n, face])
+        else:
+            if GN[n][2] != 'rb': return 'exit outside roundabout'
+            eb = _ob(n, via); ex = sorted([e for e in INC[n] if e != via], key=lambda e: (eb - _ob(n, e)) % 360)
+            if int(a) > len(ex): return 'no such exit'
+            walk(ex[int(a) - 1])
+    if [n, via] != q['end']: return 'end mismatch'
+    if [[round(x, 1), round(y, 1)] for x, y in path] != q['path'] and path != q['path']: return 'path mismatch'
+    if crosses != q['crosses']: return 'crosses mismatch'
+    if q['actions'][-1] != 'S': return 'last action is not a walk'
+    full_ = ''.join(p['tw'] for p in q['parts'])
+    nr = sum(a in '1234' for a in q['actions'])
+    if full_.count('圓環') != nr or full_.count('出口出去') != nr: return 'roundabout text mismatch'
+    if full_.count('Y字路口') != ys or full_.count('靠左') + full_.count('靠右') != ys: return 'Y text mismatch'
+    if full_.count('過馬路') != len(crosses): return 'crossing text mismatch'
+    for m in re.finditer('C', q['actions']):
+        if q['actions'][m.end():m.end() + 1] != 'S': return 'crossing not followed by a walk'
+    bl, br = _fl(*last)
+    if (bl if q['side'] == 'L' else br) != q['target']: return 'target not on stated side'
+    return None
+for q in Q:
+    if q.get('graph'):
+        r = check_graph(q)
+        if r: errs.append((q['id'], r))
+for e_, v in GE.items():
+    for sd in 'LR':
+        if v[sd] and v[sd] not in B: errs.append((e_, 'unknown building'))
+GBS = [v[s_] for v in GE.values() for s_ in 'LR' if v[s_]]
+if len(GBS) != len(set(GBS)): errs.append(('real', 'duplicate building on the graph map'))
+if set(G['bpos']) != set(GBS): errs.append(('real', 'building positions do not match the roads'))
+
 for q in Q:
     m = q['map']
-    x, y, d = q['start']
-    path, crosses, lastseg, lastlen, bad = [[x, y]], [], None, 0, False
+    gq = bool(q.get('graph'))
+    x, y, d = (0, 0, 0) if gq else q['start']
+    path, crosses, lastseg, lastlen, bad = [[x, y]], [], None, 0, gq
     rbs = ys = 0
-    for a in q['actions']:
+    for a in ('' if gq else q['actions']):
         if a == 'L': d = (d + 3) % 4
         elif a == 'R': d = (d + 1) % 4
         elif a in '123':
