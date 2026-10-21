@@ -74,10 +74,10 @@ Es un único archivo, `index.html`, sin dependencias. Funciona directamente en G
 
 ### Clasificación (Firebase)
 
-Por defecto la clasificación se guarda solo en el dispositivo. Para compartirla, pega la configuración web de
-Firebase en la constante `FIREBASE_CONFIG` al inicio del `<script>` de `index.html`.
+La clasificación en línea ya está conectada al proyecto `memorma-24dab` (compartido con Memorama y Ordena el Armario), con inicio de sesión anónimo; la configuración está en la constante `FIREBASE_CONFIG` al inicio del `<script>` de `index.html`. Si no se puede conectar, la clasificación se guarda solo en el dispositivo.
 Se usan las colecciones `askDirections_L1` … `askDirections_L4` (un documento por dispositivo y nivel, solo se
-guarda la mejor puntuación). Hay que permitir lectura y escritura en esas colecciones en las reglas de Firestore.
+guarda la mejor puntuación; se muestran los 10 mejores). Las reglas de Firestore de ese proyecto ya permiten esas colecciones.
+Desde 2026-10-21 también se registran visitas, inicios y partidas terminadas (colecciones `visits` y `plays`; GA no cambia).
 Si usas GA4, escribe el identificador en `GA_ID`.
 
 ### Añadir o cambiar preguntas
