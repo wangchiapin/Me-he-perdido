@@ -29,6 +29,7 @@ Cada ronda tiene 8 preguntas y cada acierto vale 10 puntos. Hay clasificación p
 | 2 · Esquinas y cruzar | 第一／第二／第三個路口、下一個路口、過馬路 | 直走到第二個路口，左轉，再直走到下一個路口。 |
 | 3 · Posiciones | 對面、旁邊, y usar los edificios como referencia | 一直走，右手邊是銀行，過了銀行就左轉。 |
 | 4 · Reto combinado | Indicaciones largas con todo lo anterior | 直走到第一個路口，左轉，再一直走，右手邊是公園，過了公園就右轉，再直走到第二個路口。 |
+| 5 · Cruces especiales | 圓環（第一／二／三個出口）、Y字路口（靠左／靠右） | 直走到圓環，從第二個出口出去，最後直走。 |
 
 Notas de vocabulario:
 - **直走** = avanzar hasta la siguiente esquina.
@@ -57,7 +58,9 @@ Se puede abrir con parámetros para saltarse la pantalla de inicio, por ejemplo:
 ## Mapas
 
 Seis mapas sencillos: **便利商店街** (calle comercial), **車站前** (frente a la estación), **夜市** (mercado nocturno), **校園附近** (cerca de la escuela), **醫院附近** (cerca del hospital) y **捷運站出口** (salida del metro), con 31 lugares en total.
-Cinco de ellos tienen calles cerradas (plazas peatonales) y callejones sin salida, así que no todo es una cuadrícula perfecta. Las calles cerradas se definen en `closed` dentro de `MAPS` en `tools/gen_questions.py`. **直走** avanza hasta la siguiente parada: una intersección, una curva o el final de la calle; los tramos rectos sin cruce se pasan de largo.
+Además hay tres mapas solo para el nivel 5: **圓環** (rotondas), **Y字路口** (bifurcaciones en Y) y uno mixto. En la rotonda se circula en sentido contrario a las agujas del reloj; la primera salida es la primera calle a la derecha. Los Y se dibujan con dos ramas curvas; **靠左／靠右** = pulsar girar y luego recto.
+
+Cinco de los mapas básicos tienen calles cerradas (plazas peatonales) y callejones sin salida, así que no todo es una cuadrícula perfecta. Las calles cerradas se definen en `closed` dentro de `MAPS` en `tools/gen_questions.py`. **直走** avanza hasta la siguiente parada: una intersección, una curva o el final de la calle; los tramos rectos sin cruce se pasan de largo.
 
 ---
 
@@ -81,7 +84,7 @@ Es un único archivo, `index.html`, sin dependencias. Funciona directamente en G
 ### Clasificación (Firebase)
 
 La clasificación en línea ya está conectada al proyecto `memorma-24dab` (compartido con Memorama y Ordena el Armario), con inicio de sesión anónimo; la configuración está en la constante `FIREBASE_CONFIG` al inicio del `<script>` de `index.html`. Si no se puede conectar, la clasificación se guarda solo en el dispositivo.
-Se usan las colecciones `askDirections_L1` … `askDirections_L4` (un documento por dispositivo y nivel, solo se
+Se usan las colecciones `askDirections_L1` … `askDirections_L5` (la L5 es nueva: hay que permitirla en las reglas de Firestore; mientras tanto la clasificación del nivel 5 se queda en el dispositivo) (un documento por dispositivo y nivel, solo se
 guarda la mejor puntuación; se muestran los 10 mejores). Las reglas de Firestore de ese proyecto ya permiten esas colecciones.
 Desde 2026-10-21 también se registran visitas, inicios y partidas terminadas (colecciones `visits` y `plays`; GA no cambia).
 Si usas GA4, escribe el identificador en `GA_ID`.

@@ -10,7 +10,7 @@ TRAD_ONLY = set('轉馬過經對邊個麵廳銀藥醫學書飲車飯郵攤運診
 errs = []
 
 def han_count(s):
-    return len(re.findall(r'[一-鿿]', s))
+    return len(re.findall(r'[一-鿿]', s)) + s.count('Y')
 
 def py_count(s):
     return len(re.findall(r"[A-Za-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]+", s))
@@ -36,9 +36,22 @@ for q in Q:
     m = q['map']
     x, y, d = q['start']
     path, crosses, lastseg, lastlen, bad = [[x, y]], [], None, 0, False
+    rbs = ys = 0
     for a in q['actions']:
         if a == 'L': d = (d + 3) % 4
         elif a == 'R': d = (d + 1) % 4
+        elif a in '123':
+            ex = [(((d + 2) % 4) - i) % 4 for i in (1, 2, 3) if is_open(m, x, y, (((d + 2) % 4) - i) % 4)]
+            if [x, y] not in maps[m]['rb'] or int(a) > len(ex):
+                errs.append((q['id'], 'bad roundabout exit')); bad = True; break
+            d = ex[int(a) - 1]; rbs += 1
+            n = 0
+            while True:
+                lastseg = (x, y, d)
+                x, y = x + DX[d], y + DY[d]
+                path.append([x, y]); n += 1
+                if not (deg(m, x, y) == 2 and is_open(m, x, y, d)): break
+            lastlen = n
         elif a == 'C':
             if not is_open(m, x, y, d) or deg(m, x, y) < 3:
                 errs.append((q['id'], 'crosses where there is no street to cross / no road ahead')); bad = True; break
@@ -53,7 +66,13 @@ for q in Q:
                 path.append([x, y]); n += 1
                 if not (deg(m, x, y) == 2 and is_open(m, x, y, d)): break
             lastlen = n
+            if [x, y] in maps[m]['ynodes'] and not is_open(m, x, y, d): ys += 1
     if not bad:
+        full_ = ''.join(p['tw'] for p in q['parts'])
+        if full_.count('圓環') != sum(a in '123' for a in q['actions']): errs.append((q['id'], 'roundabout text/action mismatch'))
+        if full_.count('出口出去') != sum(a in '123' for a in q['actions']): errs.append((q['id'], 'exit text mismatch'))
+        if full_.count('Y字路口') != ys: errs.append((q['id'], 'Y-junction text mismatch'))
+        if full_.count('靠左') + full_.count('靠右') != ys: errs.append((q['id'], 'fork text mismatch'))
         if [x, y, d] != q['end']: errs.append((q['id'], 'end mismatch'))
         if path != q['path']: errs.append((q['id'], 'path mismatch'))
         if crosses != q['crosses']: errs.append((q['id'], 'crosses mismatch'))

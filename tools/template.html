@@ -80,6 +80,10 @@ input.name.err{border-color:var(--bad)}
 #controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
 #controls.c4{grid-template-columns:repeat(4,1fr);gap:6px}
 #controls.c4 .cn{font-size:16px}
+#exits{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+#exits .cbtn{min-height:48px;flex-direction:row;gap:6px}
+#exits.off{opacity:.35;pointer-events:none}
+#exits .cn{font-size:14px}
 .cbtn{background:var(--card);border:1.5px solid var(--ink);border-radius:14px;padding:6px 4px;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer}
 .cbtn:active{background:var(--ink);color:#fff}
 .cbtn .ic{font-size:21px;line-height:1}
@@ -195,6 +199,11 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
     <button class="cbtn" id="b-S"></button>
     <button class="cbtn" id="b-R"></button>
     <button class="cbtn hidden" id="b-C"></button>
+  </div>
+  <div id="exits" class="hidden">
+    <button class="cbtn" id="b-1"></button>
+    <button class="cbtn" id="b-2"></button>
+    <button class="cbtn" id="b-3"></button>
   </div>
   <div class="row2" id="row2">
     <button class="btn ghost" id="b-reset"></button>
@@ -333,8 +342,8 @@ const UI = {
     slow: 'Lenta', normal: 'Normal', fast: 'Rápida',
     ph_pinyin: 'Pinyin', ph_zhuyin: 'Zhuyin 注音', ph_both: 'Pinyin + zhuyin', ph_off: 'Ninguna',
     level: 'Elige un nivel',
-    lv: ['Direcciones', 'Esquinas y cruzar', 'Posiciones', 'Reto combinado'],
-    lvd: ['Recto, izquierda y derecha', 'Contar esquinas y cruzar la calle', 'Izquierda, derecha, enfrente, al lado', 'Indicaciones largas, todo junto'],
+    lv: ['Direcciones', 'Esquinas y cruzar', 'Posiciones', 'Reto combinado', 'Cruces especiales'],
+    lvd: ['Recto, izquierda y derecha', 'Contar esquinas y cruzar la calle', 'Izquierda, derecha, enfrente, al lado', 'Indicaciones largas, todo junto', 'Rotondas y bifurcaciones en Y'],
     board: 'Clasificación', restart: '↻ Reiniciar',
     q: 'Pregunta {n}/{N}', pts: '{s} puntos',
     listen: '🔊 Escuchar', left: 'Izquierda', straight: 'Recto', right: 'Derecha',
@@ -347,6 +356,7 @@ const UI = {
     hint2: 'Las esquinas se cuentan desde donde estás. Cuando oigas {cross}, pulsa el botón de cruzar al llegar a esa esquina.',
     hint3: 'Mira el mapa: ¿qué edificio queda a tu izquierda o a tu derecha mientras caminas? Si oyes {cross}, pulsa el botón de cruzar.',
     hint4: 'Combina todo lo aprendido. ¡Tú puedes!',
+    hint5: 'Rotonda: se circula en sentido contrario a las agujas del reloj; la primera salida es la primera calle a tu derecha. Pulsa el botón de la salida. Y: 靠左/靠右 = pulsa girar y luego recto.',
     result: 'Resultado', score: '{c} de {N} correctas', time: 'Tiempo: {t} s',
     again: 'Jugar de nuevo', home: 'Cambiar de nivel',
     best: 'Mejor puntuación de cada jugador (top 10).',
@@ -356,6 +366,7 @@ const UI = {
     vocab: 'Vocabulario', vocabDir: 'Direcciones', vocabPlaces: 'Lugares del mapa',
     back: 'Volver', map: 'Mapa',
     mapAny: 'Aleatorio', show: 'Ayudas', showText: 'Texto', parts: 'Por partes', cross: 'Cruzar',
+    pickExit: 'Estás en la rotonda: elige una salida.', noExit: 'No hay tanta salida.', notRb: 'Aquí no hay rotonda.', ex1: '1.ª salida', ex2: '2.ª salida', ex3: '3.ª salida',
     alreadyCrossed: 'Ya cruzaste aquí.', noStreet: 'Aquí no hay calle que cruzar.', listenOnly: 'Solo escucha: pulsa 🔊', partN: 'Parte {n}/{N}', nextPart: '▶ Parte siguiente',
     badCross: 'Llegaste al lugar correcto, pero no cruzaste la calle donde decía la indicación.', vocabWords: 'Palabras útiles',
   },
@@ -367,8 +378,8 @@ const UI = {
     slow: 'Slow', normal: 'Normal', fast: 'Fast',
     ph_pinyin: 'Pinyin', ph_zhuyin: 'Zhuyin 注音', ph_both: 'Pinyin + zhuyin', ph_off: 'None',
     level: 'Choose a level',
-    lv: ['Directions', 'Intersections & crossing', 'Positions', 'Challenge'],
-    lvd: ['Straight, left and right', 'Count intersections, cross the street', 'Left, right, across, next to', 'Longer directions, all together'],
+    lv: ['Directions', 'Intersections & crossing', 'Positions', 'Challenge', 'Special junctions'],
+    lvd: ['Straight, left and right', 'Count intersections, cross the street', 'Left, right, across, next to', 'Longer directions, all together', 'Roundabouts and Y-junctions'],
     board: 'Leaderboard', restart: '↻ Restart',
     q: 'Question {n}/{N}', pts: '{s} points',
     listen: '🔊 Listen', left: 'Left', straight: 'Straight', right: 'Right',
@@ -381,6 +392,7 @@ const UI = {
     hint2: 'Count intersections from where you stand. When you hear {cross}, press the cross button at that intersection.',
     hint3: 'Check the map: which building is on your left or right as you walk? If you hear {cross}, press the cross button.',
     hint4: 'Combine everything you have learned. You can do it!',
+    hint5: 'Roundabout: traffic goes counter-clockwise; the first exit is the first street on your right. Press the exit button. Y-junction: 靠左/靠右 = press turn, then straight.',
     result: 'Result', score: '{c} of {N} correct', time: 'Time: {t} s',
     again: 'Play again', home: 'Change level',
     best: "Each player's best score (top 10).",
@@ -390,6 +402,7 @@ const UI = {
     vocab: 'Vocabulary', vocabDir: 'Directions', vocabPlaces: 'Places on the map',
     back: 'Back', map: 'Map',
     mapAny: 'Random', show: 'Helpers', showText: 'Text', parts: 'In parts', cross: 'Cross',
+    pickExit: 'You are in the roundabout: pick an exit.', noExit: 'There is no such exit.', notRb: 'There is no roundabout here.', ex1: '1st exit', ex2: '2nd exit', ex3: '3rd exit',
     alreadyCrossed: 'You already crossed here.', noStreet: 'There is no street to cross here.', listenOnly: 'Listening only: press 🔊', partN: 'Part {n}/{N}', nextPart: '▶ Next part',
     badCross: "Right place, but you didn't cross the street where the directions said.", vocabWords: 'Useful words',
   },
@@ -401,8 +414,8 @@ const UI = {
     slow: '慢', normal: '中', fast: '快',
     ph_pinyin: '拼音', ph_zhuyin: '注音', ph_both: '拼音＋注音', ph_off: '不顯示',
     level: '選擇關卡',
-    lv: ['方向', '路口與過馬路', '位置', '綜合挑戰'],
-    lvd: ['直走、左轉、右轉', '數路口、過馬路', '左邊、右邊、對面、旁邊', '比較長的指路，全部一起用'],
+    lv: ['方向', '路口與過馬路', '位置', '綜合挑戰', '特殊路口'],
+    lvd: ['直走、左轉、右轉', '數路口、過馬路', '左邊、右邊、對面、旁邊', '比較長的指路，全部一起用', '圓環、Y字路口'],
     board: '排行榜', restart: '↻ 重來',
     q: '第 {n}/{N} 題', pts: '{s} 分',
     listen: '🔊 聽', left: '', straight: '', right: '',
@@ -415,6 +428,7 @@ const UI = {
     hint2: '路口從你站的地方開始數。聽到{cross}時，走到那個路口按「過馬路」按鈕。',
     hint3: '看地圖：走的時候，左手邊或右手邊是哪一棟建築？聽到{cross}要按「過馬路」。',
     hint4: '把學過的全部用上，你可以的！',
+    hint5: '圓環是逆時針繞：第一個出口就是右手邊第一條路，按下面的出口按鈕。Y字路口：靠左／靠右＝按左轉或右轉，再按直走。',
     result: '結果', score: '答對 {c}/{N} 題', time: '時間：{t} 秒',
     again: '再玩一次', home: '換關卡',
     best: '每位玩家的最高分（前 10 名）。',
@@ -424,12 +438,13 @@ const UI = {
     vocab: '詞彙', vocabDir: '方向', vocabPlaces: '地圖上的地點',
     back: '返回', map: '地圖',
     mapAny: '隨機', show: '輔助', showText: '顯示文字', parts: '分段聽', cross: '',
+    pickExit: '你在圓環裡，請選出口。', noExit: '沒有這個出口。', notRb: '這裡沒有圓環。', ex1: '第一個出口', ex2: '第二個出口', ex3: '第三個出口',
     alreadyCrossed: '這裡已經過馬路了。', noStreet: '這裡沒有馬路可以過。', listenOnly: '只聽不看：請按 🔊', partN: '第 {n}/{N} 段', nextPart: '▶ 下一段',
     badCross: '地點對了，但是沒有在指路說的地方過馬路。', vocabWords: '常用詞',
   },
 };
 // simplified-character version of the Chinese-only UI (made from the traditional one)
-const S2T = { '問': '问', '聽': '听', '機': '机', '選': '选', '關': '关', '數': '数', '過': '过', '馬': '马', '綜': '综', '戰': '战', '邊': '边', '對': '对', '長': '长', '個': '个', '較': '较', '話': '话', '點': '点', '區': '区', '請': '请', '輸': '输', '體': '体', '語': '语', '讀': '读', '顯': '显', '鍵': '键', '點': '点', '榜': '榜', '題': '题', '裝': '装', '儲': '储', '這': '这', '臺': '台', '還': '还', '詞': '词', '彙': '汇', '圖': '图', '麼': '么', '線': '线', '錯': '错', '面': '面', '開': '开', '結': '结', '時': '时', '間': '间', '換': '换', '會': '会', '們': '们', '學': '学', '全': '全', '樣': '样', '幾': '几', '雙': '双', '當': '当', '築': '筑', '麼': '么', '別': '别', '對': '对', '應': '应', '給': '给', '蓋': '盖', '運': '运', '動': '动', '現': '现', '後': '后', '來': '来', '終': '终', '離': '离', '轉': '转', '帶': '带', '張': '张', '燈': '灯', '見': '见', '買': '买', '賣': '卖', '總': '总', '業': '业', '傳': '传', '極': '极', '處': '处', '準': '准', '須': '须', '標': '标', '導': '导', '歷': '历', '錄': '录', '無': '无', '難': '难', '電': '电', '腦': '脑', '為': '为', '與': '与', '確': '确', '鐘': '钟', '覺': '觉', '實': '实', '麵': '面', '館': '馆', '藥': '药', '書': '书', '車': '车', '買': '买', '軌': '轨', '號': '号', '單': '单', '務': '务', '員': '员', '辦': '办', '歡': '欢', '迎': '迎', '遊': '游', '戲': '戏', '樓': '楼', '層': '层', '導': '导', '檢': '检', '測': '测', '試': '试', '驗': '验', '紀': '纪', '錄': '录', '據': '据', '統': '统', '計': '计', '劃': '划', '設': '设', '備': '备', '類': '类', '種': '种', '終': '终', '義': '义', '網': '网', '頁': '页', '絡': '络', '連': '连', '續': '续', '擊': '击', '碼': '码', '終': '终', '則': '则', '規': '规', '範': '范', '圍': '围', '盡': '尽', '與': '与' };
+const S2T = { '問': '问', '聽': '听', '機': '机', '選': '选', '關': '关', '數': '数', '過': '过', '馬': '马', '綜': '综', '戰': '战', '邊': '边', '對': '对', '長': '长', '個': '个', '較': '较', '話': '话', '點': '点', '區': '区', '請': '请', '輸': '输', '體': '体', '語': '语', '讀': '读', '顯': '显', '鍵': '键', '點': '点', '榜': '榜', '題': '题', '裝': '装', '儲': '储', '這': '这', '臺': '台', '還': '还', '詞': '词', '彙': '汇', '圖': '图', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '線': '线', '錯': '错', '面': '面', '開': '开', '結': '结', '時': '时', '間': '间', '換': '换', '會': '会', '們': '们', '學': '学', '全': '全', '樣': '样', '幾': '几', '雙': '双', '當': '当', '築': '筑', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '別': '别', '對': '对', '應': '应', '給': '给', '蓋': '盖', '運': '运', '動': '动', '現': '现', '後': '后', '來': '来', '終': '终', '離': '离', '轉': '转', '帶': '带', '張': '张', '燈': '灯', '見': '见', '買': '买', '賣': '卖', '總': '总', '業': '业', '傳': '传', '極': '极', '處': '处', '準': '准', '須': '须', '標': '标', '導': '导', '歷': '历', '錄': '录', '無': '无', '難': '难', '電': '电', '腦': '脑', '為': '为', '與': '与', '確': '确', '鐘': '钟', '覺': '觉', '實': '实', '麵': '面', '館': '馆', '藥': '药', '書': '书', '車': '车', '買': '买', '軌': '轨', '號': '号', '單': '单', '務': '务', '員': '员', '辦': '办', '歡': '欢', '迎': '迎', '遊': '游', '戲': '戏', '樓': '楼', '層': '层', '導': '导', '檢': '检', '測': '测', '試': '试', '驗': '验', '紀': '纪', '錄': '录', '據': '据', '統': '统', '計': '计', '劃': '划', '設': '设', '備': '备', '類': '类', '種': '种', '終': '终', '義': '义', '網': '网', '頁': '页', '絡': '络', '連': '连', '續': '续', '擊': '击', '碼': '码', '終': '终', '則': '则', '規': '规', '範': '范', '圍': '围', '盡': '尽', '與': '与' };
 const zhSimp = o => { const r = {}; for (const k in o) r[k] = typeof o[k] === 'string' ? [...o[k]].map(c => S2T[c] || c).join('') : o[k].map(x => [...x].map(c => S2T[c] || c).join('')); return r; };
 UI.zhs = zhSimp(UI.zh);
 const WORDS = {
@@ -448,6 +463,11 @@ const USEFUL = [
   { tw: '對面', cn: '对面', py: 'duì miàn', es: 'enfrente', en: 'across the street' },
   { tw: '旁邊', cn: '旁边', py: 'páng biān', es: 'al lado', en: 'next to' },
   { tw: '過了', cn: '过了', py: 'guò le', es: 'después de pasar', en: 'after passing' },
+  { tw: '圓環', cn: '圆环', py: 'yuán huán', es: 'rotonda', en: 'roundabout' },
+  { tw: '出口', cn: '出口', py: 'chū kǒu', es: 'salida', en: 'exit' },
+  { tw: 'Y字路口', cn: 'Y字路口', py: 'Y zì lù kǒu', es: 'bifurcación en Y', en: 'Y-junction' },
+  { tw: '靠左', cn: '靠左', py: 'kào zuǒ', es: 'ir por la izquierda', en: 'keep left' },
+  { tw: '靠右', cn: '靠右', py: 'kào yòu', es: 'ir por la derecha', en: 'keep right' },
 ];
 const WPY = { left: 'zuǒ zhuǎn', straight: 'zhí zǒu', right: 'yòu zhuǎn', cross: 'guò mǎ lù' };
 const WTR = {
@@ -663,9 +683,9 @@ function renderStart() {
   chips('#c-rate', ['slow', 'normal', 'fast'].map(v => ({ v, label: T(v) })), S.rate, v => { S.rate = v; saveSettings(); renderStart(); speak(S.script === 'trad' ? '直走，再右轉。' : '直走，再右转。'); });
   $('#l-level').textContent = T('level');
   const lv = $('#levels'); lv.innerHTML = '';
-  const hints = [W('straight') + ' · ' + W('left') + ' · ' + W('right'), '第N個路口 · ' + W('cross'), '左/右手邊 · 對面 · 旁邊', '…'];
-  const hintsCn = [hints[0], '第N个路口 · ' + W('cross'), '左/右手边 · 对面 · 旁边', '…'];
-  for (let i = 0; i < 4; i++) {
+  const hints = [W('straight') + ' · ' + W('left') + ' · ' + W('right'), '第N個路口 · ' + W('cross'), '左/右手邊 · 對面 · 旁邊', '…', '圓環 · Y字路口'];
+  const hintsCn = [hints[0], '第N个路口 · ' + W('cross'), '左/右手边 · 对面 · 旁边', '…', '圆环 · Y字路口'];
+  for (let i = 0; i < 5; i++) {
     const b = document.createElement('button'); b.className = 'lv';
     b.innerHTML = '<span class="n">' + (i + 1) + '</span><span><span class="t"></span><br><span class="d"></span></span><span class="z"></span>';
     b.querySelector('.t').textContent = T('lv')[i];
@@ -715,6 +735,8 @@ function applyGameLabels() {
   mk('#b-L', '↰', 'left'); mk('#b-S', '↑', 'straight'); mk('#b-R', '↱', 'right'); mk('#b-C', '≣', 'cross');
   $('#b-C').classList.toggle('hidden', S.level < 2);
   $('#controls').classList.toggle('c4', S.level >= 2);
+  $('#exits').classList.toggle('hidden', S.level < 5);
+  [1, 2, 3].forEach(k => { $('#b-' + k).innerHTML = '<span class="ic">⟳</span><span class="cn"></span>'; $('#b-' + k).querySelector('.cn').textContent = T('ex' + k); });
   $('#b-reset').textContent = T('reset');
   $('#b-go').textContent = T('arrived');
   const h = T('hint' + S.level, { straight: '<b>' + W('straight') + '</b>', cross: '<b>' + W('cross') + '</b>' });
@@ -750,7 +772,7 @@ function loadQuestion() {
   $('#feedback').classList.add('hidden'); $('#feedback').innerHTML = '';
   $('#controls').classList.remove('off'); $('#row2').classList.remove('off');
   $('#vocab').classList.add('hidden');
-  renderSentence(); renderMap(); redraw();
+  renderSentence(); renderMap(); redraw(); updateExits();
   S.qStart = Date.now();
   setTimeout(speakCurrent, 300);
 }
@@ -791,7 +813,9 @@ function renderMap() {
       if (nx > 3 || ny > 3) return;
       const x1 = x * SP, y1 = y * SP, x2 = nx * SP, y2 = ny * SP;
       if (isOpen(mk, x, y, d)) {
-        h += '<line class="road" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
+        const cut = (px, py, dir) => isYn(mk, px, py) ? (dir === yStem(mk, px, py) ? 22 : 30) : 0;
+        const a1 = cut(x, y, d), a2 = cut(nx, ny, (d + 2) % 4);
+        h += '<line class="road" x1="' + (x1 + DXS[d] * a1) + '" y1="' + (y1 + DYS[d] * a1) + '" x2="' + (x2 - DXS[d] * a2) + '" y2="' + (y2 - DYS[d] * a2) + '"/>';
       } else {
         const hor = d === 1;
         const px = hor ? x1 + 14 : x1 - 12, py = hor ? y1 - 12 : y1 + 14, w = hor ? SP - 28 : 24, hh = hor ? 24 : SP - 28;
@@ -801,6 +825,19 @@ function renderMap() {
       }
     });
   }
+  // Y junctions: the stem splits into two curved branches; roundabouts: a ring with a green island
+  DATA.maps[mk].ynodes.forEach(([x, y]) => {
+    const s = yStem(mk, x, y), fx = x * SP + DXS[s] * 22, fy = y * SP + DYS[s] * 22;
+    [(s + 1) % 4, (s + 3) % 4].forEach(b => {
+      h += '<path class="road" d="M' + fx + ' ' + fy + ' Q' + (x * SP) + ' ' + (y * SP) + ' ' + (x * SP + DXS[b] * 30) + ' ' + (y * SP + DYS[b] * 30) + '"/>';
+    });
+    const tx = x * SP + DXS[s] * 4, ty = y * SP + DYS[s] * 4;
+    h += '<circle cx="' + (x * SP - DXS[s] * 9) + '" cy="' + (y * SP - DYS[s] * 9) + '" r="4.5" fill="#a9bfa7" stroke="#8a867c" stroke-width=".6"/>';
+  });
+  DATA.maps[mk].rb.forEach(([x, y]) => {
+    h += '<circle cx="' + x * SP + '" cy="' + y * SP + '" r="22" fill="var(--road)"/><circle cx="' + x * SP + '" cy="' + y * SP + '" r="16" class="mid" fill="none"/>' +
+      '<circle cx="' + x * SP + '" cy="' + y * SP + '" r="10" fill="#cfdccb" stroke="#8a867c" stroke-width=".8"/>';
+  });
   for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
     const dg = degOf(mk, x, y);
     if (dg === 1) h += '<circle cx="' + x * SP + '" cy="' + y * SP + '" r="15" fill="var(--road)"/>';
@@ -815,6 +852,7 @@ function renderMap() {
     [1, 2].forEach(d => {
       const nx = x + DXS[d], ny = y + DYS[d];
       if (nx > 3 || ny > 3 || !isOpen(mk, x, y, d)) return;
+      if (isYn(mk, x, y) || isYn(mk, nx, ny) || isRb(mk, x, y) || isRb(mk, nx, ny)) return;
       h += '<line class="mid" x1="' + x * SP + '" y1="' + y * SP + '" x2="' + nx * SP + '" y2="' + ny * SP + '"/>';
     });
   }
@@ -822,7 +860,8 @@ function renderMap() {
   for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
     for (let d = 0; d < 4; d++) {
       if (!isOpen(mk, x, y, d)) continue;
-      for (const off of [17, 23, 29]) {
+      const offs = isRb(mk, x, y) ? [27, 32, 37] : (isYn(mk, x, y) ? (d === yStem(mk, x, y) ? [28, 33, 38] : [38, 43, 48]) : [17, 23, 29]);
+      for (const off of offs) {
         const cx = x * SP + DXS[d] * off, cy = y * SP + DYS[d] * off;
         if (DXS[d] !== 0) h += '<rect class="cw" x="' + (cx - 1.6) + '" y="' + (cy - 9) + '" width="3.2" height="18"/>';
         else h += '<rect class="cw" x="' + (cx - 9) + '" y="' + (cy - 1.6) + '" width="18" height="3.2"/>';
@@ -835,6 +874,7 @@ function renderMap() {
   }
   // street furniture on the diagonal corners of every intersection: trees, and a traffic light on inner ones
   for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
+    if (isRb(q.map, x, y) || isYn(q.map, x, y)) continue;
     [[1, -1], [-1, -1], [1, 1], [-1, 1]].forEach(([dx, dy], i) => {
       const bx = x + (dx > 0 ? 0 : -1), by = y + (dy < 0 ? -1 : 0);
       if (bx < 0 || bx > 2 || by < 0 || by > 2) return;
@@ -847,8 +887,8 @@ function renderMap() {
       }
     });
   }
-  for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) h += '<circle class="nd" cx="' + x * SP + '" cy="' + y * SP + '" r="2.6"/>';
-  h += '<circle class="startring" cx="' + q.start[0] * SP + '" cy="' + q.start[1] * SP + '" r="17"/>';
+  for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) if (!isRb(q.map, x, y) && !isYn(q.map, x, y)) h += '<circle class="nd" cx="' + x * SP + '" cy="' + y * SP + '" r="2.6"/>';
+  { const sp = nodeXY(q.map, q.start[0], q.start[1]); h += '<circle class="startring" cx="' + sp[0] + '" cy="' + sp[1] + '" r="17"/>'; }
   h += '<g id="routes"></g><g id="cwm"></g><polyline class="trail" id="trail" points=""/>';
   h += '<g id="av"><g id="avr"><circle class="avc" r="11"/><path class="avt" d="M0 -22 L7 -11 L-7 -11 Z"/><circle r="3.4" fill="#fffefa"/></g></g>';
   svg.innerHTML = h;
@@ -856,12 +896,12 @@ function renderMap() {
 function setAvatar(instant) {
   const av = $('#av'), avr = $('#avr'); if (!av) return;
   if (instant) { av.classList.add('nt'); avr.classList.add('nt'); }
-  const off = S.cr ? 24 : 0;
-  av.style.transform = 'translate(' + (S.pos.x * SP + DXS[S.pos.d] * off) + 'px,' + (S.pos.y * SP + DYS[S.pos.d] * off) + 'px)';
+  const off = S.cr ? 24 : 0, base = nodeXY(S.q.map, S.pos.x, S.pos.y);
+  av.style.transform = 'translate(' + (base[0] + DXS[S.pos.d] * off) + 'px,' + (base[1] + DYS[S.pos.d] * off) + 'px)';
   avr.style.transform = 'rotate(' + S.ang + 'deg)';
   if (instant) { void av.getBoundingClientRect(); av.classList.remove('nt'); avr.classList.remove('nt'); }
 }
-function pts(path) { return path.map(p => p[0] * SP + ',' + p[1] * SP).join(' '); }
+function pts(path) { return path.map(p => nodeXY(S.q.map, p[0], p[1]).join(',')).join(' '); }
 function crossMark(c, cls) {
   const cx = c[0] * SP + DXS[c[2]] * 23, cy = c[1] * SP + DYS[c[2]] * 23;
   return DXS[c[2]] !== 0
@@ -895,10 +935,40 @@ function isOpen(mk, x, y, d) {
   return !DATA.maps[mk].closed.some(c => (c[0] === x && c[1] === y && c[2] === nx && c[3] === ny) || (c[2] === x && c[3] === y && c[0] === nx && c[1] === ny));
 }
 function degOf(mk, x, y) { let n = 0; for (let d = 0; d < 4; d++) if (isOpen(mk, x, y, d)) n++; return n; }
+const isRb = (mk, x, y) => DATA.maps[mk].rb.some(p => p[0] === x && p[1] === y);
+const isYn = (mk, x, y) => DATA.maps[mk].ynodes.some(p => p[0] === x && p[1] === y);
+function yStem(mk, x, y) {      // direction of the single road that forks at a Y node
+  for (let d = 0; d < 4; d++) {
+    const nx = x + DXS[d], ny = y + DYS[d];
+    if (nx >= 0 && nx <= 3 && ny >= 0 && ny <= 3 && !isOpen(mk, x, y, d)) return (d + 2) % 4;
+  }
+  return 0;
+}
+function nodeXY(mk, x, y) {     // where a node is drawn (a Y node is drawn at its fork point)
+  if (isYn(mk, x, y)) { const s = yStem(mk, x, y); return [x * SP + DXS[s] * 22, y * SP + DYS[s] * 22]; }
+  return [x * SP, y * SP];
+}
+function roundExit(mk, x, y, d, k) {   // k-th exit, counter-clockwise from the entry road
+  const e = (d + 2) % 4; let c = 0;
+  for (let i = 1; i <= 3; i++) { const dd = (e - i + 4) % 4; if (isOpen(mk, x, y, dd)) { c++; if (c === k) return dd; } }
+  return -1;
+}
 const plain = (mk, x, y, d) => degOf(mk, x, y) === 2 && isOpen(mk, x, y, d);   // just straight road: walking passes over it
 
 /* ---------- moving ---------- */
+function walkFrom(mk, pos, d) {
+  if (!isOpen(mk, pos.x, pos.y, d)) return null;
+  let x = pos.x, y = pos.y; const nodes = [];
+  do { x += DXS[d]; y += DYS[d]; nodes.push([x, y]); } while (plain(mk, x, y, d));
+  return { x, y, d, nodes };
+}
 function applyAction(pos, a) {
+  if (a === '1' || a === '2' || a === '3') {
+    const mk = S.q.map;
+    if (!isRb(mk, pos.x, pos.y)) return null;
+    const dd = roundExit(mk, pos.x, pos.y, pos.d, +a);
+    return dd < 0 ? null : walkFrom(mk, pos, dd);
+  }
   if (a === 'L') return { x: pos.x, y: pos.y, d: (pos.d + 3) % 4, nodes: [] };
   if (a === 'R') return { x: pos.x, y: pos.y, d: (pos.d + 1) % 4, nodes: [] };
   const mk = S.q.map;                      // walk to the next stop: junction, bend or dead end
@@ -906,6 +976,10 @@ function applyAction(pos, a) {
   let x = pos.x, y = pos.y; const nodes = [];
   do { x += DXS[pos.d]; y += DYS[pos.d]; nodes.push([x, y]); } while (plain(mk, x, y, pos.d));
   return { x, y, d: pos.d, nodes };
+}
+function updateExits() {
+  const on = S.level >= 5 && S.q && isRb(S.q.map, S.pos.x, S.pos.y) && !S.locked;
+  $('#exits').classList.toggle('off', !on);
 }
 function shakeMap(msg) {
   const m = $('#map'); m.classList.remove('shake'); void m.getBoundingClientRect(); m.classList.add('shake');
@@ -916,12 +990,25 @@ function act(a) {
   if (S.actions.length >= 40) { toast('…'); return; }
   if (a === 'C') {
     if (S.level < 2) return;
+    if (isRb(S.q.map, S.pos.x, S.pos.y)) { toast(T('pickExit')); return; }
     if (S.cr) { toast(T('alreadyCrossed')); return; }
     if (!isOpen(S.q.map, S.pos.x, S.pos.y, S.pos.d)) { shakeMap(T('noRoad')); return; }
     if (degOf(S.q.map, S.pos.x, S.pos.y) < 3) { toast(T('noStreet')); return; }
     S.cr = true; S.crosses.push([S.pos.x, S.pos.y, S.pos.d]); S.actions.push('C');
     setAvatar(false); drawTrail(); return;
   }
+  if (a === '1' || a === '2' || a === '3') {
+    if (S.level < 5) return;
+    if (!isRb(S.q.map, S.pos.x, S.pos.y)) { toast(T('notRb')); return; }
+    const np = applyAction(S.pos, a);
+    if (!np) { toast(T('noExit')); return; }
+    const delta = (np.d - S.pos.d + 4) % 4;
+    S.ang += delta === 3 ? -90 : delta * 90;
+    S.pos = np; S.actions.push(a); S.cr = false;
+    np.nodes.forEach(n => S.path.push(n));
+    setAvatar(false); drawTrail(); updateExits(); return;
+  }
+  if (isRb(S.q.map, S.pos.x, S.pos.y)) { toast(T('pickExit')); return; }
   const np = applyAction(S.pos, a);
   if (!np) {
     const m = $('#map'); m.classList.remove('shake'); void m.getBoundingClientRect(); m.classList.add('shake');
@@ -929,14 +1016,14 @@ function act(a) {
   }
   S.pos = np; S.actions.push(a); S.cr = false;
   if (a === 'L') S.ang -= 90; else if (a === 'R') S.ang += 90; else np.nodes.forEach(n => S.path.push(n));
-  setAvatar(false); drawTrail();
+  setAvatar(false); drawTrail(); updateExits();
 }
 function resetPos() {
   if (S.locked || S.busy) return;
   const q = S.q;
   S.pos = { x: q.start[0], y: q.start[1], d: q.start[2] };
   S.ang = q.start[2] * 90; S.path = [[S.pos.x, S.pos.y]]; S.actions = []; S.crosses = []; S.cr = false;
-  setAvatar(true); drawTrail();
+  setAvatar(true); drawTrail(); updateExits();
 }
 function submit() {
   if (S.locked || S.busy || !S.q) return;
@@ -952,7 +1039,7 @@ function submit() {
   S.reveal = { ok, sameNode, faceOK, student: S.path.slice(), crosses: S.crosses.slice() };
   $('#controls').classList.add('off'); $('#row2').classList.add('off');
   renderSentence();
-  drawTrail(); drawReveal(); stopSpeech();
+  drawTrail(); drawReveal(); stopSpeech(); updateExits();
   renderFeedback();
   track('answer', { level: S.level, id: q.id, correct: ok ? 1 : 0 });
   setTimeout(() => $('#feedback').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
@@ -984,10 +1071,11 @@ async function replay() {
   for (const a of q.actions) {
     if (a === 'C') { S.cr = true; setAvatar(false); await sleep(650); continue; }
     const np = applyAction(S.pos, a); if (!np) break;
+    const delta = (np.d - S.pos.d + 4) % 4;
     S.pos = np; S.cr = false;
-    if (a === 'L') S.ang -= 90; else if (a === 'R') S.ang += 90; else np.nodes.forEach(n => S.path.push(n));
+    if (a === 'L') S.ang -= 90; else if (a === 'R') S.ang += 90; else if (/[123]/.test(a)) S.ang += delta === 3 ? -90 : delta * 90; else np.nodes.forEach(n => S.path.push(n));
     setAvatar(false); drawTrail();
-    await sleep(a === 'S' ? 700 : 480);
+    await sleep(a === 'S' || /[123]/.test(a) ? 700 : 480);
   }
   S.busy = false;
 }
@@ -1085,7 +1173,7 @@ async function openBoard(level) {
   $('#b-title').textContent = '🏆 ' + T('board');
   $('#b-back').textContent = T('back');
   const tabs = $('#b-tabs'); tabs.innerHTML = '';
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 1; i <= 5; i++) {
     const b = document.createElement('button'); b.className = 'chip' + (i === boardLevel ? ' on' : '');
     b.textContent = T('lv')[i - 1]; b.style.fontSize = '12px';
     b.onclick = () => openBoard(i); tabs.appendChild(b);

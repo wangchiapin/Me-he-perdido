@@ -88,6 +88,21 @@ MAPS = {
             ['bank', 'laundry', 'salon']]),
 }
 
+MAPS['rb'] = dict(
+    tw='圓環', cn='圆环', es='Rotondas', en='Roundabouts', closed=[], rb=[(1, 1), (2, 2)], ynodes=[],
+    blocks=[['school', 'bakery', 'park'], ['cafe', 'bank', 'conv'], ['book', 'pharmacy', 'post']])
+MAPS['y'] = dict(
+    tw='Y字路口', cn='Y字路口', es='Bifurcaciones en Y', en='Y-Junctions', closed=[(1, 0, 1, 1), (2, 1, 2, 2), (0, 2, 1, 2)],
+    rb=[], ynodes=[(1, 1), (2, 2), (1, 2)],
+    blocks=[['bus', 'noodle', 'temple'], ['drink', 'market', 'bento'], ['clinic', 'library', 'cinema']])
+MAPS['mix'] = dict(
+    tw='圓環與Y字路口', cn='圆环与Y字路口', es='Rotonda y bifurcación', en='Roundabout and Y', closed=[(2, 0, 2, 1)], rb=[(1, 2)], ynodes=[(2, 1)],
+    blocks=[['hotel', 'restaurant', 'breakfast'], ['hospital', 'dept', 'laundry'], ['salon', 'fruit', 'police']])
+for _m in MAPS.values():
+    _m.setdefault('rb', []); _m.setdefault('ynodes', [])
+SPECIAL = ('rb', 'y', 'mix')
+BASIC = ('street', 'station', 'night', 'campus', 'hospital', 'metro')
+
 # ---------- phrase pieces ----------
 TURN = {
     'L': dict(tw='左轉', cn='左转', py='zuǒ zhuǎn', es='gira a la izquierda', en='turn left'),
@@ -104,6 +119,11 @@ ORD = {
     'next': dict(tw='下一個路口', cn='下一个路口', py='xià yí ge lù kǒu', es='la siguiente intersección', en='the next intersection'),
 }
 # connectors:  (tw, cn, pinyin, es, en)
+ORD2 = {
+    1: dict(tw='第一個', cn='第一个', py='dì yī ge', es='la primera', en='the first'),
+    2: dict(tw='第二個', cn='第二个', py='dì èr ge', es='la segunda', en='the second'),
+    3: dict(tw='第三個', cn='第三个', py='dì sān ge', es='la tercera', en='the third'),
+}
 CON = [
     ('先', '先', 'xiān', 'primero', 'first'),
     ('然後', '然后', 'rán hòu', 'luego', 'then'),
@@ -158,7 +178,26 @@ class Sim:
         s.last = None            # (x,y,d) of the last travelled edge
         s.last_len = 0           # edges walked by the last S
 
-    def move(s):
+    def at_rb(s):
+        return (s.x, s.y) in MAPS[s.mp]['rb']
+
+    def at_y_from_stem(s):
+        return (s.x, s.y) in MAPS[s.mp]['ynodes'] and not is_open(s.mp, s.x, s.y, s.d)
+
+    def exits(s):
+        e = (s.d + 2) % 4
+        return [(e - i) % 4 for i in (1, 2, 3) if is_open(s.mp, s.x, s.y, (e - i) % 4)]    # counter-clockwise
+
+    def roundabout(s, k):
+        ex = s.exits()
+        if not s.at_rb() or k > len(ex):
+            return False
+        s.d = ex[k - 1]
+        s.move(record=False)
+        s.actions += str(k)
+        return True
+
+    def move(s, record=True):
         """S: walk to the next stop (junction, bend or dead end); plain straight road is passed over."""
         if not is_open(s.mp, s.x, s.y, s.d):
             return False
@@ -171,7 +210,8 @@ class Sim:
             if not straight_through(s.mp, s.x, s.y, s.d):
                 break
         s.last_len = n
-        s.actions += 'S'
+        if record:
+            s.actions += 'S'
         return True
 
     def turn(s, t):
@@ -202,7 +242,7 @@ def assign_connectors(steps, level):
                 con = 1 if alt % 2 == 0 else 2
                 alt += 1
         else:
-            if k == 'turn':
+            if k in ('turn', 'round', 'fork'):
                 con = 0 if i == 0 else None
             elif i == 0:
                 con = None
@@ -235,6 +275,20 @@ def render_step(st, con, level, rng):
         return dict(kind=k, tw=ptw + '直走到' + o['tw'], cn=pcn + '直走到' + o['cn'],
                     py=ppy + 'zhí zǒu dào ' + o['py'],
                     es=pes + 'sigue recto hasta ' + o['es'], en=pen + 'go straight to ' + o['en'])
+    if k == 'torb':
+        return dict(kind=k, tw=ptw + '直走到圓環', cn=pcn + '直走到圆环', py=ppy + 'zhí zǒu dào yuán huán',
+                    es=pes + 'sigue recto hasta la rotonda', en=pen + 'go straight to the roundabout')
+    if k == 'round':
+        o = ORD2[st['k']]
+        return dict(kind=k, tw=ptw + '從' + o['tw'] + '出口出去', cn=pcn + '从' + o['cn'] + '出口出去',
+                    py=ppy + 'cóng ' + o['py'] + ' chū kǒu chū qù',
+                    es=pes + 'sal por ' + o['es'] + ' salida', en=pen + 'take ' + o['en'] + ' exit')
+    if k == 'toy':
+        return dict(kind=k, tw=ptw + '直走到Y字路口', cn=pcn + '直走到Y字路口', py=ppy + 'zhí zǒu dào Y zì lù kǒu',
+                    es=pes + 'sigue recto hasta la bifurcación en Y', en=pen + 'go straight to the Y-junction')
+    if k == 'fork':
+        s_ = {'L': ('靠左', '靠左', 'kào zuǒ', 've por la izquierda', 'keep left'), 'R': ('靠右', '靠右', 'kào yòu', 've por la derecha', 'keep right')}[st['t']]
+        return dict(kind=k, tw=ptw + s_[0] + '走', cn=pcn + s_[1] + '走', py=ppy + s_[2] + ' zǒu', es=pes + s_[3], en=pen + s_[4])
     if k == 'cross':
         return dict(kind=k, tw='過馬路', cn='过马路', py='guò mǎ lù', es='cruza la calle', en='cross the street')
     if k == 'pass':
@@ -295,9 +349,9 @@ def make_parts(clauses, fin):
     parts, cur, moved = [], [], False
     for c in clauses:
         cur.append(c)
-        if c['kind'] in ('go1', 'go', 'pass'):
+        if c['kind'] in ('go1', 'go', 'pass', 'torb', 'toy'):
             moved = True
-        if c['kind'] in ('turn', 'pass') and moved:
+        if c['kind'] in ('turn', 'pass', 'round', 'fork') and moved:
             parts.append(part_from(cur)); cur, moved = [], False
     if cur:
         parts.append(part_from(cur))
@@ -315,11 +369,18 @@ PATTERNS = {
     4: [['go', 'turn', 'pass', 'go'], ['pass', 'go', 'cross', 'go'], ['turn', 'go', 'cross', 'go', 'turn', 'go'],
         ['go', 'turn', 'go', 'pass', 'go'], ['pass', 'go', 'turn', 'go']],
 }
-MAX_MOVES = {1: 4, 2: 5, 3: 6, 4: 8}
+PATTERNS[5] = {
+    'rb':  [['torb', 'round', 'go1'], ['torb', 'round', 'go1'], ['go', 'torb', 'round', 'go'], ['torb', 'round', 'turn', 'go1'], ['turn', 'torb', 'round', 'go1']],
+    'y':   [['toy', 'fork', 'go1'], ['toy', 'fork', 'go1'], ['go', 'toy', 'fork', 'go'], ['toy', 'fork', 'turn', 'go1'], ['turn', 'toy', 'fork', 'go1']],
+    'mix': [['torb', 'round', 'go1'], ['toy', 'fork', 'go1'], ['torb', 'round', 'toy', 'fork', 'go1'], ['toy', 'fork', 'torb', 'round', 'go1'], ['go', 'torb', 'round', 'go1']],
+}
+MAX_MOVES = {1: 4, 2: 5, 3: 6, 4: 8, 5: 6}
 
 def try_build(level, mp, rng):
-    pat = rng.choice(PATTERNS[level])
+    pat = rng.choice(PATTERNS[level][mp] if level == 5 else PATTERNS[level])
     x, y, d = rng.randrange(W), rng.randrange(H), rng.randrange(4)
+    if (x, y) in MAPS[mp]['rb']:
+        return None
     sim = Sim(mp, x, y, d)
     start = (x, y, d)
     steps, named, total = [], [], 0
@@ -340,6 +401,32 @@ def try_build(level, mp, rng):
             t = rng.choice('LR')
             sim.turn(t)
             steps.append(dict(kind='turn', t=t))
+        elif kind in ('torb', 'toy'):
+            if not sim.move() or sim.last_len != 1:
+                return None
+            if kind == 'torb' and not sim.at_rb():
+                return None
+            if kind == 'toy' and not sim.at_y_from_stem():
+                return None
+            total += 1
+            steps.append(dict(kind=kind))
+        elif kind == 'round':
+            if prev != 'torb':
+                return None
+            k = rng.choice([1, 2, 3])
+            if not sim.roundabout(k):
+                return None
+            total += 1
+            steps.append(dict(kind='round', k=k))
+        elif kind == 'fork':
+            if prev != 'toy':
+                return None
+            t_ = rng.choice('LR')
+            sim.turn(t_)
+            if not sim.move() or degree(mp, sim.x, sim.y) < 2:
+                return None
+            total += 1
+            steps.append(dict(kind='fork', t=t_))
         elif kind == 'cross':
             if prev != 'go' or not sim.cross():
                 return None
@@ -370,7 +457,10 @@ def try_build(level, mp, rng):
             sim.turn(turn)
             named += [bkey] + ([okey] if okey else [])
             steps.append(dict(kind='pass', side=side, b=bkey, opp=okey, turn=turn))
-        prev = kind if kind != 'go1' else 'go'
+        if kind in ('go1', 'go', 'turn', 'pass', 'fork', 'cross') and (sim.at_rb() or sim.at_y_from_stem()):
+            if not (kind == 'turn' and False):
+                return None
+        prev = kind if kind not in ('go1',) else 'go'
     if pat[-1] not in ('go', 'go1') or sim.last is None:
         return None
     if total < 2 or total > MAX_MOVES[level]:
@@ -414,8 +504,8 @@ def try_build(level, mp, rng):
 def main(per=12, seed=20261020):
     rng = random.Random(seed)
     out = []
-    for level in (1, 2, 3, 4):
-        for mp in MAPS:
+    for level in (1, 2, 3, 4, 5):
+        for mp in (SPECIAL if level == 5 else BASIC):
             seen, made, tries = set(), 0, 0
             while made < per and tries < 30000:
                 tries += 1
@@ -436,7 +526,7 @@ def main(per=12, seed=20261020):
 if __name__ == '__main__':
     qs = main()
     data = dict(buildings={k: dict(tw=v['tw'], cn=v['cn'], py=v['py'], es=v['es'], en=v['en']) for k, v in B.items()},
-                maps={k: dict(tw=v['tw'], cn=v['cn'], es=v['es'], en=v['en'], blocks=v['blocks'], closed=[list(c) for c in v['closed']]) for k, v in MAPS.items()},
+                maps={k: dict(tw=v['tw'], cn=v['cn'], es=v['es'], en=v['en'], blocks=v['blocks'], closed=[list(c) for c in v['closed']], rb=[list(c) for c in v['rb']], ynodes=[list(c) for c in v['ynodes']]) for k, v in MAPS.items()},
                 questions=qs)
     with open('questions.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
