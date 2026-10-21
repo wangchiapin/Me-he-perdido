@@ -1,0 +1,53 @@
+/* Building illustrations: each draws in a box x -26..26, y 0..28 (origin = top-centre of the art area). Muted 無印 palette. */
+const BA = (() => {
+  const L = '#8a867c', W = '#fffefa';
+  const P = { red: '#c98f86', green: '#9db39f', blue: '#9fb3c4', yel: '#e0c98f', brown: '#b79a82', gray: '#c9c5ba', pink: '#d9b3b0', teal: '#93b5b0', orange: '#dcae84' };
+  const r = (x, y, w, h, f, extra) => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + f + '" stroke="' + L + '" stroke-width=".8"' + (extra || '') + '/>';
+  const rn = (x, y, w, h, f) => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + f + '"/>';
+  const c = (x, y, rr, f, s) => '<circle cx="' + x + '" cy="' + y + '" r="' + rr + '" fill="' + f + '"' + (s ? ' stroke="' + L + '" stroke-width=".8"' : '') + '/>';
+  const pl = (d, f, s, sw) => '<path d="' + d + '" fill="' + (f || 'none') + '" stroke="' + (s || L) + '" stroke-width="' + (sw || .8) + '" stroke-linejoin="round" stroke-linecap="round"/>';
+  // awning with stripes
+  const awn = (col, x0, x1, y0) => {
+    let s = '', n = 6, w = (x1 - x0) / n;
+    for (let i = 0; i < n; i++) s += rn(x0 + i * w, y0, w, 6, i % 2 ? W : col);
+    return s + '<rect x="' + x0 + '" y="' + y0 + '" width="' + (x1 - x0) + '" height="6" fill="none" stroke="' + L + '" stroke-width=".8"/>';
+  };
+  // basic shop: body, awning, window (returns window box for the symbol), door
+  const shop = (col, sym) => r(-22, 8, 44, 20, '#f3f0e6') + awn(col, -24, 24, 6) + r(-19, 15, 21, 11, '#e4eef2') + r(7, 15, 11, 13, '#d9d3c3') + (sym || '');
+  const tree = (x, y) => rn(x - .7, y, 1.4, 6, L) + c(x, y - 1, 5.5, P.green, 1);
+  const cross = (x, y, s, col) => rn(x - s / 2, y - s / 6, s, s / 3, col) + rn(x - s / 6, y - s / 2, s / 3, s, col);
+  const win = (x, y, w, h) => rn(x, y, w, h, '#e4eef2');
+  return {
+    bank: () => pl('M-24 12 L0 3 L24 12 Z', '#e7e2d3') + [-18, -8, 2, 12].map(x => r(x, 13, 5, 12, '#f3f0e6')).join('') + r(-24, 25, 48, 3, '#d9d3c3') + c(0, 10, 2, P.yel, 1),
+    conv: () => shop(P.green, rn(-19, 11, 40, 3, P.orange)) .replace(/$/, rn(-17, 18, 17, 2, P.gray)),
+    post: () => shop(P.green, rn(-16, 19, 14, 6, W) + pl('M-16 19 L-9 23 L-2 19', 'none', P.red, .8)),
+    pharmacy: () => shop(P.green, cross(-8.5, 20.5, 8, P.green)),
+    park: () => tree(-14, 8) + tree(2, 5) + tree(16, 9) + rn(-22, 24, 44, 4, '#cfdccb') + r(-8, 20, 16, 2.5, P.brown),
+    cafe: () => shop(P.brown, pl('M-14 19 h9 v4 a4 4 0 0 1 -9 0 Z', W) + pl('M-5 20 q3 0 0 3', 'none') + pl('M-12 17 q1 -2 0 -3 M-8 17 q1 -2 0 -3', 'none', L, .6)),
+    bakery: () => shop(P.orange, '<ellipse cx="-8" cy="22" rx="7" ry="3.2" fill="' + P.yel + '" stroke="' + L + '" stroke-width=".8"/>' + pl('M-12 21 l2 2 M-8 20.5 l2 2.5', 'none', L, .6)),
+    book: () => shop(P.blue, [0, 1, 2, 3, 4].map(i => rn(-17 + i * 3.6, 18 + (i % 2), 3, 8 - (i % 2), [P.red, P.green, P.yel, P.blue, P.brown][i])).join('')),
+    bus: () => rn(-1, 6, 2, 22, L) + r(-6, 5, 12, 8, W) + c(0, 9, 2.5, P.red) + r(8, 14, 16, 14, '#e9eef0') + rn(8, 12, 18, 2.5, P.blue) + rn(10, 25, 2, 3, L) + rn(20, 25, 2, 3, L),
+    train: () => pl('M-26 12 Q0 -2 26 12 Z', '#d9d3c3') + r(-24, 12, 48, 16, '#f3f0e6') + c(0, 17, 4.5, W, 1) + pl('M0 14 V17 L2.2 17', 'none') + r(-16, 20, 8, 8, '#e4eef2') + r(8, 20, 8, 8, '#e4eef2') + rn(-3, 22, 6, 6, '#d9d3c3'),
+    hotel: () => r(-18, 3, 36, 25, '#f3f0e6') + [0, 1, 2].map(i => [0, 1, 2].map(j => win(-14 + j * 10, 7 + i * 6, 6, 3.5)).join('')).join('') + rn(-4, 21, 8, 7, '#d9d3c3') + rn(-12, 1, 24, 3, P.brown),
+    restaurant: () => shop(P.red, c(-9, 21, 4.5, P.red, 1) + rn(-9.6, 15.5, 1.2, 2, L) + rn(-9.6, 25.5, 1.2, 2, L)),
+    market: () => r(-25, 8, 50, 20, '#f3f0e6') + awn(P.green, -25, 25, 6) + r(-22, 15, 28, 11, '#e4eef2') + r(10, 15, 12, 13, '#d9d3c3') + pl('M-18 22 h12 l-1.5 -4 h-8 Z M-17 24.5 a1 1 0 1 0 .01 0 M-8 24.5 a1 1 0 1 0 .01 0', W),
+    breakfast: () => shop(P.yel, rn(-17, 22, 14, 3, W) + c(-10, 19.5, 3.5, P.yel, 1) + c(-10, 19.5, 1.4, P.orange)),
+    temple: () => pl('M-26 12 Q-18 12 -14 6 L14 6 Q18 12 26 12 L22 15 H-22 Z', P.red) + pl('M-18 6 Q0 -2 18 6', 'none') + [-16, -8, 8, 16].map(x => rn(x - 1.5, 15, 3, 13, P.red)).join('') + rn(-22, 28, 44, 0, L) + r(-5, 17, 10, 11, '#d9c9a0') + c(0, 4, 2, P.yel, 1),
+    snack: () => pl('M-18 11 Q0 -2 18 11 Z', P.red) + rn(-.7, 11, 1.4, 6, L) + r(-18, 17, 36, 6, '#e7e2d3') + rn(-16, 23, 3, 5, L) + rn(13, 23, 3, 5, L) + c(-8, 15, 2, P.orange) + c(0, 15, 2, P.yel) + c(8, 15, 2, P.orange),
+    fruit: () => pl('M-20 9 L20 9 L16 15 H-16 Z', P.orange) + r(-20, 16, 40, 10, '#e7e2d3') + [-14, -7, 0, 7, 14].map((x, i) => c(x, 15.5, 3.2, [P.red, P.orange, P.yel, P.green, P.red][i], 1)).join('') + rn(-16, 26, 3, 3, L) + rn(13, 26, 3, 3, L),
+    drink: () => shop(P.teal, pl('M-14 17 L-6 17 L-7.5 26 H-12.5 Z', W) + pl('M-10 17 L-8 13 H-5', 'none', P.red, 1) + rn(-12, 21, 5, 4, P.brown)),
+    nightmkt: () => pl('M-26 5 Q-13 11 0 5 Q13 11 26 5', 'none', L, .8) + [-20, -10, 0, 10, 20].map((x, i) => c(x + (i % 2 ? 0 : 0), 8 + (i % 2 ? 1 : 3) - 0, 1.8, i % 2 ? P.yel : P.orange)).join('') + r(-24, 16, 15, 12, '#e7e2d3') + r(-7, 16, 15, 12, '#e7e2d3') + r(10, 16, 14, 12, '#e7e2d3') + rn(-24, 14, 15, 3, P.red) + rn(-7, 14, 15, 3, P.yel) + rn(10, 14, 14, 3, P.green),
+    mrt: () => r(-22, 9, 44, 19, '#dfe5e2') + rn(-22, 5, 44, 5, P.teal) + pl('M-7 9 V4 L0 7.5 L7 4 V9', 'none', '#4b4a46', 1.3) + [0, 1, 2, 3].map(i => rn(-14 + i * 6, 24 - i * 2.5, 6, 4, '#b9c4c0')).join('') + r(4, 14, 14, 14, '#9db3ae') + rn(8, 14, 6, 14, '#cfdcd8'),
+    police: () => r(-20, 7, 40, 21, '#e9eef3') + rn(-20, 7, 40, 4, P.blue) + c(0, 4, 3, P.red, 1) + r(-6, 17, 12, 11, '#d9d3c3') + win(-17, 14, 8, 6) + win(9, 14, 8, 6) + c(0, 14, 1.4, P.blue),
+    school: () => r(-22, 10, 44, 18, '#f3f0e6') + r(-8, 4, 16, 24, '#ebe7da') + pl('M-8 4 L0 -1 L8 4 Z', P.red) + c(0, 10, 3, W, 1) + [-18, -14, 10, 14].map(x => win(x - 1, 15, 4, 4)).join('') + rn(-3, 21, 6, 7, '#d9d3c3') + rn(20, 3, 1, 9, L) + rn(21, 3, 5, 3.5, P.red),
+    library: () => pl('M-22 12 L0 4 L22 12 Z', '#e7e2d3') + [-16, -8, 0, 8, 16].map(x => rn(x - 1.6, 13, 3.2, 13, '#f3f0e6')).join('') + r(-22, 26, 44, 3, '#d9d3c3') + r(-4, 6.5, 8, 3.4, W) + rn(-12, 18, 3, 6, P.blue) + rn(9, 18, 3, 6, P.green),
+    hospital: () => r(-18, 3, 36, 25, '#f3f0e6') + cross(0, 11, 9, P.red) + [-12, 6].map(x => win(x, 18, 6, 4)).join('') + rn(-4, 21, 8, 7, '#d9d3c3') + [-1, 1].map(s => win(s * 12 - 3, 18, 6, 4)).join(''),
+    clinic: () => r(-18, 8, 36, 20, '#f3f0e6') + rn(-18, 8, 36, 4, P.green) + cross(-8, 20, 8, P.green) + r(4, 15, 11, 13, '#d9d3c3'),
+    noodle: () => shop(P.red, pl('M-16 20 h14 a7 7 0 0 1 -14 0 Z', W) + pl('M-12 19 q1 -3 0 -5 M-7 19 q1 -3 0 -5', 'none', L, .6)),
+    bento: () => shop(P.orange, r(-16, 19, 14, 7, '#e7e2d3') + rn(-15, 20, 6, 5, P.green) + rn(-8.5, 20, 5.5, 2.4, P.red) + rn(-8.5, 22.6, 5.5, 2.4, P.yel)),
+    dept: () => r(-24, 4, 48, 24, '#f3f0e6') + rn(-24, 4, 48, 4, P.pink) + [0, 1, 2, 3, 4].map(i => win(-20 + i * 8, 11, 5, 5)).join('') + r(-6, 19, 12, 9, '#d9d3c3') + pl('M-20 20 h10 M10 20 h10', 'none', P.pink, 1.2),
+    cinema: () => r(-22, 10, 44, 18, '#ece8dc') + rn(-22, 4, 44, 7, '#4b4a46') + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => c(-20 + i * 4.4, 7.5, 1, i % 2 ? P.yel : W)).join('') + r(-6, 17, 12, 11, '#d9d3c3') + rn(-18, 15, 8, 8, '#cfd3d9') + rn(10, 15, 8, 8, '#cfd3d9'),
+    laundry: () => shop(P.blue, c(-9, 21, 5.5, '#e4eef2', 1) + c(-9, 21, 2.6, P.blue) + rn(-14, 16.5, 4, 1.2, L)),
+    salon: () => shop(P.pink, r(-15, 16, 5, 10, W) + [0, 1, 2].map(i => pl('M-15 ' + (17 + i * 3) + ' l5 2', 'none', P.red, 1.2)).join('') + c(-4, 21, 2, P.pink, 1)),
+  };
+})();
