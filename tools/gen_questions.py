@@ -52,31 +52,37 @@ B = {
 MAPS = {
  'street': dict(
     tw='便利商店街', cn='便利商店街', es='Calle comercial', en='Shopping Street',
+    closed=[],
     blocks=[['bank', 'conv', 'post'],
             ['pharmacy', 'park', 'cafe'],
             ['bakery', 'book', 'bus']]),
  'station': dict(
     tw='車站前', cn='车站前', es='Frente a la estación', en='Station Front',
+    closed=[(1, 0, 1, 1), (2, 0, 2, 1)],      # the road in front of the station is a plaza
     blocks=[['train', 'hotel', 'restaurant'],
             ['bus', 'market', 'bank'],
             ['post', 'breakfast', 'book']]),
  'night': dict(
     tw='夜市', cn='夜市', es='Mercado nocturno', en='Night Market',
+    closed=[(0, 1, 1, 1), (2, 2, 2, 3), (2, 3, 3, 3)],   # narrow alleys and dead ends
     blocks=[['temple', 'snack', 'fruit'],
             ['drink', 'nightmkt', 'pharmacy'],
             ['mrt', 'conv', 'police']]),
  'campus': dict(
     tw='校園附近', cn='校园附近', es='Cerca de la escuela', en='Near the School',
+    closed=[(1, 1, 1, 2), (1, 2, 2, 2)],      # the playground blocks two roads
     blocks=[['school', 'library', 'park'],
             ['book', 'cafe', 'bento'],
             ['bus', 'conv', 'noodle']]),
  'hospital': dict(
     tw='醫院附近', cn='医院附近', es='Cerca del hospital', en='Near the Hospital',
+    closed=[(1, 0, 1, 1), (2, 0, 3, 0)],      # a dead-end lane
     blocks=[['hospital', 'pharmacy', 'clinic'],
             ['bus', 'park', 'breakfast'],
             ['bank', 'conv', 'post']]),
  'metro': dict(
     tw='捷運站出口', cn='捷运站出口', es='Salida del metro', en='MRT Exit',
+    closed=[(0, 2, 1, 2), (2, 0, 2, 1), (1, 2, 1, 3)],
     blocks=[['mrt', 'cafe', 'drink'],
             ['conv', 'dept', 'cinema'],
             ['bank', 'laundry', 'salon']]),
@@ -128,20 +134,44 @@ def flank(mp, x, y, d):
 def in_map(x, y):
     return 0 <= x < W and 0 <= y < H
 
+def is_open(mp, x, y, d):
+    """is there a road from (x,y) heading d?"""
+    nx, ny = x + DX[d], y + DY[d]
+    if not in_map(nx, ny):
+        return False
+    for (a, b, c, e) in MAPS[mp]['closed']:
+        if {(a, b), (c, e)} == {(x, y), (nx, ny)}:
+            return False
+    return True
+
+def degree(mp, x, y):
+    return sum(1 for d in range(4) if is_open(mp, x, y, d))
+
+def straight_through(mp, x, y, d):
+    """arriving at (x,y) heading d: a plain stretch of road (no junction, no bend, no end)?"""
+    return degree(mp, x, y) == 2 and is_open(mp, x, y, d)
+
 class Sim:
     def __init__(s, mp, x, y, d):
         s.mp, s.x, s.y, s.d = mp, x, y, d
         s.actions, s.path, s.crosses = '', [(x, y)], []
-        s.last = None            # (x,y,d) of last travelled segment
+        s.last = None            # (x,y,d) of the last travelled edge
+        s.last_len = 0           # edges walked by the last S
 
     def move(s):
-        nx, ny = s.x + DX[s.d], s.y + DY[s.d]
-        if not in_map(nx, ny):
+        """S: walk to the next stop (junction, bend or dead end); plain straight road is passed over."""
+        if not is_open(s.mp, s.x, s.y, s.d):
             return False
-        s.last = (s.x, s.y, s.d)
-        s.x, s.y = nx, ny
+        n = 0
+        while True:
+            s.last = (s.x, s.y, s.d)
+            s.x, s.y = s.x + DX[s.d], s.y + DY[s.d]
+            s.path.append((s.x, s.y))
+            n += 1
+            if not straight_through(s.mp, s.x, s.y, s.d):
+                break
+        s.last_len = n
         s.actions += 'S'
-        s.path.append((nx, ny))
         return True
 
     def turn(s, t):
@@ -149,7 +179,7 @@ class Sim:
         s.actions += t
 
     def cross(s):
-        if not in_map(s.x + DX[s.d], s.y + DY[s.d]):
+        if not is_open(s.mp, s.x, s.y, s.d) or degree(s.mp, s.x, s.y) < 3:
             return False
         s.actions += 'C'
         s.crosses.append([s.x, s.y, s.d])
@@ -302,7 +332,7 @@ def try_build(level, mp, rng):
         elif kind == 'go':
             n = rng.choice([1, 2, 2, 3])
             for _ in range(n):
-                if not sim.move():
+                if not sim.move() or degree(mp, sim.x, sim.y) < 3:
                     return None
             total += n
             steps.append(dict(kind='go', n=n, next=(len(steps) > 0 and n == 1 and rng.random() < 0.5)))
@@ -317,17 +347,23 @@ def try_build(level, mp, rng):
         elif kind == 'pass':
             side = rng.choice('LR')
             cands, cx, cy, k = [], sim.x, sim.y, 0
-            while in_map(cx + DX[sim.d], cy + DY[sim.d]):
+            while is_open(mp, cx, cy, sim.d):
                 f = flank(mp, cx, cy, sim.d)
-                k += 1
-                if f[side]:
-                    cands.append((k, f[side][0], f['L' if side == 'R' else 'R']))
-                cx, cy = cx + DX[sim.d], cy + DY[sim.d]
+                nx, ny = cx + DX[sim.d], cy + DY[sim.d]
+                if not straight_through(mp, nx, ny, sim.d):       # a place where the walker stops
+                    k += 1
+                    if f[side] and k <= 4:
+                        cands.append((k, nx, ny, f[side][0], f['L' if side == 'R' else 'R']))
+                else:
+                    pass
+                cx, cy = nx, ny
             if not cands:
                 return None
-            k, bkey, opp = rng.choice(cands)
+            k, tx, ty, bkey, opp = rng.choice(cands)
             for _ in range(k):
                 sim.move()
+            if (sim.x, sim.y) != (tx, ty):
+                return None
             total += k
             okey = opp[0] if (opp and opp[0] and rng.random() < 0.55) else None
             turn = rng.choice('LR')
@@ -341,6 +377,8 @@ def try_build(level, mp, rng):
         return None
     if (sim.x, sim.y) == (start[0], start[1]):
         return None
+    if sim.last_len != 1:
+        return None          # the destination must be beside a single block of road
     # destination
     lx, ly, ld = sim.last
     f = flank(mp, lx, ly, ld)
@@ -398,7 +436,7 @@ def main(per=12, seed=20261020):
 if __name__ == '__main__':
     qs = main()
     data = dict(buildings={k: dict(tw=v['tw'], cn=v['cn'], py=v['py'], es=v['es'], en=v['en']) for k, v in B.items()},
-                maps={k: dict(tw=v['tw'], cn=v['cn'], es=v['es'], en=v['en'], blocks=v['blocks']) for k, v in MAPS.items()},
+                maps={k: dict(tw=v['tw'], cn=v['cn'], es=v['es'], en=v['en'], blocks=v['blocks'], closed=[list(c) for c in v['closed']]) for k, v in MAPS.items()},
                 questions=qs)
     with open('questions.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))

@@ -356,7 +356,7 @@ const UI = {
     vocab: 'Vocabulario', vocabDir: 'Direcciones', vocabPlaces: 'Lugares del mapa',
     back: 'Volver', map: 'Mapa',
     mapAny: 'Aleatorio', show: 'Ayudas', showText: 'Texto', parts: 'Por partes', cross: 'Cruzar',
-    alreadyCrossed: 'Ya cruzaste aquí.', listenOnly: 'Solo escucha: pulsa 🔊', partN: 'Parte {n}/{N}', nextPart: '▶ Parte siguiente',
+    alreadyCrossed: 'Ya cruzaste aquí.', noStreet: 'Aquí no hay calle que cruzar.', listenOnly: 'Solo escucha: pulsa 🔊', partN: 'Parte {n}/{N}', nextPart: '▶ Parte siguiente',
     badCross: 'Llegaste al lugar correcto, pero no cruzaste la calle donde decía la indicación.', vocabWords: 'Palabras útiles',
   },
   en: {
@@ -390,7 +390,7 @@ const UI = {
     vocab: 'Vocabulary', vocabDir: 'Directions', vocabPlaces: 'Places on the map',
     back: 'Back', map: 'Map',
     mapAny: 'Random', show: 'Helpers', showText: 'Text', parts: 'In parts', cross: 'Cross',
-    alreadyCrossed: 'You already crossed here.', listenOnly: 'Listening only: press 🔊', partN: 'Part {n}/{N}', nextPart: '▶ Next part',
+    alreadyCrossed: 'You already crossed here.', noStreet: 'There is no street to cross here.', listenOnly: 'Listening only: press 🔊', partN: 'Part {n}/{N}', nextPart: '▶ Next part',
     badCross: "Right place, but you didn't cross the street where the directions said.", vocabWords: 'Useful words',
   },
   zh: {
@@ -424,7 +424,7 @@ const UI = {
     vocab: '詞彙', vocabDir: '方向', vocabPlaces: '地圖上的地點',
     back: '返回', map: '地圖',
     mapAny: '隨機', show: '輔助', showText: '顯示文字', parts: '分段聽', cross: '',
-    alreadyCrossed: '這裡已經過馬路了。', listenOnly: '只聽不看：請按 🔊', partN: '第 {n}/{N} 段', nextPart: '▶ 下一段',
+    alreadyCrossed: '這裡已經過馬路了。', noStreet: '這裡沒有馬路可以過。', listenOnly: '只聽不看：請按 🔊', partN: '第 {n}/{N} 段', nextPart: '▶ 下一段',
     badCross: '地點對了，但是沒有在指路說的地方過馬路。', vocabWords: '常用詞',
   },
 };
@@ -783,19 +783,45 @@ function renderMap() {
   const svg = $('#map');
   svg.setAttribute('viewBox', '-34 -34 368 368');
   let h = '';
-  for (let i = 0; i < 4; i++) {
-    h += '<line class="road" x1="-20" y1="' + i * SP + '" x2="320" y2="' + i * SP + '"/>';
-    h += '<line class="road" x1="' + i * SP + '" y1="-20" x2="' + i * SP + '" y2="320"/>';
+  const mk = q.map;
+  // open road segments (closed ones are drawn as a pedestrian plaza)
+  for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
+    [1, 2].forEach(d => {
+      const nx = x + DXS[d], ny = y + DYS[d];
+      if (nx > 3 || ny > 3) return;
+      const x1 = x * SP, y1 = y * SP, x2 = nx * SP, y2 = ny * SP;
+      if (isOpen(mk, x, y, d)) {
+        h += '<line class="road" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
+      } else {
+        const hor = d === 1;
+        const px = hor ? x1 + 14 : x1 - 12, py = hor ? y1 - 12 : y1 + 14, w = hor ? SP - 28 : 24, hh = hor ? 24 : SP - 28;
+        h += '<rect x="' + px + '" y="' + py + '" width="' + w + '" height="' + hh + '" rx="6" fill="#ebe8dc"/>';
+        const cx = x1 + (x2 - x1) / 2, cy = y1 + (y2 - y1) / 2;
+        h += '<g transform="translate(' + cx + ',' + cy + ')"><circle r="4.8" cx="' + (hor ? -12 : 0) + '" cy="' + (hor ? 0 : -12) + '" fill="#a9bfa7" stroke="#8a867c" stroke-width=".6"/><circle r="4.8" cx="' + (hor ? 12 : 0) + '" cy="' + (hor ? 0 : 12) + '" fill="#a9bfa7" stroke="#8a867c" stroke-width=".6"/></g>';
+      }
+    });
   }
-  for (let i = 0; i < 4; i++) {
-    h += '<line class="mid" x1="-20" y1="' + i * SP + '" x2="320" y2="' + i * SP + '"/>';
-    h += '<line class="mid" x1="' + i * SP + '" y1="-20" x2="' + i * SP + '" y2="320"/>';
+  for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
+    const dg = degOf(mk, x, y);
+    if (dg === 1) h += '<circle cx="' + x * SP + '" cy="' + y * SP + '" r="15" fill="var(--road)"/>';
+    if (dg >= 2) for (let d = 0; d < 4; d++) {   // stubs where a road leaves the map
+      const nx = x + DXS[d], ny = y + DYS[d];
+      if (nx >= 0 && nx <= 3 && ny >= 0 && ny <= 3) continue;
+      if (!isOpen(mk, x, y, (d + 2) % 4)) continue;
+      h += '<line class="road" x1="' + x * SP + '" y1="' + y * SP + '" x2="' + (x * SP + DXS[d] * 20) + '" y2="' + (y * SP + DYS[d] * 20) + '"/>';
+    }
   }
-  // crosswalks on every arm of every intersection
+  for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
+    [1, 2].forEach(d => {
+      const nx = x + DXS[d], ny = y + DYS[d];
+      if (nx > 3 || ny > 3 || !isOpen(mk, x, y, d)) return;
+      h += '<line class="mid" x1="' + x * SP + '" y1="' + y * SP + '" x2="' + nx * SP + '" y2="' + ny * SP + '"/>';
+    });
+  }
+  // crosswalks on every open arm of every intersection
   for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
     for (let d = 0; d < 4; d++) {
-      const nx = x + DXS[d], ny = y + DYS[d];
-      if (nx < 0 || nx > 3 || ny < 0 || ny > 3) continue;
+      if (!isOpen(mk, x, y, d)) continue;
       for (const off of [17, 23, 29]) {
         const cx = x * SP + DXS[d] * off, cy = y * SP + DYS[d] * off;
         if (DXS[d] !== 0) h += '<rect class="cw" x="' + (cx - 1.6) + '" y="' + (cy - 9) + '" width="3.2" height="18"/>';
@@ -862,13 +888,24 @@ function drawReveal() {
 }
 function redraw() { setAvatar(true); drawTrail(); drawReveal(); }
 
+/* ---------- road network ---------- */
+function isOpen(mk, x, y, d) {
+  const nx = x + DXS[d], ny = y + DYS[d];
+  if (nx < 0 || nx > 3 || ny < 0 || ny > 3) return false;
+  return !DATA.maps[mk].closed.some(c => (c[0] === x && c[1] === y && c[2] === nx && c[3] === ny) || (c[2] === x && c[3] === y && c[0] === nx && c[1] === ny));
+}
+function degOf(mk, x, y) { let n = 0; for (let d = 0; d < 4; d++) if (isOpen(mk, x, y, d)) n++; return n; }
+const plain = (mk, x, y, d) => degOf(mk, x, y) === 2 && isOpen(mk, x, y, d);   // just straight road: walking passes over it
+
 /* ---------- moving ---------- */
 function applyAction(pos, a) {
-  if (a === 'L') return { x: pos.x, y: pos.y, d: (pos.d + 3) % 4 };
-  if (a === 'R') return { x: pos.x, y: pos.y, d: (pos.d + 1) % 4 };
-  const nx = pos.x + DXS[pos.d], ny = pos.y + DYS[pos.d];
-  if (nx < 0 || nx > 3 || ny < 0 || ny > 3) return null;
-  return { x: nx, y: ny, d: pos.d };
+  if (a === 'L') return { x: pos.x, y: pos.y, d: (pos.d + 3) % 4, nodes: [] };
+  if (a === 'R') return { x: pos.x, y: pos.y, d: (pos.d + 1) % 4, nodes: [] };
+  const mk = S.q.map;                      // walk to the next stop: junction, bend or dead end
+  if (!isOpen(mk, pos.x, pos.y, pos.d)) return null;
+  let x = pos.x, y = pos.y; const nodes = [];
+  do { x += DXS[pos.d]; y += DYS[pos.d]; nodes.push([x, y]); } while (plain(mk, x, y, pos.d));
+  return { x, y, d: pos.d, nodes };
 }
 function shakeMap(msg) {
   const m = $('#map'); m.classList.remove('shake'); void m.getBoundingClientRect(); m.classList.add('shake');
@@ -880,7 +917,8 @@ function act(a) {
   if (a === 'C') {
     if (S.level < 2) return;
     if (S.cr) { toast(T('alreadyCrossed')); return; }
-    if (!applyAction(S.pos, 'S')) { shakeMap(T('noRoad')); return; }
+    if (!isOpen(S.q.map, S.pos.x, S.pos.y, S.pos.d)) { shakeMap(T('noRoad')); return; }
+    if (degOf(S.q.map, S.pos.x, S.pos.y) < 3) { toast(T('noStreet')); return; }
     S.cr = true; S.crosses.push([S.pos.x, S.pos.y, S.pos.d]); S.actions.push('C');
     setAvatar(false); drawTrail(); return;
   }
@@ -890,7 +928,7 @@ function act(a) {
     toast(T('noRoad')); return;
   }
   S.pos = np; S.actions.push(a); S.cr = false;
-  if (a === 'L') S.ang -= 90; else if (a === 'R') S.ang += 90; else S.path.push([np.x, np.y]);
+  if (a === 'L') S.ang -= 90; else if (a === 'R') S.ang += 90; else np.nodes.forEach(n => S.path.push(n));
   setAvatar(false); drawTrail();
 }
 function resetPos() {
@@ -947,7 +985,7 @@ async function replay() {
     if (a === 'C') { S.cr = true; setAvatar(false); await sleep(650); continue; }
     const np = applyAction(S.pos, a); if (!np) break;
     S.pos = np; S.cr = false;
-    if (a === 'L') S.ang -= 90; else if (a === 'R') S.ang += 90; else S.path.push([np.x, np.y]);
+    if (a === 'L') S.ang -= 90; else if (a === 'R') S.ang += 90; else np.nodes.forEach(n => S.path.push(n));
     setAvatar(false); drawTrail();
     await sleep(a === 'S' ? 700 : 480);
   }

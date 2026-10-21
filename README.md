@@ -57,6 +57,7 @@ Se puede abrir con parámetros para saltarse la pantalla de inicio, por ejemplo:
 ## Mapas
 
 Seis mapas sencillos: **便利商店街** (calle comercial), **車站前** (frente a la estación), **夜市** (mercado nocturno), **校園附近** (cerca de la escuela), **醫院附近** (cerca del hospital) y **捷運站出口** (salida del metro), con 31 lugares en total.
+Cinco de ellos tienen calles cerradas (plazas peatonales) y callejones sin salida, así que no todo es una cuadrícula perfecta. Las calles cerradas se definen en `closed` dentro de `MAPS` en `tools/gen_questions.py`. **直走** avanza hasta la siguiente parada: una intersección, una curva o el final de la calle; los tramos rectos sin cruce se pasan de largo.
 
 ---
 

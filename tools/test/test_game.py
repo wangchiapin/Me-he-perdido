@@ -39,6 +39,12 @@ with sync_playwright() as p:
     chk(pg.evaluate("__askdir.S.correct") == 0, 'missing crossing is wrong')
     chk('cruzaste' in pg.inner_text('#feedback'), 'badCross message shown')
     pg.screenshot(path=SH + '/wrongcross.png', full_page=True)
+    # closed road: walking into it is refused; dead ends exist
+    qn = next(q for q in qs if q['map']=='night')
+    pg.evaluate("q=>__askdir.loadSpecific(q)", qn)
+    pg.evaluate("q=>{const S=__askdir.S;S.pos={x:0,y:1,d:1};}", qn)
+    pg.evaluate("__askdir.act('S')")
+    chk(pg.evaluate("[__askdir.S.pos.x,__askdir.S.pos.y,__askdir.S.actions.length]") == [0,1,0], 'cannot walk along a closed road')
     # level 1 cannot cross
     q1 = next(q for q in qs if q['level'] == 1)
     pg.evaluate("q=>__askdir.loadSpecific(q)", q1)
@@ -88,6 +94,10 @@ with sync_playwright() as p:
     for a in q2['actions'][:3]: pg.evaluate("a=>__askdir.act(a)", a)
     pg.screenshot(path=SH + '/l2.png', full_page=True)
     pg.click('#btn-vocab'); pg.screenshot(path=SH + '/vocab.png', full_page=True)
+    for mp in ['street','station','night','campus','hospital','metro']:
+        qq = next(q for q in qs if q['map']==mp and q['level']==2)
+        pg.evaluate("q=>__askdir.loadSpecific(q)", qq)
+        pg.locator('.mapwrap').screenshot(path=SH + '/road_%s.png' % mp)
     chk(not errs, 'no console errors %s' % errs[:3])
     b.close()
 print('FAILS:', len(fails)); sys.exit(1 if fails else 0)

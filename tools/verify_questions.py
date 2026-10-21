@@ -15,27 +15,50 @@ def han_count(s):
 def py_count(s):
     return len(re.findall(r"[A-Za-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]+", s))
 
+closed = {m: [({(c[0], c[1]), (c[2], c[3])}) for c in maps[m]['closed']] for m in maps}
+def is_open(m, x, y, d):
+    nx, ny = x + DX[d], y + DY[d]
+    return 0 <= nx < W and 0 <= ny < H and {(x, y), (nx, ny)} not in closed[m]
+def deg(m, x, y): return sum(is_open(m, x, y, d) for d in range(4))
+
+# every map: connected, no isolated node
+for m in maps:
+    seen, stack = {(0, 0)}, [(0, 0)]
+    while stack:
+        x, y = stack.pop()
+        for d in range(4):
+            if is_open(m, x, y, d):
+                p = (x + DX[d], y + DY[d])
+                if p not in seen: seen.add(p); stack.append(p)
+    if len(seen) != W * H: errs.append((m, 'road map not connected'))
+
 for q in Q:
+    m = q['map']
     x, y, d = q['start']
-    path, crosses, lastseg, bad = [[x, y]], [], None, False
+    path, crosses, lastseg, lastlen, bad = [[x, y]], [], None, 0, False
     for a in q['actions']:
         if a == 'L': d = (d + 3) % 4
         elif a == 'R': d = (d + 1) % 4
         elif a == 'C':
-            if not (0 <= x + DX[d] < W and 0 <= y + DY[d] < H):
-                errs.append((q['id'], 'crosses where there is no road')); bad = True; break
+            if not is_open(m, x, y, d) or deg(m, x, y) < 3:
+                errs.append((q['id'], 'crosses where there is no street to cross / no road ahead')); bad = True; break
             crosses.append([x, y, d])
         else:
-            lastseg = (x, y, d)
-            x, y = x + DX[d], y + DY[d]
-            if not (0 <= x < W and 0 <= y < H):
-                errs.append((q['id'], 'walks off map')); bad = True; break
-            path.append([x, y])
+            if not is_open(m, x, y, d):
+                errs.append((q['id'], 'walks along a closed road')); bad = True; break
+            n = 0
+            while True:
+                lastseg = (x, y, d)
+                x, y = x + DX[d], y + DY[d]
+                path.append([x, y]); n += 1
+                if not (deg(m, x, y) == 2 and is_open(m, x, y, d)): break
+            lastlen = n
     if not bad:
         if [x, y, d] != q['end']: errs.append((q['id'], 'end mismatch'))
         if path != q['path']: errs.append((q['id'], 'path mismatch'))
         if crosses != q['crosses']: errs.append((q['id'], 'crosses mismatch'))
         if q['actions'][-1] != 'S': errs.append((q['id'], 'last action is not a walk'))
+        if lastlen != 1: errs.append((q['id'], 'last walk is longer than one block'))
         # every crossing must be followed by a walk
         for m in re.finditer('C', q['actions']):
             if q['actions'][m.end():m.end() + 1] != 'S': errs.append((q['id'], 'crossing not followed by a walk'))
