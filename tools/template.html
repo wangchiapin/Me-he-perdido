@@ -7,6 +7,7 @@
 <style>
 :root{--bg:#f6f4ee;--card:#fffefa;--ink:#2b2b2b;--muted:#8a867c;--line:#dcd8cd;--road:#e7e3d9;--ok:#6f8f72;--bad:#b5736a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{padding-bottom:26px}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,"Segoe UI",sans-serif}
 button,input{font:inherit;color:inherit;touch-action:manipulation}
 #app{max-width:520px;margin:0 auto;padding:12px 14px calc(18px + env(safe-area-inset-bottom))}
@@ -305,7 +306,7 @@ const FIREBASE_CONFIG = {      // 連到 memorma-24dab（和翻牌記憶、收�
   messagingSenderId: "806709458465",
   appId: "1:806709458465:web:f0d12acb2f911f2f165560"
 };
-const LB_PREFIX = 'askDirections_L';   // Firestore collections: askDirections_L1 … L4
+const LB_PREFIX = 'askDirections_L';   // Firestore collections: askDirections_L1 … L5
 const GA_ID = '';               // GA4 measurement id, e.g. 'G-XXXXXXXXXX'
 
 /* ---------- helpers ---------- */
@@ -499,6 +500,8 @@ function readShared() {
   try { saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); } catch (e) {}
   if (saved && typeof saved === 'object') {
     Object.keys(SET_OPTS).forEach(k => { if (SET_OPTS[k].includes(saved[k])) out[k] = saved[k]; });
+  } else {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(Object.assign({ v: 1 }, out))); } catch (e) {}   // 和共用零件一致：第一次就寫入預設值
   }
   return out;
 }
@@ -638,7 +641,8 @@ function speak(text) {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'zh-TW'; u.rate = RATE_VALUE[S.rate] || RATE_VALUE.normal;
-    const v = voices.find(v => /zh[-_]TW/i.test(v.lang)) || voices.find(v => /^zh/i.test(v.lang) && !/^(yue|zh[-_]hk)/i.test(v.lang));   // 排除廣東話
+    const okv = v => /^(zh|cmn)/i.test(v.lang) && !/^(yue|zh[-_]hk)/i.test(v.lang);   // 只選國語，排除廣東話
+    const v = voices.find(v => /^(zh|cmn)[-_]TW/i.test(v.lang)) || voices.find(okv);
     if (v) u.voice = v;
     speechSynthesis.speak(u);
   } catch (e) {}
