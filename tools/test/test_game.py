@@ -1,7 +1,8 @@
-import json, sys, os
+import json, re, sys, os
 from playwright.sync_api import sync_playwright
 URL = 'file://' + os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'index.html'))
 SH = '/tmp/shots'
+os.makedirs(SH, exist_ok=True)
 fails = []
 def chk(c, m):
     print(('PASS ' if c else 'FAIL ') + m)
@@ -113,8 +114,20 @@ with sync_playwright() as p:
     lb = pg.evaluate("localStorage.getItem('askdir_lb')")
     chk('Ana' in (lb or ''), 'local leaderboard saved')
     # screenshots of a level-2 question with pinyin
-    pg.evaluate("__askdir.S.pinyin=true")
     q2 = next(q for q in qs if q['level'] == 2 and q['crosses'])
+    # 拼音注音四種都要真的測：畫面上有沒有出現拼音聲調字母／注音符號
+    # （門檻：有顯示 ≥30 個；沒顯示時 ≤15，西班牙文的重音字母 ó é í 會佔幾個）
+    PY = re.compile('[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]'); ZY = re.compile('[ㄅ-ㄩ]')
+    for ph, want_py, want_zy in (('pinyin', True, False), ('zhuyin', False, True), ('both', True, True), ('off', False, False)):
+        pg.evaluate("v=>{__askdir.S.phon=v}", ph)
+        pg.evaluate("q=>__askdir.loadSpecific(q)", q2)
+        for a in q2['actions'][:3]: pg.evaluate("a=>__askdir.act(a)", a)
+        pg.wait_for_timeout(250)
+        txt = pg.inner_text('body'); npy = len(PY.findall(txt)); nzy = len(ZY.findall(txt))
+        chk((npy >= 30) == want_py and (npy <= 15 or want_py), '拼音注音=%s：拼音字母 %d 個，應該%s' % (ph, npy, '有' if want_py else '沒有'))
+        chk((nzy >= 30) == want_zy and (nzy <= 15 or want_zy), '拼音注音=%s：注音符號 %d 個，應該%s' % (ph, nzy, '有' if want_zy else '沒有'))
+        pg.screenshot(path=SH + '/l2_%s.png' % ph, full_page=True)
+    pg.evaluate("__askdir.S.phon='pinyin'")
     pg.evaluate("q=>__askdir.loadSpecific(q)", q2)
     for a in q2['actions'][:3]: pg.evaluate("a=>__askdir.act(a)", a)
     pg.screenshot(path=SH + '/l2.png', full_page=True)
