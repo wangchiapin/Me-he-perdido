@@ -800,7 +800,7 @@ function renderStart() {
   $('#l-script').textContent = T('script');
   chips('#c-script', [{ v: 'trad', label: '繁體' }, { v: 'simp', label: '简体' }], S.script, v => { S.script = v; saveSettings(); renderStart(); });
   $('#l-lang').textContent = T('lang');
-  chips('#c-lang', [{ v: 'es', label: isZh() ? (S.script === 'trad' ? '西班牙文' : '西班牙文') : 'Español' }, { v: 'en', label: isZh() ? '英文' : 'English' }, { v: 'zh', label: S.script === 'trad' ? '中文' : '中文' }], S.lang, v => { S.lang = v; saveSettings(); renderStart(); });
+  chips('#c-lang', [{ v: 'es', label: '中文＋' + (isZh() ? '西班牙文' : 'Español') }, { v: 'en', label: '中文＋' + (isZh() ? '英文' : 'English') }, { v: 'zh', label: '只有中文' }], S.lang, v => { S.lang = v; saveSettings(); renderStart(); });
   $('#l-map').textContent = T('map');
   chips('#c-map', [{ v: 'any', label: T('mapAny') }].concat(Object.keys(DATA.maps).map(k => ({ v: k, label: mapLabel(k) }))), S.map, v => { S.map = v; saveSettings(); renderStart(); });
   $('#l-show').textContent = T('show');
