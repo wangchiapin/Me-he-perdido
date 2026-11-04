@@ -40,7 +40,7 @@ input.name.err{border-color:var(--bad)}
 .topmid{text-align:center;line-height:1.25}
 .topmid b{font-size:14px;display:block}
 .topmid span{font-size:12px;color:var(--muted)}
-#score{font-size:13px;min-width:70px;text-align:right}
+#score{font-size:13px;min-width:44px;text-align:right}
 .bar{height:3px;background:var(--line);border-radius:3px;margin:8px 0 10px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--ink);width:0;transition:width .3s}
 .zh{font-size:19px;line-height:1.75;letter-spacing:.03em}
@@ -126,6 +126,16 @@ table.lb td,table.lb th{padding:8px 4px;border-bottom:1px solid var(--line);text
 table.lb th{font-size:12px;color:var(--muted);font-weight:500}
 table.lb td:nth-child(1){width:30px;color:var(--muted)}
 table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table.lb th:nth-child(4){text-align:right}
+.iconbar{display:flex;gap:6px;align-items:center}
+.iconbar .mini{padding:5px 9px;font-size:16px;line-height:1}
+.startbar{display:flex;justify-content:flex-end;margin-bottom:-6px}
+.topr{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.modal{position:fixed;inset:0;background:rgba(43,43,43,.38);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:520px;max-height:86vh;overflow:auto;border-radius:20px 20px 0 0;padding:14px 16px calc(20px + env(safe-area-inset-bottom))}
+.sheethead{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.sheethead b{font-size:17px}
+.help{margin:6px 0 0;padding:0;list-style:none}
+.help li{font-size:14.5px;line-height:1.6;margin:9px 0}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
 .toast.on{opacity:.95}
 </style>
@@ -135,6 +145,7 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
 
 <!-- ============ START ============ -->
 <section id="s-start" class="screen on">
+  <div class="startbar"><span class="iconbar"><button class="mini" id="i-set"></button><button class="mini" id="i-help"></button></span></div>
   <h1 id="ttl">問路小達人</h1>
   <p class="sub" id="ttlsub"></p>
   <p class="muted" id="tag"></p>
@@ -142,23 +153,8 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
   <div class="lbl" id="l-name"></div>
   <input id="name" class="name" maxlength="14" autocomplete="off">
 
-  <div class="lbl" id="l-script"></div>
-  <div class="chips" id="c-script"></div>
-
-  <div class="lbl" id="l-lang"></div>
-  <div class="chips" id="c-lang"></div>
-
   <div class="lbl" id="l-map"></div>
   <div class="chips" id="c-map"></div>
-
-  <div class="lbl" id="l-show"></div>
-  <div class="chips" id="c-show"></div>
-
-  <div class="lbl" id="l-phon"></div>
-  <div class="chips" id="c-phon"></div>
-
-  <div class="lbl" id="l-rate"></div>
-  <div class="chips" id="c-rate"></div>
 
   <div class="lbl" id="l-level"></div>
   <div class="levels" id="levels"></div>
@@ -171,7 +167,7 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
   <div class="top">
     <button class="mini" id="btn-restart"></button>
     <div class="topmid"><b id="lvname"></b><span id="prog"></span></div>
-    <div id="score"></div>
+    <div class="topr"><span id="score"></span><span class="iconbar"><button class="mini" id="g-set"></button><button class="mini" id="g-help"></button></span></div>
   </div>
   <div class="bar"><i id="barfill"></i></div>
 
@@ -245,6 +241,24 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
 
 </div>
 <div class="toast" id="toast"></div>
+<div class="modal hidden" id="modal">
+  <div class="sheet" role="dialog" aria-modal="true">
+    <div class="sheethead"><b id="m-title"></b><button class="mini" id="m-close" aria-label="close">✕</button></div>
+    <div id="pane-set" class="hidden">
+      <div class="lbl" id="l-script"></div>
+      <div class="chips" id="c-script"></div>
+      <div class="lbl" id="l-lang"></div>
+      <div class="chips" id="c-lang"></div>
+      <div class="lbl" id="l-show"></div>
+      <div class="chips" id="c-show"></div>
+      <div class="lbl" id="l-phon"></div>
+      <div class="chips" id="c-phon"></div>
+      <div class="lbl" id="l-rate"></div>
+      <div class="chips" id="c-rate"></div>
+    </div>
+    <ol id="pane-help" class="help hidden"></ol>
+  </div>
+</div>
 
 <script>
 
@@ -349,6 +363,16 @@ const UI = {
     level: 'Elige un nivel',
     lv: ['Nivel 1', 'Nivel 2', 'Nivel 3', 'Nivel 4', 'Nivel 5'],
     lvd: ['Recto, izquierda y derecha', 'Contar esquinas y cruzar la calle', 'Izquierda, derecha, enfrente, al lado', 'Indicaciones largas, todo junto', 'Barrio real: calles en diagonal, rotonda y Y'],
+    settings: 'Ajustes', helpT: 'Cómo jugar', close: 'Cerrar',
+    helpL: [
+      '🎧 Pulsa «🔊 Escuchar» para oír las indicaciones. También puedes ver el texto y el pinyin.',
+      '🚶 Camina con los botones de abajo: «Recto» te lleva hasta la siguiente esquina o curva; «Izquierda» y «Derecha» solo giran.',
+      '🚦 Desde el nivel 2, cuando oigas «cruzar la calle», llega a esa esquina y pulsa el botón de cruzar.',
+      '🔄 Nivel 5, rotondas: entra en la rotonda y pulsa el botón de la salida (se cuentan en sentido contrario a las agujas del reloj).',
+      '✅ Al llegar al destino, pulsa «¡Llegué!». Si aciertas, ganas 10 puntos.',
+      '↺ Si te equivocas, pulsa «Reintentar» para volver al inicio.',
+      '⚙ En Ajustes puedes cambiar la escritura, el idioma, la lectura y la velocidad. El ranking está en la pantalla de inicio.',
+    ],
     board: 'Clasificación', restart: '↻ Reiniciar',
     q: 'Pregunta {n}/{N}', pts: '{s} puntos',
     listen: '🔊 Escuchar', left: 'Izquierda', straight: 'Recto', right: 'Derecha',
@@ -385,6 +409,16 @@ const UI = {
     level: 'Choose a level',
     lv: ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5'],
     lvd: ['Straight, left and right', 'Count intersections, cross the street', 'Left, right, across, next to', 'Longer directions, all together', 'Real streets: diagonals, roundabout, Y-fork'],
+    settings: 'Settings', helpT: 'How to play', close: 'Close',
+    helpL: [
+      '🎧 Tap “🔊 Listen” to hear the directions. You can also show the text and pinyin.',
+      '🚶 Walk with the buttons below: “Straight” takes you to the next intersection or bend; “Left” and “Right” only turn you.',
+      '🚦 From level 2, when you hear “cross the street”, walk to that intersection and tap the cross button.',
+      '🔄 Level 5, roundabouts: walk into the roundabout, then tap the exit button (exits are counted counter-clockwise).',
+      '✅ When you reach the destination, tap “I\'m here!”. A correct answer earns 10 points.',
+      '↺ If you go wrong, tap “Try again” to go back to the start.',
+      '⚙ In Settings you can change the script, language, phonetics and speech speed. The leaderboard is on the start screen.',
+    ],
     board: 'Leaderboard', restart: '↻ Restart',
     q: 'Question {n}/{N}', pts: '{s} points',
     listen: '🔊 Listen', left: 'Left', straight: 'Straight', right: 'Right',
@@ -421,6 +455,16 @@ const UI = {
     level: '選擇關卡',
     lv: ['第一級', '第二級', '第三級', '第四級', '第五級'],
     lvd: ['直走、左轉、右轉', '數路口、過馬路', '左邊、右邊、對面、旁邊', '比較長的指路，全部一起用', '真實街區：斜路、圓環、Y字路口'],
+    settings: '設定', helpT: '遊戲說明', close: '關閉',
+    helpL: [
+      '🎧 先按「🔊 聽」，聽指路的話。也可以顯示文字和讀音。',
+      '🚶 用下面的按鈕走路：直走＝走到下一個路口或轉角；左轉、右轉＝只轉向，不會移動。',
+      '🚦 第二級以後，聽到「過馬路」就走到那個路口，按「過馬路」按鈕。',
+      '🔄 第五級的圓環：先走進圓環，再按出口按鈕（出口是逆時針數）。',
+      '✅ 走到目的地，按「我到了！」。答對得 10 分。',
+      '↺ 走錯了，按「重走」回到起點重來。',
+      '⚙ 在「設定」可以換字體、語言、讀音和語音速度。排行榜在開始頁。',
+    ],
     board: '排行榜', restart: '↻ 重來',
     q: '第 {n}/{N} 題', pts: '{s} 分',
     listen: '🔊 聽', left: '', straight: '', right: '',
@@ -449,7 +493,7 @@ const UI = {
   },
 };
 // simplified-character version of the Chinese-only UI (made from the traditional one)
-const S2T = { '問': '问', '聽': '听', '機': '机', '選': '选', '關': '关', '數': '数', '過': '过', '馬': '马', '綜': '综', '戰': '战', '邊': '边', '對': '对', '長': '长', '個': '个', '較': '较', '話': '话', '點': '点', '區': '区', '請': '请', '輸': '输', '體': '体', '語': '语', '讀': '读', '顯': '显', '鍵': '键', '點': '点', '榜': '榜', '題': '题', '裝': '装', '儲': '储', '這': '这', '臺': '台', '還': '还', '詞': '词', '彙': '汇', '圖': '图', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '線': '线', '錯': '错', '面': '面', '開': '开', '結': '结', '時': '时', '間': '间', '換': '换', '會': '会', '們': '们', '學': '学', '全': '全', '樣': '样', '幾': '几', '雙': '双', '當': '当', '築': '筑', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '別': '别', '對': '对', '應': '应', '給': '给', '蓋': '盖', '運': '运', '動': '动', '現': '现', '後': '后', '來': '来', '終': '终', '離': '离', '轉': '转', '帶': '带', '張': '张', '燈': '灯', '見': '见', '買': '买', '賣': '卖', '總': '总', '業': '业', '傳': '传', '極': '极', '處': '处', '準': '准', '須': '须', '標': '标', '導': '导', '歷': '历', '錄': '录', '無': '无', '難': '难', '電': '电', '腦': '脑', '為': '为', '與': '与', '確': '确', '鐘': '钟', '覺': '觉', '實': '实', '麵': '面', '館': '馆', '藥': '药', '書': '书', '車': '车', '買': '买', '軌': '轨', '號': '号', '單': '单', '務': '务', '員': '员', '辦': '办', '歡': '欢', '迎': '迎', '遊': '游', '戲': '戏', '樓': '楼', '層': '层', '導': '导', '檢': '检', '測': '测', '試': '试', '驗': '验', '紀': '纪', '錄': '录', '據': '据', '統': '统', '計': '计', '劃': '划', '設': '设', '備': '备', '類': '类', '種': '种', '終': '终', '義': '义', '網': '网', '頁': '页', '絡': '络', '連': '连', '續': '续', '擊': '击', '碼': '码', '終': '终', '則': '则', '規': '规', '範': '范', '圍': '围', '盡': '尽', '與': '与' };
+const S2T = { '級': '级', '針': '针', '說': '说', '閉': '闭', '鈕': '钮', '從': '从', '進': '进', '項': '项', '問': '问', '聽': '听', '機': '机', '選': '选', '關': '关', '數': '数', '過': '过', '馬': '马', '綜': '综', '戰': '战', '邊': '边', '對': '对', '長': '长', '個': '个', '較': '较', '話': '话', '點': '点', '區': '区', '請': '请', '輸': '输', '體': '体', '語': '语', '讀': '读', '顯': '显', '鍵': '键', '點': '点', '榜': '榜', '題': '题', '裝': '装', '儲': '储', '這': '这', '臺': '台', '還': '还', '詞': '词', '彙': '汇', '圖': '图', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '線': '线', '錯': '错', '面': '面', '開': '开', '結': '结', '時': '时', '間': '间', '換': '换', '會': '会', '們': '们', '學': '学', '全': '全', '樣': '样', '幾': '几', '雙': '双', '當': '当', '築': '筑', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '別': '别', '對': '对', '應': '应', '給': '给', '蓋': '盖', '運': '运', '動': '动', '現': '现', '後': '后', '來': '来', '終': '终', '離': '离', '轉': '转', '帶': '带', '張': '张', '燈': '灯', '見': '见', '買': '买', '賣': '卖', '總': '总', '業': '业', '傳': '传', '極': '极', '處': '处', '準': '准', '須': '须', '標': '标', '導': '导', '歷': '历', '錄': '录', '無': '无', '難': '难', '電': '电', '腦': '脑', '為': '为', '與': '与', '確': '确', '鐘': '钟', '覺': '觉', '實': '实', '麵': '面', '館': '馆', '藥': '药', '書': '书', '車': '车', '買': '买', '軌': '轨', '號': '号', '單': '单', '務': '务', '員': '员', '辦': '办', '歡': '欢', '迎': '迎', '遊': '游', '戲': '戏', '樓': '楼', '層': '层', '導': '导', '檢': '检', '測': '测', '試': '试', '驗': '验', '紀': '纪', '錄': '录', '據': '据', '統': '统', '計': '计', '劃': '划', '設': '设', '備': '备', '類': '类', '種': '种', '終': '终', '義': '义', '網': '网', '頁': '页', '絡': '络', '連': '连', '續': '续', '擊': '击', '碼': '码', '終': '终', '則': '则', '規': '规', '範': '范', '圍': '围', '盡': '尽', '與': '与' };
 const zhSimp = o => { const r = {}; for (const k in o) r[k] = typeof o[k] === 'string' ? [...o[k]].map(c => S2T[c] || c).join('') : o[k].map(x => [...x].map(c => S2T[c] || c).join('')); return r; };
 UI.zhs = zhSimp(UI.zh);
 const WORDS = {
@@ -667,6 +711,21 @@ function chips(sel, items, cur, pick) {
     el.appendChild(b);
   });
 }
+function iconLabels() {
+  [['#i-set', '#g-set', '⚙', 'settings'], ['#i-help', '#g-help', '❓', 'helpT']].forEach(([a, b, ic, k]) => { [a, b].forEach(id => { const el = $(id); el.textContent = ic; el.title = T(k); el.setAttribute('aria-label', T(k)); }); });
+  $('#m-close').setAttribute('aria-label', T('close'));
+  if (!$('#modal').classList.contains('hidden')) openModal(modalKind);
+}
+let modalKind = 'set';
+function openModal(kind) {
+  modalKind = kind;
+  $('#m-title').textContent = T(kind === 'set' ? 'settings' : 'helpT');
+  $('#pane-set').classList.toggle('hidden', kind !== 'set');
+  const hp = $('#pane-help'); hp.classList.toggle('hidden', kind !== 'help');
+  if (kind === 'help') { hp.innerHTML = ''; T('helpL').forEach(t => { const li = document.createElement('li'); li.textContent = t; hp.appendChild(li); }); }
+  $('#modal').classList.remove('hidden');
+}
+function closeModal() { $('#modal').classList.add('hidden'); }
 function renderStart() {
   document.documentElement.lang = isZh() ? (S.script === 'trad' ? 'zh-TW' : 'zh-CN') : S.lang;
   $('#ttl').textContent = S.script === 'trad' ? '問路小達人' : '问路小达人';
@@ -703,6 +762,8 @@ function renderStart() {
     lv.appendChild(b);
   }
   $('#btn-board').textContent = '🏆 ' + T('board');
+  iconLabels();
+  if ($('#s-game').classList.contains('on') && S.q) refreshAll();
 }
 
 /* ---------- game ---------- */
@@ -1433,6 +1494,11 @@ function bind() {
   $('#btn-rate').onclick = () => { const o = ['slow', 'normal', 'fast']; S.rate = o[(o.indexOf(S.rate) + 1) % 3]; saveSettings(); $('#btn-rate').textContent = '⏱ ' + T(S.rate); speakCurrent(); };
   $('#btn-vocab').onclick = toggleVocab;
   $('#btn-restart').onclick = () => { stopSpeech(); startGame(S.level); };
+  ['#i-set', '#g-set'].forEach(id => { $(id).onclick = () => openModal('set'); });
+  ['#i-help', '#g-help'].forEach(id => { $(id).onclick = () => openModal('help'); });
+  $('#m-close').onclick = closeModal;
+  $('#modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
   $('#btn-board').onclick = () => openBoard(1);
   $('#r-again').onclick = () => startGame(S.level);
   $('#r-board').onclick = () => openBoard(S.level);
