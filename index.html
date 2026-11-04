@@ -76,6 +76,7 @@ input.name.err{border-color:var(--bad)}
 .cwm{stroke:#8a867c;stroke-width:5;stroke-linecap:round}
 .cwm-ok{stroke:var(--ok);stroke-width:6;stroke-linecap:round}
 .cwm-bad{stroke:var(--bad);stroke-width:6;stroke-linecap:round;stroke-dasharray:2 5}
+.goalmk circle,.goalmk path{fill:var(--ok)}.goalmk circle:last-child{fill:#fffefa}.goalmk{opacity:.92}
 .startring{fill:none;stroke:var(--ink);stroke-width:1.2;stroke-dasharray:3 3}
 #av,#avr{transition:transform .38s ease}
 #av.nt,#avr.nt{transition:none}
@@ -548,7 +549,7 @@ const WTR = {
 const S = {
   name: '', script: 'trad', lang: 'es', phon: 'pinyin', rate: 'normal', map: 'any', showText: true, partMode: false,
   level: 1, qs: [], qi: 0, q: null, correct: 0, results: [], totalMs: 0, qStart: 0,
-  cam: 'follow', pos: null, ang: 0, path: [], actions: [], crosses: [], cr: false, partIdx: 0, locked: false, busy: false, reveal: null,
+  cam: 'follow', pos: null, ang: 0, path: [], actions: [], crosses: [], cr: false, partIdx: 0, locked: false, busy: false, reveal: null, atGoal: false,
 };
 const DEVICE = (() => {
   try {
@@ -838,7 +839,7 @@ function renderSentence() {
 function loadQuestion() {
   const q = S.qs[S.qi]; S.q = q;
   initPos(q); S.actions = []; S.crosses = []; S.cr = false; S.partIdx = 0;
-  S.locked = false; S.busy = false; S.reveal = null;
+  S.locked = false; S.busy = false; S.reveal = null; S.atGoal = false;
   $('#feedback').classList.add('hidden'); $('#feedback').innerHTML = '';
   $('#controls').classList.remove('off'); $('#row2').classList.remove('off');
   $('#vocab').classList.add('hidden');
@@ -972,11 +973,29 @@ function renderMap() {
   h += '<g id="av"><g id="avr"><circle class="avc" r="11"/><path class="avt" d="M0 -22 L7 -11 L-7 -11 Z"/><circle r="3.4" fill="#fffefa"/></g></g>';
   svg.innerHTML = h;
 }
+function goalSpot() {            // beside the destination: halfway along the last road, facing the way you walked
+  const q = S.q;
+  if (q.graph) {
+    const m = gM(), n = q.end[0], e = q.end[1], p = gOpts(m, e, gOth(m, e, n)), bp = m.bpos && m.bpos[q.target];
+    let best = null;
+    for (let i = 1; i < p.length; i++) {      // the point on the last road closest to the building
+      const x0 = p[i - 1][0], y0 = p[i - 1][1], dx = p[i][0] - x0, dy = p[i][1] - y0, l2 = dx * dx + dy * dy;
+      const ref = bp || [(x0 + p[i][0]) / 2, (y0 + p[i][1]) / 2];
+      const t = l2 ? Math.max(0, Math.min(1, ((ref[0] - x0) * dx + (ref[1] - y0) * dy) / l2)) : 0;
+      const x = x0 + dx * t, y = y0 + dy * t, dist = Math.hypot(ref[0] - x, ref[1] - y);
+      if (!best || dist < best[0]) best = [dist, x, y, gBrg(p[i - 1], p[i]) + 90];
+    }
+    return [best[1], best[2], best[3]];
+  }
+  const b = nodeXY(q.map, q.end[0], q.end[1]), d = q.end[2];
+  return [b[0] - DXS[d] * SP / 2, b[1] - DYS[d] * SP / 2, d * 90];
+}
 function setAvatar(instant) {
   const av = $('#av'), avr = $('#avr'); if (!av) return;
   if (instant) { av.classList.add('nt'); avr.classList.add('nt'); }
   let ax, ay;
-  if (S.q.graph) { [ax, ay] = gAvatarXY(); }
+  if (S.atGoal) { const g = goalSpot(); ax = g[0]; ay = g[1]; if (S.q.graph) S.ang += gAd(S.ang, g[2]); }
+  else if (S.q.graph) { [ax, ay] = gAvatarXY(); }
   else { const off = S.cr ? 24 : 0, base = nodeXY(S.q.map, S.pos.x, S.pos.y); ax = base[0] + DXS[S.pos.d] * off; ay = base[1] + DYS[S.pos.d] * off; }
   S.axy = [ax, ay];
   av.style.transform = 'translate(' + ax + 'px,' + ay + 'px)';
@@ -1006,6 +1025,7 @@ function drawReveal() {
   h += mk('rt-ok', S.q.path);
   if (!S.reveal.ok) h += S.reveal.crosses.map(c => crossMark(c, 'cwm-bad')).join('');
   h += S.q.crosses.map(c => crossMark(c, 'cwm-ok')).join('');
+  if (!S.reveal.ok) { const gs = goalSpot(); h += '<g class="goalmk" transform="translate(' + gs[0] + ',' + gs[1] + ') rotate(' + gs[2] + ')"><circle r="11"/><path d="M0 -22 L7 -11 L-7 -11 Z"/><circle r="3.4" fill="#fffefa"/></g>'; }
   g.innerHTML = h;
   const b = document.querySelector('.bld[data-k="' + S.q.target + '"]');
   if (b) b.classList.add('hl');
@@ -1245,7 +1265,7 @@ function renderGraph() {
 function resetPos() {
   if (S.locked || S.busy) return;
   const q = S.q;
-  initPos(q); S.actions = []; S.crosses = []; S.cr = false;
+  initPos(q); S.actions = []; S.crosses = []; S.cr = false; S.atGoal = false;
   setAvatar(true); drawTrail(); updateExits();
 }
 function submit() {
@@ -1260,9 +1280,10 @@ function submit() {
   if (ok) S.correct++;
   S.results.push({ ok, q });
   S.reveal = { ok, sameNode, faceOK, student: S.path.slice(), crosses: S.crosses.slice() };
+  S.atGoal = ok;
   $('#controls').classList.add('off'); $('#row2').classList.add('off');
   renderSentence();
-  drawTrail(); drawReveal(); stopSpeech(); updateExits();
+  drawTrail(); drawReveal(); setAvatar(false); stopSpeech(); updateExits();
   if (q.graph) setCam(false);
   renderFeedback();
   track('answer', { level: S.level, id: q.id, correct: ok ? 1 : 0 });
@@ -1289,7 +1310,7 @@ async function replay() {
   if (S.busy) return;
   S.busy = true;
   const q = S.q;
-  initPos(q); S.cr = false; setAvatar(true); drawTrail();
+  S.atGoal = false; initPos(q); S.cr = false; setAvatar(true); drawTrail();
   await sleep(450);
   for (const a of q.actions) {
     if (q.graph) { const gp = gApply(a); if (!gp) break; if (a === 'C') { S.cr = true; } else { gSetPos(gp); S.cr = false; } setAvatar(false); drawTrail(); await sleep(a === 'C' ? 650 : (a === 'S' || /[1-4]/.test(a) ? 700 : 480)); continue; }
@@ -1301,6 +1322,7 @@ async function replay() {
     setAvatar(false); drawTrail();
     await sleep(a === 'S' || /[123]/.test(a) ? 700 : 480);
   }
+  S.atGoal = true; setAvatar(false); await sleep(700);
   S.busy = false;
 }
 function nextQuestion() {
