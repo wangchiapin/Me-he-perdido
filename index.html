@@ -76,7 +76,7 @@ input.name.err{border-color:var(--bad)}
 .cwm{stroke:#8a867c;stroke-width:5;stroke-linecap:round}
 .cwm-ok{stroke:var(--ok);stroke-width:6;stroke-linecap:round}
 .cwm-bad{stroke:var(--bad);stroke-width:6;stroke-linecap:round;stroke-dasharray:2 5}
-.goalmk circle,.goalmk path{fill:var(--ok)}.goalmk circle:last-child{fill:#fffefa}.goalmk{opacity:.92}
+.goalmk{opacity:.85}.gring{fill:none;stroke:var(--ok);stroke-width:2.5;stroke-dasharray:4 3}.goalmk .avp{filter:saturate(.6)}
 .startring{fill:none;stroke:var(--ink);stroke-width:1.2;stroke-dasharray:3 3}
 #av,#avr{transition:transform .38s ease}
 #av.nt,#avr.nt{transition:none}
@@ -432,7 +432,7 @@ const UI = {
     settings: 'Ajustes', helpT: 'Cómo jugar', close: 'Cerrar',
     helpL: [
       '🎧 Pulsa «🔊 Escuchar» para oír las indicaciones. También puedes ver el texto y el pinyin.',
-      '🚶 Camina con los botones de abajo: «Recto» te lleva hasta la siguiente esquina o curva; «Izquierda» y «Derecha» solo giran.',
+      '🚶 Camina con los botones de abajo: «Recto» te lleva hasta justo antes de la siguiente esquina o curva; «Izquierda» y «Derecha» giran en la esquina.',
       '🚦 Desde el nivel 2, cuando oigas «cruzar la calle», llega a esa esquina y pulsa el botón de cruzar.',
       '🔄 Nivel 5, rotondas: entra en la rotonda y pulsa el botón de la salida (se cuentan en sentido contrario a las agujas del reloj).',
       '✅ Al llegar al destino, pulsa «¡Llegué!». Si aciertas, ganas 10 puntos.',
@@ -447,7 +447,7 @@ const UI = {
     badFace: 'Llegaste al lugar correcto, pero miras hacia otro lado.',
     yourRoute: 'Tu ruta', rightRoute: 'Ruta correcta',
     watch: '▶ Ver la ruta', next: 'Siguiente →', finish: 'Ver resultado',
-    hint1: '{straight} = avanzar hasta la siguiente esquina.',
+    hint1: '{straight} = avanzar hasta justo antes de la siguiente esquina.',
     hint2: 'Las esquinas se cuentan desde donde estás. Cuando oigas {cross}, pulsa el botón de cruzar al llegar a esa esquina.',
     hint3: 'Mira el mapa: ¿qué edificio queda a tu izquierda o a tu derecha mientras caminas? Si oyes {cross}, pulsa el botón de cruzar.',
     hint4: 'Combina todo lo aprendido. ¡Tú puedes!',
@@ -478,7 +478,7 @@ const UI = {
     settings: 'Settings', helpT: 'How to play', close: 'Close',
     helpL: [
       '🎧 Tap “🔊 Listen” to hear the directions. You can also show the text and pinyin.',
-      '🚶 Walk with the buttons below: “Straight” takes you to the next intersection or bend; “Left” and “Right” only turn you.',
+      '🚶 Walk with the buttons below: “Straight” takes you to just before the next intersection or bend; “Left” and “Right” turn you at the intersection.',
       '🚦 From level 2, when you hear “cross the street”, walk to that intersection and tap the cross button.',
       '🔄 Level 5, roundabouts: walk into the roundabout, then tap the exit button (exits are counted counter-clockwise).',
       '✅ When you reach the destination, tap “I\'m here!”. A correct answer earns 10 points.',
@@ -493,7 +493,7 @@ const UI = {
     badFace: "Right place, but you're facing the wrong way.",
     yourRoute: 'Your route', rightRoute: 'Correct route',
     watch: '▶ Watch the route', next: 'Next →', finish: 'See result',
-    hint1: '{straight} = walk to the next intersection.',
+    hint1: '{straight} = walk to just before the next intersection.',
     hint2: 'Count intersections from where you stand. When you hear {cross}, press the cross button at that intersection.',
     hint3: 'Check the map: which building is on your left or right as you walk? If you hear {cross}, press the cross button.',
     hint4: 'Combine everything you have learned. You can do it!',
@@ -524,7 +524,7 @@ const UI = {
     settings: '設定', helpT: '遊戲說明', close: '關閉',
     helpL: [
       '🎧 先按「🔊 聽」，聽指路的話。也可以顯示文字和讀音。',
-      '🚶 用下面的按鈕走路：直走＝走到下一個路口或轉角；左轉、右轉＝只轉向，不會移動。',
+      '🚶 用下面的按鈕走路：直走＝走到下一個路口或轉角前；左轉、右轉＝在路口轉向。',
       '🚦 第二級以後，聽到「過馬路」就走到那個路口，按「過馬路」按鈕。',
       '🔄 第五級的圓環：先走進圓環，再按出口按鈕（出口是逆時針數）。',
       '✅ 走到目的地，按「我到了！」。答對得 10 分。',
@@ -539,7 +539,7 @@ const UI = {
     badFace: '地點對了，但是面向的方向不對。',
     yourRoute: '你的路線', rightRoute: '正確路線',
     watch: '▶ 看路線', next: '下一題 →', finish: '看結果',
-    hint1: '{straight}＝走到下一個路口。',
+    hint1: '{straight}＝走到下一個路口前。',
     hint2: '路口從你站的地方開始數。聽到{cross}時，走到那個路口按「過馬路」按鈕。',
     hint3: '看地圖：走的時候，左手邊或右手邊是哪一棟建築？聽到{cross}要按「過馬路」。',
     hint4: '把學過的全部用上，你可以的！',
@@ -922,7 +922,7 @@ function renderSentence() {
   np.textContent = flat(T('nextPart')) + ' (' + (S.partIdx + 1) + '/' + parts.length + ')';
 }
 function loadQuestion() {
-  const q = S.qs[S.qi]; S.q = q;
+  const q = S.qs[S.qi]; S.q = q; avPick();
   initPos(q); S.actions = []; S.crosses = []; S.cr = false; S.partIdx = 0;
   S.locked = false; S.busy = false; S.reveal = null; S.atGoal = false;
   $('#feedback').classList.add('hidden'); $('#feedback').innerHTML = '';
@@ -1055,8 +1055,46 @@ function renderMap() {
   for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) if (!isRb(q.map, x, y) && !isYn(q.map, x, y)) h += '<circle class="nd" cx="' + x * SP + '" cy="' + y * SP + '" r="2.6"/>';
   { const sp = nodeXY(q.map, q.start[0], q.start[1]); h += '<circle class="startring" cx="' + sp[0] + '" cy="' + sp[1] + '" r="17"/>'; }
   h += '<g id="routes"></g><g id="cwm"></g><polyline class="trail" id="trail" points=""/>';
-  h += '<g id="av"><g id="avr"><circle class="avc" r="11"/><path class="avt" d="M0 -22 L7 -11 L-7 -11 Z"/><circle r="3.4" fill="#fffefa"/></g></g>';
+  h += '<g id="av"><g id="avr">' + avArt() + '</g></g>';
   svg.innerHTML = h;
+}
+
+/* ---------- avatar: a top-down person or animal (nose points up, the whole picture turns) ---------- */
+const AV_INK = '#4b4a46';
+const avWrap = (inner, extra) => '<g class="avp" transform="scale(1.25)" stroke="' + AV_INK + '" stroke-width="1.3" stroke-linejoin="round">' + (extra || '') + inner + '</g>';
+const avAnimal = (o) => {          // body behind, head in front, ears, nose
+  const e = o.ears || '', t = o.tail || '';
+  return avWrap(t + '<ellipse cx="0" cy="6" rx="' + (o.bw || 8) + '" ry="' + (o.bh || 10) + '" fill="' + o.body + '"/>' + (o.extra || '') + e +
+    '<circle cx="0" cy="-6" r="' + (o.hr || 7.5) + '" fill="' + o.head + '"/>' + (o.face || '') +
+    (o.nose === 'none' ? '' : '<ellipse cx="0" cy="' + (o.ny || -12.5) + '" rx="' + (o.nw || 2.2) + '" ry="1.7" fill="' + (o.nose || AV_INK) + '"/>'));
+};
+const eyes = '<circle cx="-3" cy="-7" r="1.1" fill="' + AV_INK + '" stroke="none"/><circle cx="3" cy="-7" r="1.1" fill="' + AV_INK + '" stroke="none"/>';
+const AVATARS = [
+  { n: 'person', svg: avWrap('<ellipse cx="0" cy="5" rx="12" ry="6.5" fill="#cfd8c8"/><circle cx="-7" cy="0" r="1.8" fill="#f0d9c0"/><circle cx="7" cy="0" r="1.8" fill="#f0d9c0"/><circle cx="0" cy="-8" r="2" fill="#f0d9c0"/><circle cx="0" cy="0" r="7" fill="#f0d9c0"/><path d="M-7 0 A7 7 0 0 0 7 0 Q0 -4.5 -7 0 Z" fill="#4b4a46"/>') },
+  { n: 'cat', svg: avAnimal({ body: '#e6d5bb', head: '#ecdcc4', tail: '<path d="M0 15 Q8 21 14 14" fill="none" stroke-width="2.6"/>', ears: '<path d="M-6.5 -9.5 L-8 -17 L-2 -12.5 Z M6.5 -9.5 L8 -17 L2 -12.5 Z" fill="#ecdcc4"/>', face: eyes, nose: '#c98f86' }) },
+  { n: 'dog', svg: avAnimal({ body: '#d9c3a3', head: '#e3d0b2', tail: '<path d="M0 15 Q4 22 9 19" fill="none" stroke-width="2.6"/>', ears: '<ellipse cx="-8.5" cy="-5" rx="3.2" ry="5.5" fill="#a98b68" transform="rotate(12 -8.5 -5)"/><ellipse cx="8.5" cy="-5" rx="3.2" ry="5.5" fill="#a98b68" transform="rotate(-12 8.5 -5)"/>', face: eyes, nw: 2.8 }) },
+  { n: 'bear', svg: avAnimal({ body: '#c9ab8a', head: '#d3b898', ears: '<circle cx="-6.5" cy="-12" r="3" fill="#c9ab8a"/><circle cx="6.5" cy="-12" r="3" fill="#c9ab8a"/>', face: eyes + '<ellipse cx="0" cy="-10.5" rx="3.6" ry="2.6" fill="#ecdcc4"/>', nw: 1.8, ny: -11 }) },
+  { n: 'panda', svg: avAnimal({ body: '#fbfaf5', head: '#fbfaf5', ears: '<circle cx="-6.5" cy="-12" r="3" fill="#4b4a46"/><circle cx="6.5" cy="-12" r="3" fill="#4b4a46"/>', extra: '<ellipse cx="-7" cy="1" rx="3" ry="4" fill="#4b4a46"/><ellipse cx="7" cy="1" rx="3" ry="4" fill="#4b4a46"/><ellipse cx="0" cy="12" rx="3.4" ry="2.6" fill="#4b4a46"/>', face: '<ellipse cx="-3.2" cy="-7" rx="2" ry="2.6" fill="#4b4a46" transform="rotate(-18 -3.2 -7)"/><ellipse cx="3.2" cy="-7" rx="2" ry="2.6" fill="#4b4a46" transform="rotate(18 3.2 -7)"/>', ny: -11.5 }) },
+  { n: 'rabbit', svg: avAnimal({ body: '#f0e8dc', head: '#f4eee4', ears: '<ellipse cx="-3.4" cy="3" rx="2.4" ry="7.5" fill="#f4eee4" transform="rotate(8 -3.4 3)"/><ellipse cx="3.4" cy="3" rx="2.4" ry="7.5" fill="#f4eee4" transform="rotate(-8 3.4 3)"/>', tail: '<circle cx="0" cy="16" r="3.2" fill="#fffefa"/>', face: eyes, nose: '#c98f86', hr: 7, nw: 1.6 }) },
+  { n: 'frog', svg: avAnimal({ body: '#a9bfa7', head: '#b7cdb4', ears: '<circle cx="-5.4" cy="-11.5" r="3" fill="#b7cdb4"/><circle cx="5.4" cy="-11.5" r="3" fill="#b7cdb4"/>', extra: '<ellipse cx="-9" cy="10" rx="3" ry="4.5" fill="#a9bfa7" transform="rotate(-25 -9 10)"/><ellipse cx="9" cy="10" rx="3" ry="4.5" fill="#a9bfa7" transform="rotate(25 9 10)"/>', face: '<circle cx="-5.4" cy="-11.5" r="1.1" fill="#4b4a46" stroke="none"/><circle cx="5.4" cy="-11.5" r="1.1" fill="#4b4a46" stroke="none"/>', nw: 0.1, ny: -13.5, nose: 'none' }) },
+  { n: 'chick', svg: avWrap('<ellipse cx="0" cy="4" rx="9" ry="11" fill="#f1dd9a"/><path d="M-9 4 Q-13 8 -9 12 M9 4 Q13 8 9 12" fill="none"/><circle cx="0" cy="-5" r="7" fill="#f4e4a8"/><circle cx="-2.6" cy="-6.5" r="1.1" fill="#4b4a46" stroke="none"/><circle cx="2.6" cy="-6.5" r="1.1" fill="#4b4a46" stroke="none"/><path d="M-2.4 -11 L0 -15 L2.4 -11 Z" fill="#e6a86a"/>') },
+  { n: 'pig', svg: avAnimal({ body: '#eec8c0', head: '#f2d2cb', ears: '<path d="M-6.5 -9.5 L-9 -15 L-2.5 -12 Z M6.5 -9.5 L9 -15 L2.5 -12 Z" fill="#e4aea5"/>', tail: '<path d="M0 15 q3 3 0 5 q-3 2 1 4" fill="none" stroke-width="1.8"/>', face: eyes, nose: '#d99890', nw: 3.2, ny: -12 }) },
+];
+function avPick() {                // a new picture each question, never the same twice in a row
+  let i; do { i = Math.floor(Math.random() * AVATARS.length); } while (AVATARS.length > 1 && i === S.avi);
+  S.avi = i;
+}
+const avArt = () => AVATARS[S.avi || 0].svg;
+const STOP_BACK = 33;            // after walking, stop this far before the next intersection (2/3 of a block)
+const isMv = a => !!a && a !== 'L' && a !== 'R' && a !== 'C';
+const lastAct = () => S.rpA !== undefined ? S.rpA : S.actions[S.actions.length - 1];
+const atRbNode = () => S.q.graph ? gM().nodes[S.pos.n][2] === 'rb' : isRb(S.q.map, S.pos.x, S.pos.y);
+const pullNow = () => !S.cr && isMv(lastAct()) && !atRbNode();
+function pullBack(P, Q) {        // move the end point P back toward Q (the point before it)
+  const dx = P[0] - Q[0], dy = P[1] - Q[1], l = Math.hypot(dx, dy);
+  if (!l) return P;
+  const b = Math.min(STOP_BACK, l / 2);
+  return [P[0] - dx / l * b, P[1] - dy / l * b];
 }
 function goalSpot() {            // beside the destination: halfway along the last road, facing the way you walked
   const q = S.q;
@@ -1073,7 +1111,7 @@ function goalSpot() {            // beside the destination: halfway along the la
     return [best[1], best[2], best[3]];
   }
   const b = nodeXY(q.map, q.end[0], q.end[1]), d = q.end[2];
-  return [b[0] - DXS[d] * SP / 2, b[1] - DYS[d] * SP / 2, d * 90];
+  return [b[0] - DXS[d] * STOP_BACK, b[1] - DYS[d] * STOP_BACK, d * 90];
 }
 function setAvatar(instant) {
   const av = $('#av'), avr = $('#avr'); if (!av) return;
@@ -1081,14 +1119,18 @@ function setAvatar(instant) {
   let ax, ay;
   if (S.atGoal) { const g = goalSpot(); ax = g[0]; ay = g[1]; if (S.q.graph) S.ang += gAd(S.ang, g[2]); }
   else if (S.q.graph) { [ax, ay] = gAvatarXY(); }
-  else { const off = S.cr ? 24 : 0, base = nodeXY(S.q.map, S.pos.x, S.pos.y); ax = base[0] + DXS[S.pos.d] * off; ay = base[1] + DYS[S.pos.d] * off; }
+  else { const off = (S.cr ? 24 : 0) - (pullNow() ? STOP_BACK : 0), base = nodeXY(S.q.map, S.pos.x, S.pos.y); ax = base[0] + DXS[S.pos.d] * off; ay = base[1] + DYS[S.pos.d] * off; }
   S.axy = [ax, ay];
   av.style.transform = 'translate(' + ax + 'px,' + ay + 'px)';
   avr.style.transform = 'rotate(' + S.ang + 'deg)';
   if (instant) { void av.getBoundingClientRect(); av.classList.remove('nt'); avr.classList.remove('nt'); }
   if (S.q.graph) setCam(instant);
 }
-function pts(path) { return S.q.graph ? path.map(p => p.join(',')).join(' ') : path.map(p => nodeXY(S.q.map, p[0], p[1]).join(',')).join(' '); }
+function pts(path, pull) {
+  const a = S.q.graph ? path.map(p => p.slice(0, 2)) : path.map(p => nodeXY(S.q.map, p[0], p[1]));
+  if (pull && a.length > 1) a[a.length - 1] = pullBack(a[a.length - 1], a[a.length - 2]);
+  return a.map(p => p.join(',')).join(' ');
+}
 function crossMark(c, cls) {
   if (S.q.graph) return gCrossMark(c, cls);
   const cx = c[0] * SP + DXS[c[2]] * 23, cy = c[1] * SP + DYS[c[2]] * 23;
@@ -1097,20 +1139,22 @@ function crossMark(c, cls) {
     : '<line class="' + cls + '" x1="' + (cx - 11) + '" y1="' + cy + '" x2="' + (cx + 11) + '" y2="' + cy + '"/>';
 }
 function drawTrail() {
-  const t = $('#trail'); if (t) t.setAttribute('points', S.path.length > 1 ? pts(S.path) : '');
+  const t = $('#trail'); if (t) t.setAttribute('points', S.path.length > 1 ? pts(S.path, pullNow()) : '');
   const g = $('#cwm'); if (g) g.innerHTML = S.crosses.map(c => crossMark(c, 'cwm')).join('');
 }
 function drawReveal() {
   const g = $('#routes'); if (!g) return;
   g.innerHTML = '';
   if (!S.reveal) return;
-  const mk = (cls, path) => '<polyline class="' + cls + '" points="' + pts(path) + '"/>';
+  const mk = (cls, path, pull) => '<polyline class="' + cls + '" points="' + pts(path, pull) + '"/>';
+  const okRb = S.q.graph ? gM().nodes[S.q.end[0]][2] === 'rb' : isRb(S.q.map, S.q.end[0], S.q.end[1]);
+  const okPull = isMv(S.q.actions[S.q.actions.length - 1]) && !okRb;
   let h = '';
-  if (!S.reveal.ok && S.reveal.student.length > 1) h += mk('rt-bad', S.reveal.student);
-  h += mk('rt-ok', S.q.path);
+  if (!S.reveal.ok && S.reveal.student.length > 1) h += mk('rt-bad', S.reveal.student, S.reveal.sPull);
+  h += mk('rt-ok', S.q.path, okPull);
   if (!S.reveal.ok) h += S.reveal.crosses.map(c => crossMark(c, 'cwm-bad')).join('');
   h += S.q.crosses.map(c => crossMark(c, 'cwm-ok')).join('');
-  if (!S.reveal.ok) { const gs = goalSpot(); h += '<g class="goalmk" transform="translate(' + gs[0] + ',' + gs[1] + ') rotate(' + gs[2] + ')"><circle r="11"/><path d="M0 -22 L7 -11 L-7 -11 Z"/><circle r="3.4" fill="#fffefa"/></g>'; }
+  if (!S.reveal.ok) { const gs = goalSpot(); h += '<g class="goalmk" transform="translate(' + gs[0] + ',' + gs[1] + ') rotate(' + gs[2] + ')"><circle class="gring" r="17"/>' + avArt() + '</g>'; }
   g.innerHTML = h;
   const b = document.querySelector('.bld[data-k="' + S.q.target + '"]');
   if (b) b.classList.add('hl');
@@ -1219,6 +1263,7 @@ const gOpts = (m, e, frm) => m.edges[e].a === frm ? m.edges[e].pts : m.edges[e].
 const gOb = (m, n, e) => { const p = gOpts(m, e, n); return gBrg(p[0], p[1]); };
 function gArr(m, e, to) { const p = gOpts(m, e, gOth(m, e, to)); return gBrg(p[p.length - 2], p[p.length - 1]); }
 function initPos(q) {
+  S.rpA = undefined;
   if (q.graph) {
     const m = DATA.maps[q.map], n = q.start[0], e = q.start[1], h = gOb(m, n, e);
     S.pos = { n, face: e, via: null, h }; S.ang = h + 90; S.path = [m.nodes[n].slice(0, 2)];
@@ -1269,6 +1314,7 @@ function gSetPos(np) {
 }
 function gAvatarXY() {
   const m = gM(), p = S.pos, b = m.nodes[p.n];
+  if (!S.cr && p.via && pullNow()) { const o = gOpts(m, p.via, gOth(m, p.via, p.n)); return pullBack([b[0], b[1]], o[o.length - 2]); }
   if (!S.cr || !p.face) return [b[0], b[1]];
   const o = gOpts(m, p.face, p.n), dx = o[1][0] - o[0][0], dy = o[1][1] - o[0][1], l = Math.hypot(dx, dy), off = (m.cwd[p.n] || 30) + 14;
   return [b[0] + dx / l * off, b[1] + dy / l * off];
@@ -1341,7 +1387,7 @@ function renderGraph() {
   const sp = m.nodes[q.start[0]];
   h += '<circle class="startring" cx="' + sp[0] + '" cy="' + sp[1] + '" r="17"/>';
   h += '<g id="routes"></g><g id="cwm"></g><polyline class="trail" id="trail" points=""/>';
-  h += '<g id="av"><g id="avr"><circle class="avc" r="11"/><path class="avt" d="M0 -22 L7 -11 L-7 -11 Z"/><circle r="3.4" fill="#fffefa"/></g></g>';
+  h += '<g id="av"><g id="avr">' + avArt() + '</g></g>';
   svg.innerHTML = h;
   S.axy = null; camCur = null;
   svg.setAttribute('viewBox', m.vb.join(' '));
@@ -1364,7 +1410,7 @@ function submit() {
   S.totalMs += Math.min(Date.now() - S.qStart, 120000);
   if (ok) S.correct++;
   S.results.push({ ok, q });
-  S.reveal = { ok, sameNode, faceOK, student: S.path.slice(), crosses: S.crosses.slice() };
+  S.reveal = { ok, sameNode, faceOK, student: S.path.slice(), crosses: S.crosses.slice(), sPull: pullNow() };
   S.atGoal = ok;
   $('#controls').classList.add('off'); $('#row2').classList.add('off');
   renderSentence();
@@ -1395,9 +1441,10 @@ async function replay() {
   if (S.busy) return;
   S.busy = true;
   const q = S.q;
-  S.atGoal = false; initPos(q); S.cr = false; setAvatar(true); drawTrail();
+  S.atGoal = false; initPos(q); S.rpA = null; S.cr = false; setAvatar(true); drawTrail();
   await sleep(450);
   for (const a of q.actions) {
+    S.rpA = a;
     if (q.graph) { const gp = gApply(a); if (!gp) break; if (a === 'C') { S.cr = true; } else { gSetPos(gp); S.cr = false; } setAvatar(false); drawTrail(); await sleep(a === 'C' ? 650 : (a === 'S' || /[1-4]/.test(a) ? 700 : 480)); continue; }
     if (a === 'C') { S.cr = true; setAvatar(false); await sleep(650); continue; }
     const np = applyAction(S.pos, a); if (!np) break;
