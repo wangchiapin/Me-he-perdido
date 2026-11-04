@@ -17,7 +17,13 @@ body{touch-action:pan-y pinch-zoom}
 #app{max-width:520px;margin:0 auto;padding:12px 14px calc(18px + env(safe-area-inset-bottom))}
 .screen{display:none}.screen.on{display:block}
 .hidden{display:none!important}
-h1{font-size:26px;margin:14px 0 2px;letter-spacing:.06em;font-weight:600}
+h1{font-size:26px;margin:0;letter-spacing:.06em;font-weight:600}
+.plaque{display:inline-block;margin:14px 0 0 2px;padding:6px 18px;border:2.5px solid var(--ink);border-radius:12px;background:var(--card);box-shadow:0 3px 0 var(--ink)}
+.hero{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px 8px 4px}
+.hero svg{display:block;width:100%;height:auto}
+.walker{transform:translate(40px,73px);animation:stroll 7s ease-in-out infinite}
+@keyframes stroll{0%,8%{transform:translate(40px,73px)}78%,100%{transform:translate(216px,73px)}}
+@media (prefers-reduced-motion:reduce){.walker{animation:none;transform:translate(130px,73px)}}
 .sub{color:var(--muted);margin:0 0 4px;font-size:15px}
 .muted{color:var(--muted);font-size:13px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
@@ -27,10 +33,13 @@ input.name.err{border-color:var(--bad)}
 .chips{display:flex;flex-wrap:wrap;gap:7px}
 .chip{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer}
 .chip.on{border-color:var(--ink);background:var(--ink);color:#fff}
-.levels{display:grid;gap:9px;margin-top:16px}
+.levels{display:grid;gap:9px;margin-top:16px;position:relative;padding-left:38px}
+.levels::before{content:'';position:absolute;left:15px;top:24px;bottom:24px;width:4px;border-radius:2px;background:var(--ink);opacity:.85}
 .lv{display:flex;align-items:center;gap:12px;text-align:left;border:1.5px solid var(--ink);background:var(--card);border-radius:16px;padding:12px 14px;cursor:pointer;width:100%}
 .lv:active{background:var(--ink);color:#fff}
-.lv .n{font-size:24px;font-weight:600;width:28px;text-align:center}
+.lv{position:relative}
+.lv .n{position:absolute;left:-38px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:var(--bg);border:3px solid var(--ink);display:grid;place-items:center;font-size:15px;font-weight:700;color:var(--ink)}
+.lv:last-child .n{background:var(--ink);color:#fff}
 .lv .t{font-size:16px;font-weight:600}
 .lv .d{font-size:12.5px;color:var(--muted)}
 .lv:active .d{color:#ddd}
@@ -46,15 +55,17 @@ input.name.err{border-color:var(--bad)}
 #score{font-size:13px;min-width:44px;text-align:right}
 .bar{height:3px;background:var(--line);border-radius:3px;margin:8px 0 10px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--ink);width:0;transition:width .3s}
-.zh{font-size:17px;line-height:1.6;letter-spacing:.03em}
+.zh{font-size:16.5px;line-height:1.55;letter-spacing:.03em;padding-right:66px}
 .zh.listen{font-size:15px;color:var(--muted);letter-spacing:0}
 .pyl{font-size:11.5px;color:var(--muted);line-height:1.4;margin-top:2px;white-space:pre-line}
 .trl{font-size:12.5px;color:#5d5a52;line-height:1.4;margin-top:3px}
-.tools{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.tools{display:flex;flex-wrap:wrap;gap:5px}
+.tools .mini:not(.hidden){margin-top:6px}
+#btn-say{position:absolute;right:10px;top:8px}
 .tools .mini{padding:5px 8px;font-size:12.5px}
 .tog.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 #btn-npart{border-color:var(--ink)}
-#sentcard{padding:9px 12px}
+#sentcard{padding:9px 12px;position:relative}
 .mapwrap{position:relative;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px}
 .maphead{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 2px}
 .mapname{font-size:12px;color:var(--muted)}
@@ -90,21 +101,27 @@ input.name.err{border-color:var(--bad)}
 #controls.c4 .cn{font-size:16px}
 #exits{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
 #exits .cbtn{min-height:42px;gap:0;padding:2px 4px}#exits .cbtn .ic{font-size:16px}
-#exits.off{opacity:.35;pointer-events:none}
+#exits.off{display:none}
 #exits .cn{font-size:13px;text-align:center}
-.cbtn{background:var(--card);border:1.5px solid var(--ink);border-radius:14px;padding:6px 4px;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer}
+.cbtn{background:var(--card);border:1.5px solid var(--ink);border-radius:14px;padding:6px 4px;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer}
 .cbtn:active{background:var(--ink);color:#fff}
-.cbtn .ic{font-size:21px;line-height:1}
+.cbtn .ic{font-size:18px;line-height:1}
 .cbtn .cn{font-size:17px;font-weight:600}
-.cbtn .pyb{font-size:11px;color:var(--muted);white-space:pre-line;text-align:center;line-height:1.25}
+.cbtn .pyb{display:none;font-size:11px;color:var(--muted);white-space:pre-line;text-align:center;line-height:1.25}
 .cbtn .sb{font-size:11px;color:var(--muted)}
 .cbtn:active .pyb,.cbtn:active .sb{color:#ddd}
 .row2{display:grid;grid-template-columns:1fr 1.5fr;gap:8px;margin-top:8px}
-#dock{position:fixed;left:0;right:0;bottom:0;z-index:5;max-width:520px;margin:0 auto;padding:16px 14px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(to bottom,rgba(246,244,238,0),var(--bg) 16px)}
+#dock{flex:none;padding-top:8px}
 #dock #controls{margin-top:0}
 #dock.off{display:none}
-#s-game.on{padding-bottom:var(--dockh,0px)}
-.row2 .btn{padding:10px}
+#s-game.on{display:flex;flex-direction:column;height:calc(100dvh - 104px);min-height:520px}
+#s-game.on>*{flex:none}
+#s-game.on>.mapwrap{flex:1 1 auto;min-height:250px;display:flex;flex-direction:column}
+#s-game.on #map,#s-game.on #map.big{flex:1 1 auto;min-height:0;height:100%;max-height:none}
+#s-game.on.locked{height:auto;min-height:0}
+#s-game.on.locked>.mapwrap{flex:none;display:block}
+#s-game.on.locked #map,#s-game.on.locked #map.big{height:auto;max-height:38vh}
+.row2 .btn{padding:8px}
 #controls.off,.row2.off{opacity:.35;pointer-events:none}
 #feedback{margin-top:10px}
 .fb{border-radius:16px;border:1.5px solid var(--line);background:var(--card);padding:12px 14px}
@@ -171,7 +188,8 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
 <!-- ============ START ============ -->
 <section id="s-start" class="screen on">
   <div class="startbar"><span class="iconbar"><button class="mini" id="i-set"></button><button class="mini" id="i-help"></button></span></div>
-  <h1 id="ttl">問路小達人</h1>
+  <div class="plaque"><h1 id="ttl">問路小達人</h1></div>
+  <div class="hero" id="hero"></div>
 
   <div class="lbl" id="l-name"></div>
   <input id="name" class="name" maxlength="14" autocomplete="off">
@@ -769,10 +787,26 @@ function toast(msg) {
   const el = $('#toast'); el.textContent = flat(msg); el.classList.add('on');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), 1700);
 }
+
+/* ---------- start page: street scene with a walking animal ---------- */
+function heroScene() {
+  const el = $('#hero'); if (!el) return;
+  const bld = (x, w, h, hl) => '<g transform="translate(' + x + ',' + (56 - h) + ')"><rect width="' + w + '" height="' + h + '" rx="4" fill="#fffefa" stroke="' + (hl ? '#6f8f72' : '#d3cec0') + '" stroke-width="' + (hl ? 2.6 : 1.4) + '"/><rect width="' + w + '" height="6" rx="3" fill="' + (hl ? '#cfdccd' : '#e7e3d9') + '"/><rect x="' + (w / 2 - 6) + '" y="' + (h - 14) + '" width="12" height="14" rx="1.5" fill="#e7e3d9"/><rect x="7" y="13" width="10" height="9" rx="1.5" fill="#e7e3d9"/><rect x="' + (w - 17) + '" y="13" width="10" height="9" rx="1.5" fill="#e7e3d9"/></g>';
+  let h = '<svg viewBox="0 0 340 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">';
+  h += bld(12, 58, 42) + bld(80, 50, 34) + bld(140, 62, 46) + bld(214, 54, 38, true) + bld(278, 50, 32);
+  h += '<rect x="0" y="56" width="340" height="34" fill="#e7e3d9"/><line x1="0" y1="73" x2="340" y2="73" stroke="#d5d0c3" stroke-width="1.2" stroke-dasharray="6 7"/>';
+  for (let i = 0; i < 5; i++) h += '<rect x="' + (172 + i * 5) + '" y="58" width="3" height="30" fill="#f8f6f0"/>';
+  h += '<line x1="40" y1="73" x2="226" y2="73" stroke="#a8a396" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 6"/>';
+  h += '<path d="M241 74 C233 62 230 58 230 52 a11 11 0 1 1 22 0 c0 6 -3 10 -11 22z" fill="#2b2b2b"/><circle cx="241" cy="52" r="4" fill="#fffefa"/>';
+  h += '<g class="walker"><g transform="rotate(90)">' + avArt() + '</g></g>';
+  h += '</svg>';
+  el.innerHTML = h;
+}
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
   window.scrollTo(0, 0);
   if (id !== 's-game') stopSpeech();
+  if (id === 's-start') { avPick(); heroScene(); }
 }
 
 /* ---------- speech ---------- */
@@ -829,6 +863,7 @@ function closeModal() { $('#modal').classList.add('hidden'); }
 function renderStart() {
   document.documentElement.lang = isZh() ? (S.script === 'trad' ? 'zh-TW' : 'zh-CN') : S.lang;
   $('#ttl').textContent = S.script === 'trad' ? '問路小達人' : '问路小达人';
+  heroScene();
   $('#l-name').textContent = T('name');
   $('#name').placeholder = flat(T('namePh')); $('#name').value = S.name;
   $('#l-script').textContent = T('script');
@@ -928,7 +963,7 @@ function loadQuestion() {
   initPos(q); S.actions = []; S.crosses = []; S.cr = false; S.partIdx = 0;
   S.locked = false; S.busy = false; S.reveal = null; S.atGoal = false;
   $('#feedback').classList.add('hidden'); $('#feedback').innerHTML = '';
-  $('#controls').classList.remove('off'); $('#row2').classList.remove('off'); $('#dock').classList.remove('off');
+  $('#controls').classList.remove('off'); $('#row2').classList.remove('off'); $('#dock').classList.remove('off'); $('#s-game').classList.remove('locked');
   $('#vocab').classList.add('hidden');
   renderSentence(); renderMap(); redraw(); updateExits();
   S.qStart = Date.now();
@@ -1414,7 +1449,7 @@ function submit() {
   S.results.push({ ok, q });
   S.reveal = { ok, sameNode, faceOK, student: S.path.slice(), crosses: S.crosses.slice(), sPull: pullNow() };
   S.atGoal = ok;
-  $('#controls').classList.add('off'); $('#row2').classList.add('off'); $('#dock').classList.add('off');
+  $('#controls').classList.add('off'); $('#row2').classList.add('off'); $('#dock').classList.add('off'); $('#s-game').classList.add('locked');
   renderSentence();
   drawTrail(); drawReveal(); setAvatar(false); stopSpeech(); updateExits();
   if (q.graph) setCam(false);
@@ -1646,7 +1681,7 @@ function bind() {
     else if (e.key === 'Enter') { if (!S.locked) submit(); else if ($('#fb-next')) nextQuestion(); }
   });
 }
-loadSettings(); bind(); renderStart();
+loadSettings(); bind(); avPick(); renderStart();
 function loadSpecific(q) {   // used by the automated tests
   S.level = q.level; S.qs = [q]; S.qi = 0; S.correct = 0; S.results = []; S.totalMs = 0;
   show('s-game'); applyGameLabels(); loadQuestion();
