@@ -161,7 +161,6 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
 <section id="s-start" class="screen on">
   <div class="startbar"><span class="iconbar"><button class="mini" id="i-set"></button><button class="mini" id="i-help"></button></span></div>
   <h1 id="ttl">問路小達人</h1>
-  <p class="sub" id="ttlsub"></p>
 
   <div class="lbl" id="l-name"></div>
   <input id="name" class="name" maxlength="14" autocomplete="off">
@@ -766,7 +765,6 @@ function closeModal() { $('#modal').classList.add('hidden'); }
 function renderStart() {
   document.documentElement.lang = isZh() ? (S.script === 'trad' ? 'zh-TW' : 'zh-CN') : S.lang;
   $('#ttl').textContent = S.script === 'trad' ? '問路小達人' : '问路小达人';
-  $('#ttlsub').textContent = T('titleSub');
   $('#l-name').textContent = T('name');
   $('#name').placeholder = flat(T('namePh')); $('#name').value = S.name;
   $('#l-script').textContent = T('script');
