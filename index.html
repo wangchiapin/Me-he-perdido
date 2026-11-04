@@ -138,6 +138,14 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
 .sheethead b{font-size:17px}
 .help{margin:6px 0 0;padding:0;list-style:none}
 .help li{font-size:14.5px;line-height:1.6;margin:9px 0}
+.bi{display:inline-block;vertical-align:top;line-height:1.3}
+.bi .bz,.bi .bf{display:block}
+.bi .bf{font-size:.74em;opacity:.6;font-weight:400;margin-top:1px;line-height:1.25}
+.chip .bi,.btn .bi,.mini .bi,.lv .bi,.cbtn .bi{text-align:inherit}
+.chip .bi,.btn .bi,.mini .bi{text-align:center}
+.lbl .bi,.topmid .bi,#score .bi,#prog .bi,.sheethead .bi,.fb h3 .bi,.leg .bi{display:inline}
+.lbl .bz,.lbl .bf,.topmid .bz,.topmid .bf,#score .bz,#score .bf,#prog .bz,#prog .bf,.sheethead .bz,.sheethead .bf,.fb h3 .bz,.fb h3 .bf,.leg .bz,.leg .bf{display:inline}
+.lbl .bf::before,.topmid .bf::before,#score .bf::before,#prog .bf::before,.sheethead .bf::before,.fb h3 .bf::before,.leg .bf::before{content:' '}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
 .toast.on{opacity:.95}
 </style>
@@ -188,13 +196,7 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
     <div class="trl" id="trl"></div>
     <div class="tools">
       <button class="mini" id="btn-say"></button>
-      <button class="mini tog" id="btn-py"></button>
-      <button class="mini" id="btn-rate"></button>
       <button class="mini hidden" id="btn-npart"></button>
-    </div>
-    <div class="tools">
-      <button class="mini tog" id="btn-tx"></button>
-      <button class="mini tog" id="btn-pt"></button>
     </div>
   </div>
 
@@ -720,18 +722,45 @@ function phLines(py) {
   return out;
 }
 const phText = py => phLines(py).join('\n');
+/* Chinese + foreign language: T() returns "\u0002中文\u0001Español\u0003"; a MutationObserver turns every such pair
+   into Chinese on top and small grey foreign text below. flat() gives "中文 / Español" for places that can't hold markup. */
+const BI_RE = /\u0002([^\u0001\u0003]*)\u0001([^\u0003]*)\u0003/g;
+const biPair = (z, f) => (!z || !f || z === f) ? (f || z) : '\u0002' + z + '\u0001' + f + '\u0003';
+const flat = s => typeof s === 'string' ? s.replace(BI_RE, '$1 / $2') : s;
+const bh = s => typeof s === 'string' ? s.replace(BI_RE, '<span class="bi"><span class="bz">$1</span><span class="bf">$2</span></span>') : s;
 const T = (k, v) => {
-  const tbl = S.lang === 'zh' ? (S.script === 'simp' ? UI.zhs : UI.zh) : (UI[S.lang] || UI.es);
-  let s = tbl[k];
-  if (s === undefined) return k;
-  if (typeof s !== 'string') return s;
-  if (v) for (const x in v) s = s.replace('{' + x + '}', v[x]);
-  return s;
+  const fill = s => { if (typeof s !== 'string') return s; if (v) for (const x in v) s = s.split('{' + x + '}').join(v[x]); return s; };
+  if (S.lang === 'zh') { const s = (S.script === 'simp' ? UI.zhs : UI.zh)[k]; return s === undefined ? k : fill(s); }
+  const fo = (UI[S.lang] || UI.es)[k];
+  if (fo === undefined) return k;
+  const zh = (S.script === 'simp' ? UI.zhs : UI.zh)[k];
+  if (zh === undefined) return Array.isArray(fo) ? fo : fill(fo);
+  if (Array.isArray(fo)) return fo.map((x, i) => biPair(fill(zh[i]), fill(x)));
+  return biPair(fill(zh), fill(fo));
 };
+function biSplit(n) {
+  const s = n.nodeValue, frag = document.createDocumentFragment(); let last = 0, m;
+  BI_RE.lastIndex = 0;
+  while ((m = BI_RE.exec(s))) {
+    if (m.index > last) frag.appendChild(document.createTextNode(s.slice(last, m.index)));
+    const sp = document.createElement('span'); sp.className = 'bi';
+    const z = document.createElement('span'); z.className = 'bz'; z.textContent = m[1];
+    const f = document.createElement('span'); f.className = 'bf'; f.textContent = m[2];
+    sp.appendChild(z); sp.appendChild(f); frag.appendChild(sp); last = BI_RE.lastIndex;
+  }
+  if (last < s.length) frag.appendChild(document.createTextNode(s.slice(last)));
+  n.parentNode.replaceChild(frag, n);
+}
+function biWalk(root) {
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), list = [];
+  while (w.nextNode()) if (w.currentNode.nodeValue.indexOf('\u0002') >= 0) list.push(w.currentNode);
+  list.forEach(biSplit);
+}
+try { new MutationObserver(() => biWalk(document.body)).observe(document.body, { childList: true, subtree: true, characterData: true }); } catch (e) {}
 const W = k => WORDS[S.script][k];
 let toastTimer;
 function toast(msg) {
-  const el = $('#toast'); el.textContent = msg; el.classList.add('on');
+  const el = $('#toast'); el.textContent = flat(msg); el.classList.add('on');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('on'), 1700);
 }
 function show(id) {
@@ -762,7 +791,7 @@ function speakCurrent() {
   const q = S.q; if (!q) return;
   speak((S.partMode && !S.locked) ? q.parts[S.partIdx].tw : fullTxt(q, 'tw'));
 }
-const mapLabel = k => { const m = DATA.maps[k]; return isZh() ? m[sk()] : m[S.lang]; };
+const mapLabel = k => { const m = DATA.maps[k]; return isZh() ? m[sk()] : biPair(m[sk()], m[S.lang]); };
 
 /* ---------- start screen ---------- */
 function chips(sel, items, cur, pick) {
@@ -776,8 +805,8 @@ function chips(sel, items, cur, pick) {
   });
 }
 function iconLabels() {
-  [['#i-set', '#g-set', '⚙', 'settings'], ['#i-help', '#g-help', '❓', 'helpT']].forEach(([a, b, ic, k]) => { [a, b].forEach(id => { const el = $(id); el.textContent = ic; el.title = T(k); el.setAttribute('aria-label', T(k)); }); });
-  $('#m-close').setAttribute('aria-label', T('close'));
+  [['#i-set', '#g-set', '⚙', 'settings'], ['#i-help', '#g-help', '❓', 'helpT']].forEach(([a, b, ic, k]) => { [a, b].forEach(id => { const el = $(id); el.textContent = ic; el.title = flat(T(k)); el.setAttribute('aria-label', flat(T(k))); }); });
+  $('#m-close').setAttribute('aria-label', flat(T('close')));
   if (!$('#modal').classList.contains('hidden')) openModal(modalKind);
 }
 let modalKind = 'set';
@@ -796,7 +825,7 @@ function renderStart() {
   $('#ttlsub').textContent = T('titleSub');
   $('#tag').textContent = T('tag');
   $('#l-name').textContent = T('name');
-  $('#name').placeholder = T('namePh'); $('#name').value = S.name;
+  $('#name').placeholder = flat(T('namePh')); $('#name').value = S.name;
   $('#l-script').textContent = T('script');
   chips('#c-script', [{ v: 'trad', label: '繁體' }, { v: 'simp', label: '简体' }], S.script, v => { S.script = v; saveSettings(); renderStart(); });
   $('#l-lang').textContent = T('lang');
@@ -807,7 +836,7 @@ function renderStart() {
   chips('#c-show', [
     { v: 'tx', label: T('showText'), on: S.showText },
     { v: 'pt', label: T('parts'), on: S.partMode },
-  ], null, v => { if (v === 'tx') S.showText = !S.showText; else S.partMode = !S.partMode; saveSettings(); renderStart(); });
+  ], null, v => { if (v === 'tx') S.showText = !S.showText; else { S.partMode = !S.partMode; S.partIdx = 0; } saveSettings(); renderStart(); if (v === 'pt' && S.partMode && $('#s-game').classList.contains('on') && S.q && !S.locked) speakCurrent(); });
   $('#l-phon').textContent = T('phon');
   chips('#c-phon', SET_OPTS.phon.map(v => ({ v, label: T('ph_' + v) })), S.phon, v => { S.phon = v; saveSettings(); renderStart(); });
   $('#l-rate').textContent = T('rate');
@@ -853,11 +882,6 @@ function applyGameLabels() {
   $('#btn-restart').textContent = T('restart');
   $('#lvname').textContent = T('lv')[S.level - 1];
   $('#btn-say').textContent = T('listen');
-  $('#btn-py').textContent = T('ph_' + S.phon);
-  $('#btn-py').classList.toggle('on', S.phon !== 'off');
-  $('#btn-rate').textContent = '⏱ ' + T(S.rate);
-  $('#btn-tx').textContent = T('showText'); $('#btn-tx').classList.toggle('on', S.showText);
-  $('#btn-pt').textContent = T('parts'); $('#btn-pt').classList.toggle('on', S.partMode);
   const mk = (id, ic, key) => {
     const b = $(id);
     b.innerHTML = '<span class="ic">' + ic + '</span><span class="cn"></span><span class="pyb"></span><span class="sb"></span>';
@@ -873,7 +897,7 @@ function applyGameLabels() {
   $('#b-reset').textContent = T('reset');
   $('#b-go').textContent = T('arrived');
   const h = T('hint' + S.level, { straight: '<b>' + W('straight') + '</b>', cross: '<b>' + W('cross') + '</b>' });
-  $('#hint').innerHTML = h;
+  $('#hint').innerHTML = bh(h);
 }
 function renderSentence() {
   const q = S.q, parts = q.parts, last = parts.length - 1, k = sk();
@@ -888,14 +912,14 @@ function renderSentence() {
   $('#pyl').textContent = phText(py); $('#pyl').classList.toggle('hidden', S.phon === 'off' || !showTxt);
   $('#trl').textContent = showTrans() ? vis.map(p => p[S.lang]).join(' ') : ''; $('#trl').classList.toggle('hidden', !showTrans() || !showTxt);
   const m = DATA.maps[q.map];
-  $('#mapname').textContent = T('map') + ': ' + m[k] + (showTrans() ? ' · ' + m[S.lang] : '');
+  $('#mapname').textContent = flat(T('map')) + ': ' + m[k] + (showTrans() ? ' · ' + m[S.lang] : '');
   const partTxt = (S.partMode && !S.locked) ? ' · ' + T('partN', { n: S.partIdx + 1, N: parts.length }) : '';
   $('#prog').textContent = T('q', { n: S.qi + 1, N: S.qs.length }) + partTxt;
   $('#score').textContent = T('pts', { s: S.correct * 10 });
   $('#barfill').style.width = (S.qi / S.qs.length * 100) + '%';
   const np = $('#btn-npart');
   np.classList.toggle('hidden', !(S.partMode && !S.locked && S.partIdx < last));
-  np.textContent = T('nextPart') + ' (' + (S.partIdx + 1) + '/' + parts.length + ')';
+  np.textContent = flat(T('nextPart')) + ' (' + (S.partIdx + 1) + '/' + parts.length + ')';
 }
 function loadQuestion() {
   const q = S.qs[S.qi]; S.q = q;
@@ -1549,13 +1573,9 @@ function bind() {
   [1, 2, 3, 4].forEach(k => { $('#b-' + k).onclick = () => act(String(k)); });
   $('#btn-cam').onclick = () => { S.cam = S.cam === 'all' ? 'follow' : 'all'; updateCamBtn(); setCam(false); };
   $('#btn-npart').onclick = nextPart;
-  $('#btn-tx').onclick = () => { S.showText = !S.showText; saveSettings(); refreshAll(); };
-  $('#btn-pt').onclick = () => { S.partMode = !S.partMode; S.partIdx = 0; saveSettings(); refreshAll(); if (S.partMode) speakCurrent(); };
   $('#b-reset').onclick = resetPos;
   $('#b-go').onclick = submit;
   $('#btn-say').onclick = speakCurrent;
-  $('#btn-py').onclick = () => { const o = SET_OPTS.phon; S.phon = o[(o.indexOf(S.phon) + 1) % o.length]; saveSettings(); refreshAll(); };
-  $('#btn-rate').onclick = () => { const o = ['slow', 'normal', 'fast']; S.rate = o[(o.indexOf(S.rate) + 1) % 3]; saveSettings(); $('#btn-rate').textContent = '⏱ ' + T(S.rate); speakCurrent(); };
   $('#btn-vocab').onclick = toggleVocab;
   $('#btn-restart').onclick = () => { stopSpeech(); startGame(S.level); };
   ['#i-set', '#g-set'].forEach(id => { $(id).onclick = () => openModal('set'); });
