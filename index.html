@@ -55,21 +55,24 @@ input.name.err{border-color:var(--bad)}
 #score{font-size:13px;min-width:44px;text-align:right}
 .bar{height:3px;background:var(--line);border-radius:3px;margin:8px 0 10px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--ink);width:0;transition:width .3s}
-.zh{font-size:15.5px;line-height:1.45;letter-spacing:.03em;padding-right:66px}
+.sentrow{display:flex;gap:10px;align-items:flex-start}
+.sentrow .zh{flex:1 1 auto;min-width:0}
+.zh{font-size:15.5px;line-height:1.45;letter-spacing:.03em}
 .zh.listen{font-size:15px;color:var(--muted);letter-spacing:0}
-.pyl{font-size:10.5px;color:var(--muted);line-height:1.3;margin-top:1px;white-space:pre-line}
+.pyl{font-size:10.5px;color:var(--muted);line-height:1.3;margin-top:6px;white-space:pre-line}
 .trl{font-size:12px;color:#5d5a52;line-height:1.3;margin-top:2px}
 .tools{display:flex;flex-wrap:wrap;gap:5px}
 .tools .mini:not(.hidden){margin-top:6px}
-#btn-say{position:absolute;right:10px;top:8px}
+#btn-say{flex:none}
 .tools .mini{padding:5px 8px;font-size:12.5px}
 .tog.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-#btn-npart{border-color:var(--ink)}
+#btn-npart,#btn-reveal{border-color:var(--ink)}
 #sentcard{padding:7px 12px;position:relative}
 .mapwrap{position:relative;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px}
 .maphead{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 2px}
 .mapname{font-size:12px;color:var(--muted)}
 #btn-vocab,#btn-cam{padding:3px 10px}
+#btn-vocab{font-size:12.5px}
 #map.big{max-height:44vh}
 #map{width:100%;height:auto;max-height:38vh;display:block;margin:0 auto}
 #map.shake{animation:shake .3s}
@@ -221,20 +224,19 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
   <div class="bar"><i id="barfill"></i></div>
 
   <div class="card" id="sentcard">
-    <div class="zh" id="zh"></div>
+    <div class="sentrow"><div class="zh" id="zh"></div><button class="mini" id="btn-say"></button></div>
     <div class="pyl" id="pyl"></div>
     <div class="trl" id="trl"></div>
     <div class="tools">
-      <button class="mini" id="btn-say"></button>
+      <button class="mini hidden" id="btn-reveal"></button>
       <button class="mini hidden" id="btn-npart"></button>
     </div>
   </div>
 
   <div class="mapwrap">
-    <div class="maphead"><div class="mapname" id="mapname"></div><span><button class="mini hidden" id="btn-cam"></button> <button class="mini" id="btn-vocab">📖</button></span></div>
+    <div class="maphead"><div class="mapname" id="mapname"></div><span><button class="mini hidden" id="btn-cam"></button> <button class="mini" id="btn-vocab"></button></span></div>
     <svg id="map" xmlns="http://www.w3.org/2000/svg" role="img"></svg>
   </div>
-  <div class="card hidden" id="vocab"></div>
   <div class="hint hidden" id="hint"></div>
 
   <div id="dock">
@@ -289,6 +291,7 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
 <div class="modal hidden" id="modal">
   <div class="sheet" role="dialog" aria-modal="true">
     <div class="sheethead"><b id="m-title"></b><button class="mini" id="m-close" aria-label="close">✕</button></div>
+    <div id="vocab" class="hidden"></div>
     <div id="pane-set" class="hidden">
       <div class="lbl" id="l-script"></div>
       <div class="chips" id="c-script"></div>
@@ -463,7 +466,7 @@ const UI = {
     lvd: ['Recto, izquierda y derecha', 'Contar esquinas y cruzar la calle', 'Izquierda, derecha, enfrente, al lado', 'Indicaciones largas, todo junto', 'Barrio real: calles en diagonal, rotonda y Y'],
     settings: 'Ajustes', helpT: 'Cómo jugar', close: 'Cerrar',
     helpL: [
-      '🎧 Pulsa «🔊 Escuchar» para oír las indicaciones. También puedes ver el texto y el pinyin.',
+      '🎧 Pulsa «🔊 Escuchar» para oír las indicaciones. Si lo necesitas, pulsa «Ver texto» y después «Ver lectura y traducción».',
       '🚶 Camina con los botones de abajo: «Recto» te lleva hasta justo antes de la siguiente esquina o curva; «Izquierda» y «Derecha» giran en la esquina.',
       '🚦 Desde el nivel 2, cuando oigas «cruzar la calle», llega a esa esquina y pulsa el botón de cruzar.',
       '🔄 Nivel 5, rotondas: entra en la rotonda y pulsa el botón de la salida (se cuentan en sentido contrario a las agujas del reloj).',
@@ -473,7 +476,7 @@ const UI = {
     ],
     board: 'Clasificación', restart: '↻ Reiniciar',
     q: 'Pregunta {n}/{N}', pts: '{s} puntos',
-    listen: '🔊 Escuchar', left: 'Izquierda', straight: 'Recto', right: 'Derecha',
+    listen: '🔊 Escuchar', seeText: '👁 Ver texto', seeMore: '👁 Ver lectura y traducción', seeRead: '👁 Ver lectura', seeTrans: '👁 Ver traducción', left: 'Izquierda', straight: 'Recto', right: 'Derecha',
     reset: '↺ Reintentar', arrived: '✓ ¡Llegué!', noRoad: 'No hay camino adelante.',
     ok: '¡Correcto! +10', bad: 'Casi. Mira la ruta correcta.',
     badFace: 'Llegaste al lugar correcto, pero miras hacia otro lado.',
@@ -492,7 +495,7 @@ const UI = {
     saved: 'Puntuación guardada.', savedLocal: 'Puntuación guardada en este dispositivo.',
     vocab: 'Vocabulario', vocabDir: 'Direcciones', vocabPlaces: 'Lugares del mapa',
     back: 'Volver', map: 'Mapa',
-    mapAny: 'Aleatorio', show: 'Ayudas', showText: 'Texto', parts: 'Por partes', cross: 'Cruzar',
+    mapAny: 'Aleatorio', show: 'Ayudas', showText: 'Texto desde el inicio', parts: 'Por partes', cross: 'Cruzar',
     pickExit: 'Estás en la rotonda: elige una salida.', noExit: 'No hay tanta salida.', notRb: 'Aquí no hay rotonda.', ex1: '1.ª salida', ex2: '2.ª salida', ex3: '3.ª salida', ex4: '4.ª salida', camFollow: '🔍 Seguir', camAll: '🗺 Mapa',
     alreadyCrossed: 'Ya cruzaste aquí.', noStreet: 'Aquí no hay calle que cruzar.', listenOnly: 'Solo escucha: pulsa 🔊', partN: 'Parte {n}/{N}', nextPart: '▶ Parte siguiente',
     badCross: 'Llegaste al lugar correcto, pero no cruzaste la calle donde decía la indicación.', vocabWords: 'Palabras útiles',
@@ -509,7 +512,7 @@ const UI = {
     lvd: ['Straight, left and right', 'Count intersections, cross the street', 'Left, right, across, next to', 'Longer directions, all together', 'Real streets: diagonals, roundabout, Y-fork'],
     settings: 'Settings', helpT: 'How to play', close: 'Close',
     helpL: [
-      '🎧 Tap “🔊 Listen” to hear the directions. You can also show the text and pinyin.',
+      '🎧 Tap “🔊 Listen” to hear the directions. If you need help, tap “Show text”, then “Show reading & translation”.',
       '🚶 Walk with the buttons below: “Straight” takes you to just before the next intersection or bend; “Left” and “Right” turn you at the intersection.',
       '🚦 From level 2, when you hear “cross the street”, walk to that intersection and tap the cross button.',
       '🔄 Level 5, roundabouts: walk into the roundabout, then tap the exit button (exits are counted counter-clockwise).',
@@ -519,7 +522,7 @@ const UI = {
     ],
     board: 'Leaderboard', restart: '↻ Restart',
     q: 'Question {n}/{N}', pts: '{s} points',
-    listen: '🔊 Listen', left: 'Left', straight: 'Straight', right: 'Right',
+    listen: '🔊 Listen', seeText: '👁 Show text', seeMore: '👁 Show reading & translation', seeRead: '👁 Show reading', seeTrans: '👁 Show translation', left: 'Left', straight: 'Straight', right: 'Right',
     reset: '↺ Try again', arrived: "✓ I'm here!", noRoad: 'No road ahead.',
     ok: 'Correct! +10', bad: 'Not quite. Here is the correct route.',
     badFace: "Right place, but you're facing the wrong way.",
@@ -538,7 +541,7 @@ const UI = {
     saved: 'Score saved.', savedLocal: 'Score saved on this device.',
     vocab: 'Vocabulary', vocabDir: 'Directions', vocabPlaces: 'Places on the map',
     back: 'Back', map: 'Map',
-    mapAny: 'Random', show: 'Helpers', showText: 'Text', parts: 'In parts', cross: 'Cross',
+    mapAny: 'Random', show: 'Helpers', showText: 'Text from the start', parts: 'In parts', cross: 'Cross',
     pickExit: 'You are in the roundabout: pick an exit.', noExit: 'There is no such exit.', notRb: 'There is no roundabout here.', ex1: '1st exit', ex2: '2nd exit', ex3: '3rd exit', ex4: '4th exit', camFollow: '🔍 Follow', camAll: '🗺 Full map',
     alreadyCrossed: 'You already crossed here.', noStreet: 'There is no street to cross here.', listenOnly: 'Listening only: press 🔊', partN: 'Part {n}/{N}', nextPart: '▶ Next part',
     badCross: "Right place, but you didn't cross the street where the directions said.", vocabWords: 'Useful words',
@@ -555,7 +558,7 @@ const UI = {
     lvd: ['直走、左轉、右轉', '數路口、過馬路', '左邊、右邊、對面、旁邊', '比較長的指路，全部一起用', '真實街區：斜路、圓環、Y字路口'],
     settings: '設定', helpT: '遊戲說明', close: '關閉',
     helpL: [
-      '🎧 先按「🔊 聽」，聽指路的話。也可以顯示文字和讀音。',
+      '🎧 先按「🔊 聽」，聽指路的話。聽不懂再按「看文字」，還不懂再按「看讀音和翻譯」。',
       '🚶 用下面的按鈕走路：直走＝走到下一個路口或轉角前；左轉、右轉＝在路口轉向。',
       '🚦 第二級以後，聽到「過馬路」就走到那個路口，按「過馬路」按鈕。',
       '🔄 第五級的圓環：先走進圓環，再按出口按鈕（出口是逆時針數）。',
@@ -565,7 +568,7 @@ const UI = {
     ],
     board: '排行榜', restart: '↻ 重來',
     q: '第 {n}/{N} 題', pts: '{s} 分',
-    listen: '🔊 聽', left: '', straight: '', right: '',
+    listen: '🔊 聽', seeText: '👁 看文字', seeMore: '👁 看讀音和翻譯', seeRead: '👁 看讀音', seeTrans: '👁 看翻譯', left: '', straight: '', right: '',
     reset: '↺ 重走', arrived: '✓ 我到了！', noRoad: '前面沒有路。',
     ok: '答對了！+10', bad: '差一點。看看正確的路線。',
     badFace: '地點對了，但是面向的方向不對。',
@@ -584,7 +587,7 @@ const UI = {
     saved: '分數已儲存。', savedLocal: '分數已存在這台裝置。',
     vocab: '詞彙', vocabDir: '方向', vocabPlaces: '地圖上的地點',
     back: '返回', map: '地圖',
-    mapAny: '隨機', show: '輔助', showText: '顯示文字', parts: '分段聽', cross: '',
+    mapAny: '隨機', show: '輔助', showText: '一開始就顯示文字', parts: '分段聽', cross: '',
     pickExit: '你在圓環裡，請選出口。', noExit: '沒有這個出口。', notRb: '這裡沒有圓環。', ex1: '第一個出口', ex2: '第二個出口', ex3: '第三個出口', ex4: '第四個出口', camFollow: '🔍 跟隨', camAll: '🗺 全圖',
     alreadyCrossed: '這裡已經過馬路了。', noStreet: '這裡沒有馬路可以過。', listenOnly: '只聽不看：請按 🔊', partN: '第 {n}/{N} 段', nextPart: '▶ 下一段',
     badCross: '地點對了，但是沒有在指路說的地方過馬路。', vocabWords: '常用詞',
@@ -625,7 +628,7 @@ const WTR = {
 
 /* ---------- state ---------- */
 const S = {
-  name: '', script: 'trad', lang: 'es', phon: 'pinyin', rate: 'normal', map: 'any', showText: true, partMode: false,
+  name: '', script: 'trad', lang: 'es', phon: 'pinyin', rate: 'normal', map: 'any', showAll: false, rev: 0, partMode: false,
   level: 1, qs: [], qi: 0, q: null, correct: 0, results: [], totalMs: 0, qStart: 0,
   cam: 'follow', pos: null, ang: 0, path: [], actions: [], crosses: [], cr: false, partIdx: 0, locked: false, busy: false, reveal: null, atGoal: false,
 };
@@ -682,7 +685,7 @@ function loadSettings() {
     const o = JSON.parse(localStorage.getItem(OWN_KEY) || '{}') || {};
     if (typeof o.name === 'string') S.name = o.name;
     if (typeof o.map === 'string') S.map = o.map;
-    if (typeof o.showText === 'boolean') S.showText = o.showText;
+    if (typeof o.showAll === 'boolean') S.showAll = o.showAll;
     if (typeof o.partMode === 'boolean') S.partMode = o.partMode;
   } catch (e) {}
   const p = new URLSearchParams(location.search);
@@ -697,7 +700,7 @@ function saveSettings() {
   try {
     let o = {};
     try { o = JSON.parse(localStorage.getItem(OWN_KEY) || '{}') || {}; } catch (e) {}
-    o.name = S.name; o.map = S.map; o.showText = S.showText; o.partMode = S.partMode;
+    o.name = S.name; o.map = S.map; o.showAll = S.showAll; o.partMode = S.partMode;
     localStorage.setItem(OWN_KEY, JSON.stringify(o));
   } catch (e) {}
 }
@@ -860,8 +863,10 @@ function iconLabels() {
 let modalKind = 'set';
 function openModal(kind) {
   modalKind = kind;
-  $('#m-title').textContent = T(kind === 'set' ? 'settings' : 'helpT');
+  $('#m-title').textContent = T(kind === 'set' ? 'settings' : (kind === 'vocab' ? 'vocab' : 'helpT'));
   $('#pane-set').classList.toggle('hidden', kind !== 'set');
+  $('#vocab').classList.toggle('hidden', kind !== 'vocab');
+  if (kind === 'vocab') buildVocab();
   const hp = $('#pane-help'); hp.classList.toggle('hidden', kind !== 'help');
   if (kind === 'help') { hp.innerHTML = ''; T('helpL').forEach(t => { const li = document.createElement('li'); li.textContent = t; hp.appendChild(li); });
     if (S.q && $('#s-game').classList.contains('on')) { const li = document.createElement('li'); li.innerHTML = '💡 ' + bh(T('hint' + S.level, { straight: '<b>' + W('straight') + '</b>', cross: '<b>' + W('cross') + '</b>' })); hp.appendChild(li); } }
@@ -882,9 +887,9 @@ function renderStart() {
   chips('#c-map', [{ v: 'any', label: T('mapAny') }].concat(Object.keys(DATA.maps).map(k => ({ v: k, label: mapLabel(k) }))), S.map, v => { S.map = v; saveSettings(); renderStart(); });
   $('#l-show').textContent = T('show');
   chips('#c-show', [
-    { v: 'tx', label: T('showText'), on: S.showText },
+    { v: 'tx', label: T('showText'), on: S.showAll },
     { v: 'pt', label: T('parts'), on: S.partMode },
-  ], null, v => { if (v === 'tx') S.showText = !S.showText; else { S.partMode = !S.partMode; S.partIdx = 0; } saveSettings(); renderStart(); if (v === 'pt' && S.partMode && $('#s-game').classList.contains('on') && S.q && !S.locked) speakCurrent(); });
+  ], null, v => { if (v === 'tx') S.showAll = !S.showAll; else { S.partMode = !S.partMode; S.partIdx = 0; } saveSettings(); renderStart(); if (v === 'pt' && S.partMode && $('#s-game').classList.contains('on') && S.q && !S.locked) speakCurrent(); });
   $('#l-phon').textContent = T('phon');
   chips('#c-phon', SET_OPTS.phon.map(v => ({ v, label: T('ph_' + v) })), S.phon, v => { S.phon = v; saveSettings(); renderStart(); });
   $('#l-rate').textContent = T('rate');
@@ -920,13 +925,14 @@ function startGame(level) {
   show('s-game');
   applyGameLabels();
   loadQuestion();
-  track('game_start', { level, map: S.map, parts: S.partMode ? 1 : 0, text: S.showText ? 1 : 0 });
+  track('game_start', { level, map: S.map, parts: S.partMode ? 1 : 0, text: S.showAll ? 1 : 0 });
   try { window.HGPlays && HGPlays.start('L' + level, S.name); } catch (e) {}
 }
 function applyGameLabels() {
   $('#btn-restart').textContent = T('restart');
   $('#lvname').textContent = T('lv')[S.level - 1];
   $('#btn-say').textContent = T('listen');
+  $('#btn-vocab').textContent = '📖 ' + T('vocab');
   const mk = (id, ic, key) => {
     const b = $(id);
     b.innerHTML = '<span class="ic">' + ic + '</span><span class="cn"></span><span class="pyb"></span><span class="sb"></span>';
@@ -948,14 +954,20 @@ function renderSentence() {
   const q = S.q, parts = q.parts, last = parts.length - 1, k = sk();
   const upto = (S.locked || !S.partMode) ? last : S.partIdx;
   const vis = parts.slice(0, upto + 1);
-  const showTxt = S.showText || S.locked;
+  // reveal steps: 0 = listen only, 1 = Chinese text, 2 = + reading and translation (after answering: everything)
+  const rev = S.locked ? 2 : S.rev;
+  const showTxt = rev >= 1, showAux = rev >= 2;
+  const hasRead = S.phon !== 'off', hasTr = showTrans();
   const zh = $('#zh'); zh.lang = S.script === 'trad' ? 'zh-TW' : 'zh-CN';
   zh.classList.toggle('listen', !showTxt);
   zh.textContent = showTxt ? vis.map(p => p[k]).join('')
     : '🎧 ' + (S.partMode ? T('partN', { n: upto + 1, N: parts.length }) : T('listenOnly'));
   const py = vis.map(p => p.py).join(' ');
-  $('#pyl').textContent = phText(py); $('#pyl').classList.toggle('hidden', S.phon === 'off' || !showTxt);
-  $('#trl').textContent = showTrans() ? vis.map(p => p[S.lang]).join(' ') : ''; $('#trl').classList.toggle('hidden', !showTrans() || !showTxt);
+  $('#pyl').textContent = phText(py); $('#pyl').classList.toggle('hidden', !hasRead || !showAux);
+  $('#trl').textContent = hasTr ? vis.map(p => p[S.lang]).join(' ') : ''; $('#trl').classList.toggle('hidden', !hasTr || !showAux);
+  const rb = $('#btn-reveal');
+  rb.classList.toggle('hidden', S.locked || rev >= 2 || (rev >= 1 && !hasRead && !hasTr));
+  rb.textContent = T(rev === 0 ? 'seeText' : (hasRead && hasTr ? 'seeMore' : (hasRead ? 'seeRead' : 'seeTrans')));
   const m = DATA.maps[q.map];
   $('#mapname').textContent = flat(T('map')) + ': ' + m[k] + (showTrans() ? ' · ' + m[S.lang] : '');
   const partTxt = (S.partMode && !S.locked) ? ' · ' + T('partN', { n: S.partIdx + 1, N: parts.length }) : '';
@@ -969,10 +981,9 @@ function renderSentence() {
 function loadQuestion() {
   const q = S.qs[S.qi]; S.q = q; avPick();
   initPos(q); S.actions = []; S.crosses = []; S.cr = false; S.partIdx = 0;
-  S.locked = false; S.busy = false; S.reveal = null; S.atGoal = false;
+  S.locked = false; S.busy = false; S.reveal = null; S.atGoal = false; S.rev = S.showAll ? 2 : 0;
   $('#feedback').classList.add('hidden'); $('#feedback').innerHTML = '';
   $('#controls').classList.remove('off'); $('#row2').classList.remove('off'); $('#dock').classList.remove('off'); $('#s-game').classList.remove('locked');
-  $('#vocab').classList.add('hidden');
   renderSentence(); renderMap(); redraw(); updateExits();
   S.qStart = Date.now();
   setTimeout(speakCurrent, 300);
@@ -1616,9 +1627,10 @@ async function openBoard(level) {
 }
 
 /* ---------- vocabulary panel ---------- */
-function toggleVocab() {
+function toggleVocab() { if (S.q) openModal('vocab'); }
+function buildVocab() {
   const v = $('#vocab');
-  if (!v.classList.contains('hidden')) { v.classList.add('hidden'); return; }
+  if (!S.q) return;
   const m = DATA.maps[S.q.map];
   v.innerHTML = '<h4>' + T('vocabDir') + '</h4><div class="g" id="vg1"></div><h4>' + T('vocabWords') + '</h4><div class="g" id="vg3"></div><h4>' + T('vocabPlaces') + '</h4><div class="g" id="vg2"></div>';
   const fill = (id, rows) => {
@@ -1637,15 +1649,13 @@ function toggleVocab() {
   const keys = [];
   m.blocks.forEach(r => r.forEach(k => keys.push(k)));
   fill('#vg2', keys.map(k => { const b = DATA.buildings[k]; return [S.script === 'trad' ? b.tw : b.cn, b.py, b[S.lang]]; }));
-  v.classList.remove('hidden');
 }
 // re-draw whatever screen is showing after the settings changed (e.g. in another tab)
 function refreshAll() {
   if ($('#s-start').classList.contains('on')) { S.name = $('#name').value; renderStart(); }
   else if ($('#s-game').classList.contains('on') && S.q) {
-    const vopen = !$('#vocab').classList.contains('hidden');
     applyGameLabels(); renderSentence(); renderMap(); redraw(); renderFeedback();
-    $('#vocab').classList.add('hidden'); if (vopen) toggleVocab();
+    if (!$('#modal').classList.contains('hidden') && modalKind === 'vocab') buildVocab();
   }
   else if ($('#s-result').classList.contains('on')) paintResult();
   else if ($('#s-board').classList.contains('on')) openBoard(boardLevel);
@@ -1669,6 +1679,7 @@ function bind() {
   $('#b-reset').onclick = resetPos;
   $('#b-go').onclick = submit;
   $('#btn-say').onclick = speakCurrent;
+  $('#btn-reveal').onclick = () => { if (S.locked || !S.q || S.rev >= 2) return; S.rev++; renderSentence(); };
   $('#btn-vocab').onclick = toggleVocab;
   $('#btn-restart').onclick = () => { stopSpeech(); startGame(S.level); };
   ['#i-set', '#g-set'].forEach(id => { $(id).onclick = () => openModal('set'); });
