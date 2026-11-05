@@ -40,7 +40,7 @@ Notas de vocabulario:
 
 ## Ayudas y ajustes
 
-Todos los ajustes están en el icono ⚙ (arriba a la derecha, en la pantalla de inicio y en el juego); ❓ explica cómo se juega. Solo la elección de mapa se queda en la pantalla de inicio.
+Todos los ajustes están en el icono ⚙ (arriba a la derecha, en la pantalla de inicio y en el juego); ❓ explica cómo se juega.
 Se guardan en la clave compartida `hanziGames.settings` (la misma en todos los juegos de la familia): `{v:1, script, lang, phon, rate}`. Si cambias algo aquí, los otros juegos lo ven (y al revés).
 
 - Caracteres: **繁體** o **简体** (por defecto, tradicional)
@@ -49,18 +49,17 @@ Se guardan en la clave compartida `hanziGames.settings` (la misma en todos los j
 - Velocidad de la voz: lenta (0.45), normal (0.65) o rápida (0.85); siempre voz `zh-TW`
 - **Texto desde el inicio** (apagado por defecto): por defecto cada pregunta empieza solo con 🔊 (el texto está oculto). «👁 Ver texto» muestra el chino; el segundo toque muestra la lectura (pinyin/zhuyin) y la traducción. Al responder se muestra todo. Si lo enciendes, todo se ve desde el principio.
 - **Por partes**: la indicación se escucha en trozos cortos con «Parte siguiente»
-- **Mapa**: elige uno de los 6 mapas o aleatorio
 - 📖 **Vocabulario** (botón sobre el mapa): se abre como una hoja desde abajo con las direcciones, las palabras útiles (先、然後、再、最後…) y los lugares del mapa; se cierra con ✕
 - Fotos opcionales: si pones `photos/<clave>.jpg` (p. ej. `bank.jpg`) se muestra al terminar cada pregunta
 
-El nombre del jugador, el mapa elegido, «Texto desde el inicio» (`showAll`) y «Por partes» y la clasificación local se guardan solo en este juego (`askdir_settings`, `askdir_lb`). Los ajustes antiguos de `askdir_settings` se pasan a la clave compartida la primera vez; el antiguo `showText` ya no se usa.
+El nombre del jugador, «Texto desde el inicio» (`showAll`) y «Por partes» y la clasificación local se guardan solo en este juego (`askdir_settings`, `askdir_lb`). Los ajustes antiguos de `askdir_settings` se pasan a la clave compartida la primera vez; el antiguo `showText` ya no se usa.
 
 Se puede abrir con parámetros para saltarse la pantalla de inicio, por ejemplo:
 `index.html?name=Ana&script=trad&lang=es` (`script`: `trad`/`tw` o `simp`/`cn`; `lang`: `es`, `en` o `zh`).
 
 ## Mapas
 
-Seis mapas sencillos: **便利商店街** (calle comercial), **車站前** (frente a la estación), **夜市** (mercado nocturno), **校園附近** (cerca de la escuela), **醫院附近** (cerca del hospital) y **捷運站出口** (salida del metro), con 31 lugares en total (el barrio real del nivel 5 añade otros 21).
+El mapa no se elige: en los niveles 1–4 cada ronda mezcla al azar los 6 mapas básicos, y el nivel 5 siempre usa el barrio real. Seis mapas sencillos: **便利商店街** (calle comercial), **車站前** (frente a la estación), **夜市** (mercado nocturno), **校園附近** (cerca de la escuela), **醫院附近** (cerca del hospital) y **捷運站出口** (salida del metro), con 31 lugares en total (el barrio real del nivel 5 añade otros 21).
 El nivel 5 usa un mapa aparte, **真實街區** (barrio real), que ya no es una cuadrícula: una rotonda con cinco calles de ángulos distintos, una avenida en diagonal, una calle curva y una bifurcación en Y con isla verde. Es una red de calles (`tools/graph_map.py`, motor en `tools/graph_engine.py`): cada giro se decide por el ángulo (más de 20° a un lado = izquierda/derecha; casi recto = sigue recto). En la rotonda se circula en sentido contrario a las agujas del reloj; la primera salida es la primera calle después de por donde entraste. **靠左／靠右** = pulsar girar y luego recto. En el mapa grande, el botón 🔍/🗺 alterna entre seguir al personaje y ver el mapa completo.
 
 Cinco de los mapas básicos tienen calles cerradas (plazas peatonales) y callejones sin salida, así que no todo es una cuadrícula perfecta. Las calles cerradas se definen en `closed` dentro de `MAPS` en `tools/gen_questions.py`. **直走** avanza 2/3 de la cuadra, hasta justo antes de la siguiente parada (una intersección, una curva o el final de la calle); los tramos rectos sin cruce se pasan de largo.
@@ -73,7 +72,7 @@ Cinco de los mapas básicos tienen calles cerradas (plazas peatonales) y callejo
 
 - 聽一段指路的話，用「直走、左轉、右轉、過馬路」按鈕讓小人走，走到目的地按「我到了」。
 - 文字一開始是藏起來的：先用聽的，聽不懂再按「看文字」（只出現中文），還不懂再按「看讀音和翻譯」；答完題會全部顯示。設定裡的「一開始就顯示文字」可以改成一開始就全部顯示。
-- 其他功能：分段聽、可選地圖、真正的「過馬路」按鈕、6 張地圖、可放自己的街景照片；📖 小字典從畫面下方跳出來，不會被版權文字蓋住。
+- 其他功能：分段聽、真正的「過馬路」按鈕、6 張地圖、可放自己的街景照片；📖 小字典從畫面下方跳出來，不會被版權文字蓋住。
 - 共 5 個關卡：方向詞 → 路口與過馬路 → 位置詞（對面、旁邊）→ 綜合挑戰 → 第五級「真實街區」（不是方格的街道：圓環、Y字路口、斜路與彎路）。
 - 設定和其他遊戲共用（localStorage 的 `hanziGames.settings`）：繁體／簡體；語言選項是「中文＋Español」、「中文＋English」、「只有中文」，介面一律中文在上、外語小灰字在下（只有中文就沒有外語）；所有設定集中在右上角 ⚙，玩法說明在 ❓；讀音可選拼音（台灣讀音，預設）、注音、拼音＋注音或不顯示；語音速度慢 0.45／中 0.65／快 0.85。
 - 只有語言不是「中文」時才會顯示翻譯，沒有另外的翻譯開關。

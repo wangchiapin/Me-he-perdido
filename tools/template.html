@@ -39,11 +39,7 @@ input.name.err{border-color:var(--bad)}
 .frow .lbl .bi,.frow .lbl .bz,.frow .lbl .bf{display:block}
 .frow .lbl .bz{font-size:14px;color:var(--ink)}
 .frow .lbl .bf::before{content:''}
-.frow input.name,.frow .selwrap{flex:1 1 auto;min-width:0}
-.selwrap{position:relative}
-.selwrap::after{content:'▾';position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none}
-.mapsel{appearance:none;-webkit-appearance:none;width:100%;border:1.5px solid var(--ink);background:var(--card);border-radius:14px;padding:11px 34px 11px 12px;font-size:15px;color:var(--ink);cursor:pointer;text-overflow:ellipsis}
-@media(max-width:360px){.mapsel{font-size:13.5px}}
+.frow input.name{flex:1 1 auto;min-width:0}
 @media(max-width:340px){.headrow .hero{display:none}}
 .levels{display:grid;gap:7px;margin-top:12px;position:relative;padding-left:31px}
 .levels::before{content:'';position:absolute;left:12px;top:20px;bottom:20px;width:3px;border-radius:2px;background:var(--ink);opacity:.85}
@@ -227,8 +223,6 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
   <div class="headrow"><div class="plaque"><h1 id="ttl">問路小達人</h1></div><div class="hero" id="hero"></div></div>
 
   <div class="frow"><div class="lbl" id="l-name"></div><input id="name" class="name" maxlength="14" autocomplete="off"></div>
-
-  <div class="frow"><div class="lbl" id="l-map"></div><div class="selwrap"><select id="mapsel" class="mapsel"></select></div></div>
 
   <div class="lbl" id="l-level"></div>
   <div class="levels" id="levels"></div>
@@ -655,7 +649,6 @@ function loadSettings() {
   try {
     const o = JSON.parse(localStorage.getItem(OWN_KEY) || '{}') || {};
     if (typeof o.name === 'string') S.name = o.name;
-    if (typeof o.map === 'string') S.map = o.map;
     if (typeof o.showAll === 'boolean') S.showAll = o.showAll;
     if (typeof o.partMode === 'boolean') S.partMode = o.partMode;
   } catch (e) {}
@@ -664,14 +657,13 @@ function loadSettings() {
   const sc = p.get('script');
   if (sc === 'tw' || sc === 'trad') S.script = 'trad'; else if (sc === 'cn' || sc === 'simp') S.script = 'simp';
   if (['es', 'en', 'zh'].includes(p.get('lang'))) S.lang = p.get('lang');
-  if (S.map !== 'any' && !DATA.maps[S.map]) S.map = 'any';
 }
 function saveSettings() {
   writeShared();
   try {
     let o = {};
     try { o = JSON.parse(localStorage.getItem(OWN_KEY) || '{}') || {}; } catch (e) {}
-    o.name = S.name; o.map = S.map; o.showAll = S.showAll; o.partMode = S.partMode;
+    o.name = S.name; delete o.map; o.showAll = S.showAll; o.partMode = S.partMode;
     localStorage.setItem(OWN_KEY, JSON.stringify(o));
   } catch (e) {}
 }
@@ -861,10 +853,6 @@ function renderStart() {
   chips('#c-script', [{ v: 'trad', label: '繁體' }, { v: 'simp', label: '简体' }], S.script, v => { S.script = v; saveSettings(); renderStart(); });
   $('#l-lang').textContent = T('lang');
   chips('#c-lang', [{ v: 'es', label: '中文＋' + (isZh() ? '西班牙文' : 'Español') }, { v: 'en', label: '中文＋' + (isZh() ? '英文' : 'English') }, { v: 'zh', label: '只有中文' }], S.lang, v => { S.lang = v; saveSettings(); renderStart(); });
-  $('#l-map').textContent = T('map');
-  const ms = $('#mapsel'); ms.innerHTML = '';
-  [['any', flat(T('mapAny'))]].concat(Object.keys(DATA.maps).map(k => [k, flat(mapLabel(k))])).forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; ms.appendChild(o); });
-  ms.value = S.map;
   $('#l-show').textContent = T('show');
   chips('#c-show', [
     { v: 'tx', label: T('showText'), on: S.showAll },
@@ -1678,7 +1666,6 @@ function bind() {
   const reveal = () => { if (S.locked || !S.q || S.rev >= 2) return; S.rev++; renderSentence(); };
   $('#btn-reveal').onclick = reveal; $('#btn-reveal2').onclick = reveal;
   $('#btn-vocab').onclick = toggleVocab;
-  $('#mapsel').onchange = e => { S.map = e.target.value; saveSettings(); };
   window.addEventListener('resize', setVocabLabel);
   $('#btn-restart').onclick = () => { stopSpeech(); leaveAt = Date.now(); openModal('leave'); };
   $('#lv-keep').onclick = closeModal;
