@@ -126,3 +126,7 @@ iPhone 版 Chrome 上，頁面可以捲動時，往下捲之後有時回不到�
 - En las calles largas del 真實街區 hay una segunda tienda; cada tienda es una **parada**: 直走 avanza solo hasta la siguiente parada (tienda, esquina o rotonda). En una parada no se puede girar ni cruzar.
 - Frases nuevas: 「直走到咖啡店前面」. Con 「直走到第N個路口」「直走到圓環」 se pasan las tiendas sin parar en ellas en la frase, pero hay que pulsar 直走 una vez por parada.
 - 繁中：第 5 級較長的路多了第二間店，「直走」一次只走到下一間店／路口／圓環；店前不能轉彎或過馬路。
+
+## Modo avanzado / 進階玩法
+- En ⚙ Ajustes → «Modo de caminar»: **Un toque = un paso** (por defecto) o **Avanzado: mantén pulsado para caminar**. En el modo avanzado, mientras mantienes 直走 el personaje sigue avanzando parada tras parada y se detiene en la siguiente parada al soltar; hay que soltar en el sitio correcto (por ejemplo, al llegar a la segunda esquina). Un toque rápido sigue siendo un paso. Funciona en los 5 niveles y se recuerda en el navegador.
+- 繁中：⚙ 設定 →「走路方式」：預設「點一下走一步」；選「進階：按住才走，放開就停」後，按住「直走」會一直往前走，放開就停在下一個停靠點，要在對的位置放開。
