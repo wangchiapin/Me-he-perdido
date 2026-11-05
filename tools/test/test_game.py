@@ -81,6 +81,27 @@ with sync_playwright() as p:
     pg.evaluate("q=>__askdir.loadSpecific(q)", q1)
     pg.evaluate("__askdir.act('C')")
     chk(pg.evaluate("__askdir.S.actions.length") == 0, 'level 1 ignores cross')
+    # the cross button starts at level 3: level 2 has none (no 過馬路 in its sentences either)
+    q2n = next(q for q in qs if q['level'] == 2)
+    pg.evaluate("q=>__askdir.loadSpecific(q)", q2n)
+    pg.evaluate("__askdir.act('C')")
+    chk(pg.evaluate("__askdir.S.actions.length") == 0, 'level 2 ignores cross')
+    chk(not pg.is_visible('#b-C'), 'level 2: no cross button')
+    q3n = next(q for q in qs if q['level'] == 3)
+    pg.evaluate("q=>__askdir.loadSpecific(q)", q3n)
+    chk(pg.is_visible('#b-C'), 'level 3: cross button shown')
+    # sentence rules (all questions)
+    full = lambda q: ''.join(p['tw'] for p in q['parts'])
+    chk(not any(q['crosses'] for q in qs if q['level'] <= 2), 'levels 1-2 have no crossing')
+    chk(any('到底' in full(q) for q in qs if q['level'] == 2), 'level 2 has 一直走到底 questions')
+    chk(not any('旁邊' in full(q) for q in qs), 'no 旁邊 any more')
+    chk(any('它前面是' in full(q) for q in qs) and any('它後面是' in full(q) for q in qs), '它前面是 / 它後面是 are used')
+    chk(not any('最後' in full(q) and '先' not in full(q) for q in qs), '最後 only after 先')
+    chk(not any('第一個路口' in full(q) and '下一個路口' in full(q) for q in qs), 'never 第一個路口 and 下一個路口 together')
+    chk(not any(full(q).count('第一個路口') > 1 for q in qs), '第一個路口 at most once per sentence')
+    import re as _re
+    chk(not any(q['crosses'] and _re.search('第.個路口|下一個路口', full(q)) for q in qs), 'crossing sentences never count intersections')
+    chk(all(('過了' in full(q)) for q in qs if q['crosses']), 'crossing only comes after 過了…就過馬路')
     # replay ends at correct square
     pg.evaluate("q=>__askdir.loadSpecific(q)", q)
     pg.evaluate("__askdir.act('L')"); pg.evaluate("__askdir.submit()")
@@ -180,7 +201,7 @@ with sync_playwright() as p:
     lb = pg.evaluate("localStorage.getItem('askdir_lb')")
     chk('Ana' in (lb or ''), 'local leaderboard saved')
     # screenshots of a level-2 question with pinyin
-    q2 = next(q for q in qs if q['level'] == 2 and q['crosses'])
+    q2 = next(q for q in qs if q['level'] == 3 and q['crosses'])
     # 拼音注音四種都要真的測：畫面上有沒有出現拼音聲調字母／注音符號
     # （門檻：有顯示 ≥30 個；沒顯示時 ≤15，西班牙文的重音字母 ó é í 會佔幾個）
     PY = re.compile('[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]'); ZY = re.compile('[ㄅ-ㄩ]')

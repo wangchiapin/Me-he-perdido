@@ -111,6 +111,7 @@ def shuffled_blocks(mp, rng):
 TURN = {
     'L': dict(tw='左轉', cn='左转', py='zuǒ zhuǎn', es='gira a la izquierda', en='turn left'),
     'R': dict(tw='右轉', cn='右转', py='yòu zhuǎn', es='gira a la derecha', en='turn right'),
+    'C': dict(tw='過馬路', cn='过马路', py='guò mǎ lù', es='cruza la calle', en='cross the street'),   # used only after "過了…就"
 }
 HAND = {
     'L': dict(tw='左手邊', cn='左手边', py='zuǒ shǒu biān', es='izquierda', en='left'),
@@ -234,6 +235,7 @@ class Sim:
 def assign_connectors(steps, level):
     n = len(steps)
     cons, alt = [None] * n, 0
+    has_xian = bool(steps) and steps[0]['kind'] in ('turn', 'round', 'fork')      # the sentence starts with 先…
     for i, st in enumerate(steps):
         k = st['kind']
         if k == 'cross':
@@ -252,7 +254,7 @@ def assign_connectors(steps, level):
             elif i == 0:
                 con = None
             elif i == n - 1:
-                con = 3
+                con = 3 if has_xian else 2          # 最後 only after 先/然後; otherwise 再
             else:
                 con = 1 if alt % 2 == 0 else 2
                 alt += 1
@@ -280,6 +282,9 @@ def render_step(st, con, level, rng):
         return dict(kind=k, tw=ptw + '直走到' + o['tw'], cn=pcn + '直走到' + o['cn'],
                     py=ppy + 'zhí zǒu dào ' + o['py'],
                     es=pes + 'sigue recto hasta ' + o['es'], en=pen + 'go straight to ' + o['en'])
+    if k == 'end':
+        return dict(kind=k, tw=ptw + '一直走到底', cn=pcn + '一直走到底', py=ppy + 'yì zhí zǒu dào dǐ',
+                    es=pes + 'sigue recto hasta el final', en=pen + 'go straight to the end of the road')
     if k == 'torb':
         return dict(kind=k, tw=ptw + '直走到圓環', cn=pcn + '直走到圆环', py=ppy + 'zhí zǒu dào yuán huán',
                     es=pes + 'sigue recto hasta la rotonda', en=pen + 'go straight to the roundabout')
@@ -332,11 +337,16 @@ def final_clause(tkey, side, extra):
             py += ', duì miàn shì ' + o['py']
             es += ', y enfrente está ' + o['es_art']
             en += ', and across the street is ' + o['en_art']
+        elif kind == 'ahead':
+            tw += '，它前面是' + o['tw']; cn += '，它前面是' + o['cn']
+            py += ', tā qián miàn shì ' + o['py']
+            es += ', y más adelante está ' + o['es_art']
+            en += ', and just beyond it is ' + o['en_art']
         else:
-            tw += '，旁邊是' + o['tw']; cn += '，旁边是' + o['cn']
-            py += ', páng biān shì ' + o['py']
-            es += ', y al lado está ' + o['es_art']
-            en += ', and next to it is ' + o['en_art']
+            tw += '，它後面是' + o['tw']; cn += '，它后面是' + o['cn']
+            py += ', tā hòu miàn shì ' + o['py']
+            es += ', y justo antes está ' + o['es_art']
+            en += ', and just before it is ' + o['en_art']
     return dict(tw=tw, cn=cn, py=py, es=es, en=en)
 
 def part_from(clauses):
@@ -354,7 +364,7 @@ def make_parts(clauses, fin):
     parts, cur, moved = [], [], False
     for c in clauses:
         cur.append(c)
-        if c['kind'] in ('go1', 'go', 'pass', 'torb', 'toy'):
+        if c['kind'] in ('go1', 'go', 'pass', 'torb', 'toy', 'end'):
             moved = True
         if c['kind'] in ('turn', 'pass', 'round', 'fork') and moved:
             parts.append(part_from(cur)); cur, moved = [], False
@@ -368,13 +378,22 @@ PATTERNS = {
     1: [['go1', 'turn', 'go1'], ['go1', 'turn', 'go1'], ['go1', 'turn', 'go1'],
         ['turn', 'go1', 'turn', 'go1'], ['turn', 'go1', 'turn', 'go1'],
         ['go1', 'turn', 'go1', 'turn', 'go1']],
-    2: [['go', 'turn', 'go'], ['go', 'cross', 'go'], ['go', 'cross', 'go', 'turn', 'go'],
-        ['turn', 'go', 'turn', 'go'], ['go', 'turn', 'go', 'cross', 'go']],
-    3: [['pass', 'go'], ['pass', 'go'], ['turn', 'pass', 'go'], ['go', 'turn', 'go'], ['go', 'cross', 'go']],
-    4: [['go', 'turn', 'pass', 'go'], ['pass', 'go', 'cross', 'go'], ['turn', 'go', 'cross', 'go', 'turn', 'go'],
-        ['go', 'turn', 'go', 'pass', 'go'], ['pass', 'go', 'turn', 'go']],
+    2: [['go', 'turn', 'go'], ['go', 'turn', 'go'], ['go', 'turn', 'end'], ['go', 'turn', 'end'],
+        ['turn', 'go', 'turn', 'go'], ['turn', 'go', 'turn', 'end'], ['turn', 'end']],
+    3: [['pass', 'go'], ['pass', 'go'], ['turn', 'pass', 'go'], ['go', 'turn', 'end'],
+        ['passx', 'end'], ['passx', 'go1'], ['turn', 'passx', 'end']],
+    4: [['go', 'turn', 'pass', 'go'], ['pass', 'go', 'turn', 'go'], ['go', 'turn', 'go', 'pass', 'go'],
+        ['passx', 'go1', 'turn', 'end'], ['turn', 'go1', 'turn', 'passx', 'end'], ['pass', 'passx', 'end'],
+        ['turn', 'passx', 'go1', 'turn', 'go1'], ['go', 'turn', 'pass', 'end']],
 }
 MAX_MOVES = {1: 4, 2: 5, 3: 6, 4: 8, 5: 6}
+
+def counting_ok(steps):
+    """one way of counting per sentence: never both 第一個 and 下一個, and no phrase twice"""
+    keys = [('next' if st.get('next') else st['n']) for st in steps if st['kind'] == 'go']
+    if len(keys) != len(set(keys)):
+        return False
+    return not ('next' in keys and 1 in keys)
 
 def try_build(level, mp, rng):
     pat = rng.choice(PATTERNS[level])
@@ -396,7 +415,7 @@ def try_build(level, mp, rng):
                 if not sim.move() or degree(mp, sim.x, sim.y) < 3:
                     return None
             total += n
-            steps.append(dict(kind='go', n=n, next=(len(steps) > 0 and n == 1 and rng.random() < 0.5)))
+            steps.append(dict(kind='go', n=n, next=(n == 1 and any(st['kind'] == 'go' for st in steps))))
         elif kind == 'turn':
             t = rng.choice('LR')
             sim.turn(t)
@@ -431,7 +450,8 @@ def try_build(level, mp, rng):
             if prev != 'go' or not sim.cross():
                 return None
             steps.append(dict(kind='cross'))
-        elif kind == 'pass':
+        elif kind in ('pass', 'passx'):
+            xing = (kind == 'passx')          # "過了X就過馬路" instead of "過了X就左轉"
             side = rng.choice('LR')
             cands, cx, cy, k = [], sim.x, sim.y, 0
             while is_open(mp, cx, cy, sim.d):
@@ -439,7 +459,7 @@ def try_build(level, mp, rng):
                 nx, ny = cx + DX[sim.d], cy + DY[sim.d]
                 if not straight_through(mp, nx, ny, sim.d):       # a place where the walker stops
                     k += 1
-                    if f[side] and k <= 4:
+                    if f[side] and k <= 4 and (not xing or (degree(mp, nx, ny) >= 3 and is_open(mp, nx, ny, sim.d))):
                         cands.append((k, nx, ny, f[side][0], f['L' if side == 'R' else 'R']))
                 else:
                     pass
@@ -453,15 +473,32 @@ def try_build(level, mp, rng):
                 return None
             total += k
             okey = opp[0] if (opp and opp[0] and rng.random() < 0.55) else None
-            turn = rng.choice('LR')
-            sim.turn(turn)
+            if xing:
+                if not sim.cross():
+                    return None
+                turn = 'C'
+            else:
+                turn = rng.choice('LR')
+                sim.turn(turn)
             named += [bkey] + ([okey] if okey else [])
             steps.append(dict(kind='pass', side=side, b=bkey, opp=okey, turn=turn))
-        if kind in ('go1', 'go', 'turn', 'pass', 'fork', 'cross') and (sim.at_rb() or sim.at_y_from_stem()):
+        elif kind == 'end':
+            n_end = 0
+            while is_open(mp, sim.x, sim.y, sim.d):          # walk until the road ends
+                if not sim.move():
+                    return None
+                n_end += 1
+            if n_end < 1:
+                return None
+            total += n_end
+            steps.append(dict(kind='end'))
+        if kind in ('go1', 'go', 'turn', 'pass', 'passx', 'fork', 'cross') and (sim.at_rb() or sim.at_y_from_stem()):
             if not (kind == 'turn' and False):
                 return None
         prev = kind if kind not in ('go1',) else 'go'
-    if pat[-1] not in ('go', 'go1') or sim.last is None:
+    if pat[-1] not in ('go', 'go1', 'end') or sim.last is None:
+        return None
+    if not counting_ok(steps):
         return None
     if total < 2 or total > MAX_MOVES[level]:
         return None
@@ -485,10 +522,10 @@ def try_build(level, mp, rng):
             extra = ('opp', f[other][0])
         elif r < 0.9:
             bx, by = f[side][1]
-            nbrs = [k for sgn in (1, -1)
+            nbrs = [('ahead' if sgn == 1 else 'behind', k) for sgn in (1, -1)
                     for k in [block_at(mp, bx + sgn * DX[ld], by + sgn * DY[ld])] if k]
             if nbrs:
-                extra = ('next', rng.choice(nbrs))
+                extra = rng.choice(nbrs)
     if tkey in named or (extra and extra[1] in named):
         return None
     cons = assign_connectors(steps, level)
@@ -508,7 +545,7 @@ GPATTERNS = [
     ['torb', 'round', 'go1'], ['torb', 'round', 'go1'], ['go1', 'torb', 'round', 'go1'], ['torb', 'round', 'turn', 'go1'],
     ['turn', 'torb', 'round', 'go1'], ['toy', 'fork', 'go1'], ['go1', 'toy', 'fork', 'go1'], ['turn', 'toy', 'fork', 'go1'],
     ['pass', 'go'], ['go', 'turn', 'go'], ['go', 'pass', 'go'], ['turn', 'pass', 'go'],
-    ['go', 'cross', 'go'], ['go', 'cross', 'go', 'turn', 'go'], ['go', 'turn', 'go', 'cross', 'go'],
+    ['passx', 'go1'], ['turn', 'passx', 'go1'],
 ]
 
 def try_build_graph(rng):
@@ -526,7 +563,7 @@ def try_build_graph(rng):
             for _ in range(k):
                 if not sim.move() or GE.deg(sim.node) < 3: return None
             total += k
-            steps.append(dict(kind='go', n=k, next=(len(steps) > 0 and k == 1 and rng.random() < 0.5)))
+            steps.append(dict(kind='go', n=k, next=(k == 1 and any(st['kind'] == 'go' for st in steps))))
         elif kind == 'turn':
             t = rng.choice('LR')
             if not sim.turn(t): return None
@@ -549,7 +586,7 @@ def try_build_graph(rng):
         elif kind == 'cross':
             if prev != 'go' or not sim.cross(): return None
             steps.append(dict(kind='cross'))
-        elif kind == 'pass':
+        elif kind in ('pass', 'passx'):
             side = rng.choice('LR'); k = rng.choice([1, 1, 2])
             for _ in range(k):
                 if not sim.move(): return None
@@ -558,15 +595,20 @@ def try_build_graph(rng):
             bkey = fl[0] if side == 'L' else fl[1]
             if not bkey: return None
             opp = fl[1] if side == 'L' else fl[0]
-            t = rng.choice('LR')
-            if not sim.turn(t): return None
+            if kind == 'passx':
+                if not sim.cross(): return None
+                t = 'C'
+            else:
+                t = rng.choice('LR')
+                if not sim.turn(t): return None
             okey = opp if (opp and rng.random() < 0.55) else None
             total += k; named += [bkey] + ([okey] if okey else [])
             steps.append(dict(kind='pass', side=side, b=bkey, opp=okey, turn=t))
-        if kind in ('go1', 'go', 'turn', 'pass', 'fork', 'cross') and (sim.at_rb() or sim.at_y_from_stem()):
+        if kind in ('go1', 'go', 'turn', 'pass', 'passx', 'fork', 'cross') and (sim.at_rb() or sim.at_y_from_stem()):
             return None
         prev = kind if kind != 'go1' else 'go'
     if pat[-1] not in ('go', 'go1') or sim.last is None: return None
+    if not counting_ok(steps): return None
     if total < 2 or total > MAX_MOVES[5] or sim.node == n: return None
     ed, frm = sim.last
     fl = GE.flank(ed, frm)
@@ -601,6 +643,8 @@ def main(per=12, per5=72, seed=20261020):
     for level in (1, 2, 3, 4, 5):
         for mp in (('real',) if level == 5 else BASIC):
             seen, made, tries, want = set(), 0, 0, (per5 if level == 5 else per)
+            n_cross = n_end = 0
+            cross_cap, end_cap = max(1, want // 4), max(1, want * 5 // 12)      # keep 過馬路 and 到底 from taking over
             while made < want and tries < 60000:
                 tries += 1
                 if level < 5:
@@ -613,6 +657,11 @@ def main(per=12, per5=72, seed=20261020):
                 key = ''.join(p['tw'] for p in q['parts'])
                 if key in seen:
                     continue
+                has_end = '到底' in key
+                if (q['crosses'] and n_cross >= cross_cap) or (has_end and n_end >= end_cap):
+                    continue
+                n_cross += 1 if q['crosses'] else 0
+                n_end += 1 if has_end else 0
                 seen.add(key)
                 made += 1
                 q['id'] = '%s-L%d-%02d' % (mp, level, made)

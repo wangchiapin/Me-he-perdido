@@ -423,12 +423,12 @@ const UI = {
     ph_pinyin: 'Pinyin', ph_zhuyin: 'Zhuyin 注音', ph_both: 'Pinyin + zhuyin', ph_off: 'Ninguna',
     level: 'Elige un nivel',
     lv: ['Nivel 1', 'Nivel 2', 'Nivel 3', 'Nivel 4', 'Nivel 5'],
-    lvd: ['Recto, izquierda y derecha', 'Contar esquinas y cruzar la calle', 'Izquierda, derecha, enfrente, al lado', 'Indicaciones largas, todo junto', 'Barrio real: calles en diagonal, rotonda y Y'],
+    lvd: ['Recto, izquierda y derecha', 'Contar esquinas y seguir hasta el final', 'Izquierda, derecha, enfrente, cruzar la calle', 'Indicaciones largas, todo junto', 'Barrio real: calles en diagonal, rotonda y Y'],
     settings: 'Ajustes', helpT: 'Cómo jugar', close: 'Cerrar',
     helpL: [
       '🎧 Pulsa «🔊 Escuchar» para oír las indicaciones. Si lo necesitas, pulsa «Ver texto» y después «Ver lectura y traducción».',
       '🚶 Camina con los botones de abajo: «Recto» te lleva hasta justo antes de la siguiente esquina o curva; «Izquierda» y «Derecha» giran en la esquina.',
-      '🚦 Desde el nivel 2, cuando oigas «cruzar la calle», llega a esa esquina y pulsa el botón de cruzar.',
+      '🚦 Desde el nivel 3, cuando oigas «cruzar la calle», llega a esa esquina y pulsa el botón de cruzar.',
       '🔄 Nivel 5, rotondas: entra en la rotonda y pulsa el botón de la salida (se cuentan en sentido contrario a las agujas del reloj).',
       '✅ Al llegar al destino, pulsa «¡Llegué!». Si aciertas, ganas 10 puntos.',
       '↺ Si te equivocas, pulsa «Reintentar» para volver al inicio.',
@@ -443,7 +443,7 @@ const UI = {
     yourRoute: 'Tu ruta', rightRoute: 'Ruta correcta',
     watch: '▶ Ver la ruta', next: 'Siguiente →', finish: 'Ver resultado',
     hint1: '{straight} = avanzar hasta justo antes de la siguiente esquina.',
-    hint2: 'Las esquinas se cuentan desde donde estás. Cuando oigas {cross}, pulsa el botón de cruzar al llegar a esa esquina.',
+    hint2: 'Las esquinas se cuentan desde donde estás. «Hasta el final» = sigue recto hasta que la calle se acabe.',
     hint3: 'Mira el mapa: ¿qué edificio queda a tu izquierda o a tu derecha mientras caminas? Si oyes {cross}, pulsa el botón de cruzar.',
     hint4: 'Combina todo lo aprendido. ¡Tú puedes!',
     hint5: 'Rotonda: se circula en sentido contrario a las agujas del reloj; la 1.ª salida es la primera calle después de por donde entraste. Pulsa el botón de la salida. Y: 靠左/靠右 = pulsa girar y luego recto. Con 🔍 / 🗺 acercas o alejas el mapa.',
@@ -469,12 +469,12 @@ const UI = {
     ph_pinyin: 'Pinyin', ph_zhuyin: 'Zhuyin 注音', ph_both: 'Pinyin + zhuyin', ph_off: 'None',
     level: 'Choose a level',
     lv: ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5'],
-    lvd: ['Straight, left and right', 'Count intersections, cross the street', 'Left, right, across, next to', 'Longer directions, all together', 'Real streets: diagonals, roundabout, Y-fork'],
+    lvd: ['Straight, left and right', 'Count intersections, go to the end', 'Left, right, across, cross the street', 'Longer directions, all together', 'Real streets: diagonals, roundabout, Y-fork'],
     settings: 'Settings', helpT: 'How to play', close: 'Close',
     helpL: [
       '🎧 Tap “🔊 Listen” to hear the directions. If you need help, tap “Show text”, then “Show reading & translation”.',
       '🚶 Walk with the buttons below: “Straight” takes you to just before the next intersection or bend; “Left” and “Right” turn you at the intersection.',
-      '🚦 From level 2, when you hear “cross the street”, walk to that intersection and tap the cross button.',
+      '🚦 From level 3, when you hear “cross the street”, walk to that intersection and tap the cross button.',
       '🔄 Level 5, roundabouts: walk into the roundabout, then tap the exit button (exits are counted counter-clockwise).',
       '✅ When you reach the destination, tap “I\'m here!”. A correct answer earns 10 points.',
       '↺ If you go wrong, tap “Try again” to go back to the start.',
@@ -489,7 +489,7 @@ const UI = {
     yourRoute: 'Your route', rightRoute: 'Correct route',
     watch: '▶ Watch the route', next: 'Next →', finish: 'See result',
     hint1: '{straight} = walk to just before the next intersection.',
-    hint2: 'Count intersections from where you stand. When you hear {cross}, press the cross button at that intersection.',
+    hint2: 'Count intersections from where you stand. “To the end” = keep going straight until the road ends.',
     hint3: 'Check the map: which building is on your left or right as you walk? If you hear {cross}, press the cross button.',
     hint4: 'Combine everything you have learned. You can do it!',
     hint5: 'Roundabout: traffic goes counter-clockwise; the 1st exit is the first street after the one you came in by. Press the exit button. Y-junction: 靠左/靠右 = press turn, then straight. Use 🔍 / 🗺 to zoom the map.',
@@ -515,12 +515,12 @@ const UI = {
     ph_pinyin: '拼音', ph_zhuyin: '注音', ph_both: '拼音＋注音', ph_off: '不顯示',
     level: '選擇關卡',
     lv: ['第一級', '第二級', '第三級', '第四級', '第五級'],
-    lvd: ['直走、左轉、右轉', '數路口、過馬路', '左邊、右邊、對面、旁邊', '比較長的指路，全部一起用', '真實街區：斜路、圓環、Y字路口'],
+    lvd: ['直走、左轉、右轉', '數路口、直走到底', '左邊、右邊、對面、過馬路', '比較長的指路，全部一起用', '真實街區：斜路、圓環、Y字路口'],
     settings: '設定', helpT: '遊戲說明', close: '關閉',
     helpL: [
       '🎧 先按「🔊 聽」，聽指路的話。聽不懂再按「看文字」，還不懂再按「看讀音和翻譯」。',
       '🚶 用下面的按鈕走路：直走＝走到下一個路口或轉角前；左轉、右轉＝在路口轉向。',
-      '🚦 第二級以後，聽到「過馬路」就走到那個路口，按「過馬路」按鈕。',
+      '🚦 第三級以後，聽到「過馬路」就走到那個路口，按「過馬路」按鈕。',
       '🔄 第五級的圓環：先走進圓環，再按出口按鈕（出口是逆時針數）。',
       '✅ 走到目的地，按「我到了！」。答對得 10 分。',
       '↺ 走錯了，按「重走」回到起點重來。',
@@ -535,7 +535,7 @@ const UI = {
     yourRoute: '你的路線', rightRoute: '正確路線',
     watch: '▶ 看路線', next: '下一題 →', finish: '看結果',
     hint1: '{straight}＝走到下一個路口前。',
-    hint2: '路口從你站的地方開始數。聽到{cross}時，走到那個路口按「過馬路」按鈕。',
+    hint2: '路口從你站的地方開始數。「走到底」＝一直直走，直到這條路走不下去為止。',
     hint3: '看地圖：走的時候，左手邊或右手邊是哪一棟建築？聽到{cross}要按「過馬路」。',
     hint4: '把學過的全部用上，你可以的！',
     hint5: '圓環是逆時針繞：第一個出口就是從你進來的路開始，逆時針數的第一條路，按下面的出口按鈕。Y字路口：靠左／靠右＝按左轉或右轉，再按直走。地圖可以用 🔍 / 🗺 放大或看全圖。',
@@ -571,7 +571,9 @@ const USEFUL = [
   { tw: '左手邊', cn: '左手边', py: 'zuǒ shǒu biān', es: 'a la izquierda', en: 'on the left' },
   { tw: '右手邊', cn: '右手边', py: 'yòu shǒu biān', es: 'a la derecha', en: 'on the right' },
   { tw: '對面', cn: '对面', py: 'duì miàn', es: 'enfrente', en: 'across the street' },
-  { tw: '旁邊', cn: '旁边', py: 'páng biān', es: 'al lado', en: 'next to' },
+  { tw: '前面', cn: '前面', py: 'qián miàn', es: 'delante / más adelante', en: 'ahead of it' },
+  { tw: '後面', cn: '后面', py: 'hòu miàn', es: 'detrás / justo antes', en: 'behind it' },
+  { tw: '到底', cn: '到底', py: 'dào dǐ', es: 'hasta el final', en: 'to the end' },
   { tw: '過了', cn: '过了', py: 'guò le', es: 'después de pasar', en: 'after passing' },
   { tw: '圓環', cn: '圆环', py: 'yuán huán', es: 'rotonda', en: 'roundabout' },
   { tw: '出口', cn: '出口', py: 'chū kǒu', es: 'salida', en: 'exit' },
@@ -904,8 +906,8 @@ function applyGameLabels() {
     b.querySelector('.sb').textContent = isZh() ? '' : T(key);
   };
   mk('#b-L', '↰', 'left'); mk('#b-S', '↑', 'straight'); mk('#b-R', '↱', 'right'); mk('#b-C', '≣', 'cross');
-  $('#b-C').classList.toggle('hidden', S.level < 2);
-  $('#controls').classList.toggle('c4', S.level >= 2);
+  $('#b-C').classList.toggle('hidden', S.level < 3);
+  $('#controls').classList.toggle('c4', S.level >= 3);
   $('#exits').classList.toggle('hidden', S.level < 5);
   [1, 2, 3, 4].forEach(k => { $('#b-' + k).innerHTML = '<span class="ic">⟳</span><span class="cn"></span>'; $('#b-' + k).querySelector('.cn').textContent = T('ex' + k); });
   $('#b-reset').textContent = T('reset');
@@ -1258,7 +1260,7 @@ function act(a) {
   if (S.actions.length >= 40) { toast('…'); return; }
   if (S.q.graph) return gAct(a);
   if (a === 'C') {
-    if (S.level < 2) return;
+    if (S.level < 3) return;
     if (isRb(S.q.map, S.pos.x, S.pos.y)) { toast(T('pickExit')); return; }
     if (S.cr) { toast(T('alreadyCrossed')); return; }
     if (!isOpen(S.q.map, S.pos.x, S.pos.y, S.pos.d)) { shakeMap(T('noRoad')); return; }
@@ -1364,7 +1366,7 @@ function gCrossMark(c, cls) {
 function gAct(a) {
   const m = gM(), pos = S.pos, rb = m.nodes[pos.n][2] === 'rb';
   if (a === 'C') {
-    if (S.level < 2) return;
+    if (S.level < 3) return;
     if (rb) { toast(T('pickExit')); return; }
     if (S.cr) { toast(T('alreadyCrossed')); return; }
     if (!pos.face) { shakeMap(T('noRoad')); return; }
