@@ -134,7 +134,6 @@ input.name.err{border-color:var(--bad)}
 .cbtn .sb{font-size:11px;color:var(--muted)}
 .cbtn:active .pyb,.cbtn:active .sb{color:#ddd}
 .row2{display:grid;grid-template-columns:1fr 1.5fr;gap:8px;margin-top:8px}
-.row2.u{grid-template-columns:1fr 1fr 1.5fr}
 #dock{flex:none;padding-top:8px}
 #dock #controls{margin-top:0}
 #dock.off{display:none}
@@ -269,7 +268,6 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
   </div>
   <div class="row2" id="row2">
     <button class="btn ghost" id="b-reset"></button>
-    <button class="btn ghost hidden" id="b-undo"></button>
     <button class="btn" id="b-go"></button>
   </div>
   </div>
@@ -443,7 +441,7 @@ const UI = {
     board: 'Clasificación', restart: 'Menú', vocabBtn: '📖 Vocabulario', leaveT: '¿Salir de esta ronda?', leaveMsg: 'El progreso y los puntos de ahora no se guardarán.', leaveKeep: 'Seguir jugando', leaveRe: 'Reiniciar esta ronda', leaveHome: 'Ir al menú principal',
     q: 'Pregunta {n}/{N}', pts: '{s} puntos',
     listen: '🔊 Escuchar', seeText: '👁 Ver texto', seeMore: '👁 Ver lectura y traducción', seeRead: '👁 Ver lectura', seeTrans: '👁 Ver traducción', left: 'Izquierda', straight: 'Recto', right: 'Derecha',
-    undo: '↶ Atrás', reset: '↺ Reintentar', arrived: '✓ ¡Llegué!', noRoad: 'No hay camino adelante.',
+    reset: '↺ Reintentar', arrived: '✓ ¡Llegué!', noRoad: 'No hay camino adelante.',
     ok: '¡Correcto! +10', bad: 'Casi. Mira la ruta correcta.',
     badFace: 'Llegaste al lugar correcto, pero miras hacia otro lado.',
     yourRoute: 'Tu ruta', rightRoute: 'Ruta correcta',
@@ -490,7 +488,7 @@ const UI = {
     board: 'Leaderboard', restart: 'Menu', vocabBtn: '📖 Vocabulary', leaveT: 'Leave this round?', leaveMsg: 'Your current progress and score will not be saved.', leaveKeep: 'Keep playing', leaveRe: 'Restart this round', leaveHome: 'Back to main menu',
     q: 'Question {n}/{N}', pts: '{s} points',
     listen: '🔊 Listen', seeText: '👁 Show text', seeMore: '👁 Show reading & translation', seeRead: '👁 Show reading', seeTrans: '👁 Show translation', left: 'Left', straight: 'Straight', right: 'Right',
-    undo: '↶ Back', reset: '↺ Try again', arrived: "✓ I'm here!", noRoad: 'No road ahead.',
+    reset: '↺ Try again', arrived: "✓ I'm here!", noRoad: 'No road ahead.',
     ok: 'Correct! +10', bad: 'Not quite. Here is the correct route.',
     badFace: "Right place, but you're facing the wrong way.",
     yourRoute: 'Your route', rightRoute: 'Correct route',
@@ -537,7 +535,7 @@ const UI = {
     board: '排行榜', restart: '主選單', vocabBtn: '📖 詞彙', leaveT: '要離開這一輪嗎？', leaveMsg: '目前的進度和分數不會被記錄。', leaveKeep: '繼續玩', leaveRe: '重新開始這一輪', leaveHome: '回主選單',
     q: '第 {n}/{N} 題', pts: '{s} 分',
     listen: '🔊 聽', seeText: '👁 看文字', seeMore: '👁 看讀音和翻譯', seeRead: '👁 看讀音', seeTrans: '👁 看翻譯', left: '', straight: '', right: '',
-    undo: '↶ 退一步', reset: '↺ 重走', arrived: '✓ 我到了！', noRoad: '前面沒有路。',
+    reset: '↺ 重走', arrived: '✓ 我到了！', noRoad: '前面沒有路。',
     ok: '答對了！+10', bad: '差一點。看看正確的路線。',
     badFace: '地點對了，但是面向的方向不對。',
     yourRoute: '你的路線', rightRoute: '正確路線',
@@ -598,7 +596,7 @@ const WTR = {
 
 /* ---------- state ---------- */
 const S = {
-  name: '', script: 'trad', lang: 'es', phon: 'pinyin', rate: 'normal', map: 'any', hold: false, hist: [], showAll: false, rev: 0, partMode: false,
+  name: '', script: 'trad', lang: 'es', phon: 'pinyin', rate: 'normal', map: 'any', hold: false, showAll: false, rev: 0, partMode: false,
   level: 1, qs: [], qi: 0, q: null, correct: 0, results: [], totalMs: 0, qStart: 0,
   cam: 'follow', pos: null, ang: 0, path: [], actions: [], crosses: [], cr: false, partIdx: 0, locked: false, busy: false, reveal: null, atGoal: false,
 };
@@ -869,7 +867,7 @@ function renderStart() {
   $('#l-rate').textContent = T('rate');
   chips('#c-rate', ['slow', 'normal', 'fast'].map(v => ({ v, label: T(v) })), S.rate, v => { S.rate = v; saveSettings(); renderStart(); speak(S.script === 'trad' ? '直走，再右轉。' : '直走，再右转。'); });
   $('#l-hold').textContent = T('hold');
-  chips('#c-hold', [{ v: 'tap', label: T('holdTap') }, { v: 'hold', label: T('holdHold') }], S.hold ? 'hold' : 'tap', v => { S.hold = v === 'hold'; saveSettings(); renderStart(); updateUndo(); });
+  chips('#c-hold', [{ v: 'tap', label: T('holdTap') }, { v: 'hold', label: T('holdHold') }], S.hold ? 'hold' : 'tap', v => { S.hold = v === 'hold'; saveSettings(); renderStart(); });
   $('#l-level').textContent = T('level');
   const lv = $('#levels'); lv.innerHTML = '';
   for (let i = 0; i < 5; i++) {
@@ -922,7 +920,6 @@ function applyGameLabels() {
   $('#exits').classList.toggle('hidden', S.level < 5);
   [1, 2, 3, 4].forEach(k => { $('#b-' + k).innerHTML = '<span class="ic">⟳</span><span class="cn"></span>'; $('#b-' + k).querySelector('.cn').textContent = T('ex' + k); });
   $('#b-reset').textContent = T('reset');
-  $('#b-undo').textContent = T('undo');
   $('#b-go').textContent = T('arrived');
   const h = T('hint' + S.level, { straight: '<b>' + W('straight') + '</b>', cross: '<b>' + W('cross') + '</b>' });
   $('#hint').innerHTML = bh(h);
@@ -965,7 +962,6 @@ function renderSentence() {
 function loadQuestion() {
   const q = S.qs[S.qi]; S.q = q; avPick();
   initPos(q); S.actions = []; S.crosses = []; S.cr = false; S.partIdx = 0;
-  updateUndo();
   S.locked = false; S.busy = false; S.reveal = null; S.atGoal = false; S.rev = S.showAll ? 2 : 0;
   $('#feedback').classList.add('hidden'); $('#feedback').innerHTML = '';
   $('#controls').classList.remove('off'); $('#row2').classList.remove('off'); $('#dock').classList.remove('off'); $('#s-game').classList.remove('locked');
@@ -1268,25 +1264,7 @@ function shakeMap(msg) {
   const m = $('#map'); m.classList.remove('shake'); void m.getBoundingClientRect(); m.classList.add('shake');
   toast(msg);
 }
-function snap() { return JSON.stringify({ pos: S.pos, actions: S.actions, path: S.path, crosses: S.crosses, cr: S.cr, ang: S.ang }); }
-function act(a) {                // remember the state before every action so 退一步 (advanced mode) can take it back
-  const before = snap(), n0 = S.actions.length;
-  actRaw(a);
-  if (S.actions.length > n0) S.hist.push(before);
-  updateUndo();
-}
-function undoStep() {
-  if (S.locked || S.busy || !S.q || !S.hist.length) return;
-  const o = JSON.parse(S.hist.pop());
-  S.pos = o.pos; S.actions = o.actions; S.path = o.path; S.crosses = o.crosses; S.cr = o.cr; S.ang = o.ang; S.atGoal = false;
-  setAvatar(false); drawTrail(); updateExits(); updateUndo();
-}
-function updateUndo() {
-  const b = $('#b-undo'); if (!b) return;
-  b.classList.toggle('hidden', !S.hold); $('#row2').classList.toggle('u', !!S.hold);
-  b.disabled = !S.hist.length || S.locked;
-}
-function actRaw(a) {
+function act(a) {
   if (S.locked || S.busy || !S.q) return;
   if (S.actions.length >= 40) { toast('…'); return; }
   if (S.q.graph) return gAct(a);
@@ -1331,7 +1309,6 @@ const gOpts = (m, e, frm) => m.edges[e].a === frm ? m.edges[e].pts : m.edges[e].
 const gOb = (m, n, e) => { const p = gOpts(m, e, n); return gBrg(p[0], p[1]); };
 function gArr(m, e, to) { const p = gOpts(m, e, gOth(m, e, to)); return gBrg(p[p.length - 2], p[p.length - 1]); }
 function initPos(q) {
-  S.hist = [];
   S.rpA = undefined;
   if (q.graph) {
     const m = DATA.maps[q.map], n = q.start[0], e = q.start[1], h = gOb(m, n, e);
@@ -1466,7 +1443,7 @@ function resetPos() {
   if (S.locked || S.busy) return;
   const q = S.q;
   initPos(q); S.actions = []; S.crosses = []; S.cr = false; S.atGoal = false;
-  setAvatar(true); drawTrail(); updateExits(); updateUndo();
+  setAvatar(true); drawTrail(); updateExits();
 }
 function submit() {
   if (S.locked || S.busy || !S.q) return;
@@ -1699,7 +1676,6 @@ function bind() {
   $('#btn-npart').onclick = nextPart;
   if (window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--dockh', $('#dock').offsetHeight + 'px')).observe($('#dock'));
   $('#b-reset').onclick = resetPos;
-  $('#b-undo').onclick = undoStep;
   $('#b-go').onclick = submit;
   $('#btn-say').onclick = speakCurrent;
   const reveal = () => { if (S.locked || !S.q || S.rev >= 2) return; S.rev++; renderSentence(); };
@@ -1733,7 +1709,7 @@ function loadSpecific(q) {   // used by the automated tests
   S.level = q.level; S.qs = [q]; S.qi = 0; S.correct = 0; S.results = []; S.totalMs = 0;
   show('s-game'); applyGameLabels(); loadQuestion();
 }
-window.__askdir = { S, DATA, act, undoStep, submit, startGame, nextQuestion, nextPart, resetPos, loadSpecific, fullTxt, replay };
+window.__askdir = { S, DATA, act, submit, startGame, nextQuestion, nextPart, resetPos, loadSpecific, fullTxt, replay };
 </script>
 <script>
 /* ===== 版權說明 ===== */
