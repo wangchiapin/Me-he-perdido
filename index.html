@@ -172,10 +172,6 @@ body:has(#s-game.on) #hgCopy{font-size:8px!important;line-height:1.3!important;p
 #vocab .g div span.fo{flex:0 0 100%}
 #vocab h4{margin:8px 0 4px;font-size:14px;color:var(--muted);font-weight:500}
 .big{font-size:42px;font-weight:600;margin:10px 0 2px}
-.res li{display:flex;gap:8px;font-size:13px;line-height:1.5;margin:6px 0;list-style:none}
-.res{padding:0;margin:10px 0}
-.res .m{width:18px;flex:none;text-align:center;font-weight:700}
-.res .m.ok{color:var(--ok)}.res .m.bad{color:var(--bad)}
 .tabs{display:flex;gap:6px;margin:10px 0}
 .tabs .chip{flex:1;text-align:center;padding:7px 4px}
 table.lb{width:100%;border-collapse:collapse;font-size:14px}
@@ -286,7 +282,6 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
     <div class="muted" id="r-time"></div>
     <div class="muted" id="r-saved"></div>
   </div>
-  <ul class="res" id="r-list"></ul>
   <div class="fbbtns">
     <button class="btn" id="r-again"></button>
     <button class="btn ghost" id="r-board"></button>
@@ -1626,13 +1621,6 @@ function paintResult() {
   $('#r-score').textContent = score;
   $('#r-time').textContent = T('score', { c: S.correct, N: S.qs.length }) + ' · ' + T('time', { t: S.resSecs });
   $('#r-saved').textContent = S.savedRemote === null ? '' : (S.savedRemote ? T('saved') : T('savedLocal'));
-  const ul = $('#r-list'); ul.innerHTML = '';
-  S.results.forEach(r => {
-    const li = document.createElement('li');
-    li.innerHTML = '<span class="m ' + (r.ok ? 'ok' : 'bad') + '">' + (r.ok ? '✓' : '✗') + '</span><span lang="' + (S.script === 'trad' ? 'zh-TW' : 'zh-CN') + '"></span>';
-    li.lastChild.textContent = fullTxt(r.q, sk());
-    ul.appendChild(li);
-  });
   $('#r-again').textContent = T('again');
   $('#r-board').textContent = '🏆 ' + T('board');
   $('#r-home').textContent = T('home');

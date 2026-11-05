@@ -174,6 +174,8 @@ with sync_playwright() as p:
         pg.evaluate("__askdir.nextQuestion()")
     pg.wait_for_timeout(300)
     chk(pg.inner_text('#r-score') == '80', 'perfect round = 80')
+    chk(pg.locator('#r-list').count() == 0 and pg.locator('#s-result li').count() == 0, 'result page has no per-question list')
+    chk(pg.is_visible('#r-again') and pg.is_visible('#r-board') and pg.is_visible('#r-home'), 'result page keeps its three buttons')
     pg.screenshot(path=SH + '/result.png', full_page=True)
     lb = pg.evaluate("localStorage.getItem('askdir_lb')")
     chk('Ana' in (lb or ''), 'local leaderboard saved')
