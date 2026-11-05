@@ -67,7 +67,7 @@ input.name.err{border-color:var(--bad)}
 .tools .mini{padding:5px 8px;font-size:12.5px}
 .tog.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 #btn-npart,#btn-reveal,#btn-reveal2{border-color:var(--ink)}
-.sentrow #btn-reveal{flex:1 1 auto;min-width:0;min-height:50px}
+.sentrow #btn-reveal{flex:1 1 auto;min-width:0}
 #sentcard{padding:7px 12px;position:relative}
 .mapwrap{position:relative;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px}
 .maphead{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 2px}
@@ -297,6 +297,7 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
   <div class="sheet" role="dialog" aria-modal="true">
     <div class="sheethead"><b id="m-title"></b><button class="mini" id="m-close" aria-label="close">✕</button></div>
     <div id="vocab" class="hidden"></div>
+    <div id="pane-leave" class="hidden"><p id="leave-msg" style="margin:4px 0 8px"></p><button class="btn block" id="lv-keep"></button><button class="btn ghost block" id="lv-re"></button><button class="btn ghost block" id="lv-home"></button></div>
     <div id="pane-set" class="hidden">
       <div class="lbl" id="l-script"></div>
       <div class="chips" id="c-script"></div>
@@ -479,7 +480,7 @@ const UI = {
       '↺ Si te equivocas, pulsa «Reintentar» para volver al inicio.',
       '⚙ En Ajustes puedes cambiar la escritura, el idioma, la lectura y la velocidad. El ranking está en la pantalla de inicio.',
     ],
-    board: 'Clasificación', restart: '↻ Reiniciar',
+    board: 'Clasificación', restart: '🏠 Menú', leaveT: '¿Salir de esta ronda?', leaveMsg: 'El progreso y los puntos de ahora no se guardarán.', leaveKeep: 'Seguir jugando', leaveRe: 'Reiniciar esta ronda', leaveHome: 'Ir al menú principal',
     q: 'Pregunta {n}/{N}', pts: '{s} puntos',
     listen: '🔊 Escuchar', seeText: '👁 Ver texto', seeMore: '👁 Ver lectura y traducción', seeRead: '👁 Ver lectura', seeTrans: '👁 Ver traducción', left: 'Izquierda', straight: 'Recto', right: 'Derecha',
     reset: '↺ Reintentar', arrived: '✓ ¡Llegué!', noRoad: 'No hay camino adelante.',
@@ -525,7 +526,7 @@ const UI = {
       '↺ If you go wrong, tap “Try again” to go back to the start.',
       '⚙ In Settings you can change the script, language, phonetics and speech speed. The leaderboard is on the start screen.',
     ],
-    board: 'Leaderboard', restart: '↻ Restart',
+    board: 'Leaderboard', restart: '🏠 Menu', leaveT: 'Leave this round?', leaveMsg: 'Your current progress and score will not be saved.', leaveKeep: 'Keep playing', leaveRe: 'Restart this round', leaveHome: 'Back to main menu',
     q: 'Question {n}/{N}', pts: '{s} points',
     listen: '🔊 Listen', seeText: '👁 Show text', seeMore: '👁 Show reading & translation', seeRead: '👁 Show reading', seeTrans: '👁 Show translation', left: 'Left', straight: 'Straight', right: 'Right',
     reset: '↺ Try again', arrived: "✓ I'm here!", noRoad: 'No road ahead.',
@@ -571,7 +572,7 @@ const UI = {
       '↺ 走錯了，按「重走」回到起點重來。',
       '⚙ 在「設定」可以換字體、語言、讀音和語音速度。排行榜在開始頁。',
     ],
-    board: '排行榜', restart: '↻ 重來',
+    board: '排行榜', restart: '🏠 主選單', leaveT: '要離開這一輪嗎？', leaveMsg: '目前的進度和分數不會被記錄。', leaveKeep: '繼續玩', leaveRe: '重新開始這一輪', leaveHome: '回主選單',
     q: '第 {n}/{N} 題', pts: '{s} 分',
     listen: '🔊 聽', seeText: '👁 看文字', seeMore: '👁 看讀音和翻譯', seeRead: '👁 看讀音', seeTrans: '👁 看翻譯', left: '', straight: '', right: '',
     reset: '↺ 重走', arrived: '✓ 我到了！', noRoad: '前面沒有路。',
@@ -868,7 +869,9 @@ function iconLabels() {
 let modalKind = 'set';
 function openModal(kind) {
   modalKind = kind;
-  $('#m-title').textContent = T(kind === 'set' ? 'settings' : (kind === 'vocab' ? 'vocab' : 'helpT'));
+  $('#m-title').textContent = T(kind === 'set' ? 'settings' : (kind === 'vocab' ? 'vocab' : (kind === 'leave' ? 'leaveT' : 'helpT')));
+  $('#pane-leave').classList.toggle('hidden', kind !== 'leave');
+  if (kind === 'leave') { $('#leave-msg').textContent = T('leaveMsg'); $('#lv-keep').textContent = T('leaveKeep'); $('#lv-re').textContent = T('leaveRe'); $('#lv-home').textContent = T('leaveHome'); }
   $('#pane-set').classList.toggle('hidden', kind !== 'set');
   $('#vocab').classList.toggle('hidden', kind !== 'vocab');
   if (kind === 'vocab') buildVocab();
@@ -877,7 +880,12 @@ function openModal(kind) {
     if (S.q && $('#s-game').classList.contains('on')) { const li = document.createElement('li'); li.innerHTML = '💡 ' + bh(T('hint' + S.level, { straight: '<b>' + W('straight') + '</b>', cross: '<b>' + W('cross') + '</b>' })); hp.appendChild(li); } }
   $('#modal').classList.remove('hidden');
 }
-function closeModal() { $('#modal').classList.add('hidden'); }
+let leaveAt = 0;
+function closeModal() {
+  if (modalKind === 'leave' && leaveAt && !$('#modal').classList.contains('hidden')) { S.qStart += Date.now() - leaveAt; }
+  leaveAt = 0;
+  $('#modal').classList.add('hidden');
+}
 function renderStart() {
   document.documentElement.lang = isZh() ? (S.script === 'trad' ? 'zh-TW' : 'zh-CN') : S.lang;
   $('#ttl').textContent = S.script === 'trad' ? '問路小達人' : '问路小达人';
@@ -1698,7 +1706,10 @@ function bind() {
   const reveal = () => { if (S.locked || !S.q || S.rev >= 2) return; S.rev++; renderSentence(); };
   $('#btn-reveal').onclick = reveal; $('#btn-reveal2').onclick = reveal;
   $('#btn-vocab').onclick = toggleVocab;
-  $('#btn-restart').onclick = () => { stopSpeech(); startGame(S.level); };
+  $('#btn-restart').onclick = () => { stopSpeech(); leaveAt = Date.now(); openModal('leave'); };
+  $('#lv-keep').onclick = closeModal;
+  $('#lv-re').onclick = () => { leaveAt = 0; stopSpeech(); closeModal(); startGame(S.level); };
+  $('#lv-home').onclick = () => { leaveAt = 0; stopSpeech(); closeModal(); renderStart(); show('s-start'); };
   ['#i-set', '#g-set'].forEach(id => { $(id).onclick = () => openModal('set'); });
   ['#i-help', '#g-help'].forEach(id => { $(id).onclick = () => openModal('help'); });
   $('#m-close').onclick = closeModal;
