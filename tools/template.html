@@ -131,6 +131,7 @@ input.name.err{border-color:var(--bad)}
 #s-game.on{display:flex;flex-direction:column;height:calc(100svh - 60px);min-height:420px}
 body:has(#s-game.on){padding-bottom:0}
 body:has(#s-game.on) #hgCopy{font-size:8px!important;line-height:1.3!important;padding:5px 6px calc(5px + env(safe-area-inset-bottom,0px))!important;white-space:nowrap;overflow:hidden}
+@media(max-width:375px){body:has(#s-game.on) #hgCopy{white-space:normal!important;text-align:center!important;font-size:7.5px!important}}
 #s-game.on>*{flex:none}
 #s-game.on>.mapwrap{flex:1 1 auto;min-height:190px;display:flex;flex-direction:column}
 #s-game.on #map,#s-game.on #map.big{flex:1 1 auto;min-height:0;height:100%;max-height:none}
@@ -141,6 +142,7 @@ body:has(#s-game.on) #hgCopy{font-size:8px!important;line-height:1.3!important;p
 .row2 .btn .bi,.row2 .btn .bz,.row2 .btn .bf{display:inline}
 .row2 .btn .bf{opacity:.65}
 .row2 .btn .bf::before{content:" "}
+@media(max-width:380px){.row2{grid-template-columns:1fr 1fr;gap:6px}.row2 .btn{padding:5px 4px;font-size:13px}.row2 .btn .bf{font-size:.78em}.row2 .btn .bf::before{content:""}}
 #controls.off,.row2.off{opacity:.35;pointer-events:none}
 #feedback{margin-top:10px}
 .fb{border-radius:16px;border:1.5px solid var(--line);background:var(--card);padding:12px 14px}
