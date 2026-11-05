@@ -33,3 +33,10 @@ GRAPH = dict(
         dict(id='e12', a='y1', b='n8', via=[],           L=None,       R=None),
     ],
 )
+
+
+# second buildings on the longer roads (placed by graph_engine wherever there is room, in this order)
+SECOND_POOL = ['hotel', 'restaurant', 'snack', 'fruit', 'police', 'bus', 'flower', 'optical', 'gym', 'stationery']
+SECOND_CANDIDATES = [('e9', 'L'), ('e10', 'R'), ('e11', 'L'), ('e6', 'R'), ('e7', 'L'), ('e8', 'R'), ('e1', 'L'), ('e5', 'R'),
+                     ('e2', 'L'), ('e3', 'R'), ('e4', 'L'), ('e9', 'R'), ('e10', 'L'), ('e11', 'R'), ('e6', 'L'), ('e7', 'R'),
+                     ('e1', 'R'), ('e5', 'L'), ('e2', 'R'), ('e8', 'L')]

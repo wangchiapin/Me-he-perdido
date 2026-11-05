@@ -49,5 +49,9 @@ const BA = (() => {
     cinema: () => r(-22, 10, 44, 18, '#ece8dc') + rn(-22, 4, 44, 7, '#4b4a46') + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => c(-20 + i * 4.4, 7.5, 1, i % 2 ? P.yel : W)).join('') + r(-6, 17, 12, 11, '#d9d3c3') + rn(-18, 15, 8, 8, '#cfd3d9') + rn(10, 15, 8, 8, '#cfd3d9'),
     laundry: () => shop(P.blue, c(-9, 21, 5.5, '#e4eef2', 1) + c(-9, 21, 2.6, P.blue) + rn(-14, 16.5, 4, 1.2, L)),
     salon: () => shop(P.pink, r(-15, 16, 5, 10, W) + [0, 1, 2].map(i => pl('M-15 ' + (17 + i * 3) + ' l5 2', 'none', P.red, 1.2)).join('') + c(-4, 21, 2, P.pink, 1)),
+    flower: () => shop(P.pink, [0, 1, 2].map(i => rn(-17 + i * 6, 22, 4, 4, P.brown) + c(-15 + i * 6, 19.5, 2.4, [P.red, P.yel, P.pink][i], 1)).join('') + pl('M-15 22 v1 M-9 22 v1 M-3 22 v1', 'none', P.green, .8)),
+    optical: () => shop(P.teal, c(-13, 21, 3.6, '#e4eef2', 1) + c(-4, 21, 3.6, '#e4eef2', 1) + pl('M-9.4 21 h2.2', 'none', L, .8)),
+    gym: () => shop(P.gray, rn(-17, 20.5, 14, 1.6, L) + r(-18.5, 17.5, 3.4, 7.6, P.red) + r(-4.9, 17.5, 3.4, 7.6, P.red)),
+    stationery: () => shop(P.yel, r(-16, 19.5, 3.2, 7, P.blue) + rn(-11, 21, 3, 5.5, P.red) + pl('M-6 26 L-1 17.5', 'none', L, 1.1) + rn(-14, 17.5, 12, 1, L)),
   };
 })();

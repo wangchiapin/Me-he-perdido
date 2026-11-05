@@ -92,9 +92,9 @@ for q in Q:
         r = check_graph(q)
         if r: errs.append((q['id'], r))
 for e_, v in GE.items():
-    for sd in 'LR':
+    for sd in ('L', 'R', 'L2', 'R2'):
         if v[sd] and v[sd] not in B: errs.append((e_, 'unknown building'))
-GBS = [v[s_] for v in GE.values() for s_ in 'LR' if v[s_]]
+GBS = [v[s_] for v in GE.values() for s_ in ('L', 'R', 'L2', 'R2') if v[s_]]
 if len(GBS) != len(set(GBS)): errs.append(('real', 'duplicate building on the graph map'))
 if set(G['bpos']) != set(GBS): errs.append(('real', 'building positions do not match the roads'))
 

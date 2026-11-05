@@ -46,6 +46,10 @@ B = {
  'dept':     dict(tw='百貨公司', cn='百货公司', py='bǎi huò gōng sī', es='centro comercial', es_art='el centro comercial', en='department store', en_art='the department store'),
  'cinema':   dict(tw='電影院', cn='电影院', py='diàn yǐng yuàn', es='cine', es_art='el cine', en='cinema', en_art='the cinema'),
  'laundry':  dict(tw='洗衣店', cn='洗衣店', py='xǐ yī diàn', es='lavandería', es_art='la lavandería', en='laundry', en_art='the laundry'),
+ 'flower':   dict(tw='花店', cn='花店', py='huā diàn', es='floristería', es_art='la floristería', en='flower shop', en_art='the flower shop'),
+ 'optical':  dict(tw='眼鏡行', cn='眼镜行', py='yǎn jìng háng', es='óptica', es_art='la óptica', en='optical shop', en_art='the optical shop'),
+ 'gym':      dict(tw='健身房', cn='健身房', py='jiàn shēn fáng', es='gimnasio', es_art='el gimnasio', en='gym', en_art='the gym'),
+ 'stationery': dict(tw='文具店', cn='文具店', py='wén jù diàn', es='papelería', es_art='la papelería', en='stationery shop', en_art='the stationery shop'),
  'salon':    dict(tw='髮廊', cn='发廊', py='fà láng', es='peluquería', es_art='la peluquería', en='hair salon', en_art='the hair salon'),
 }
 
@@ -635,7 +639,7 @@ def graph_map_data():
     return dict(tw=GRAPH_TW['tw'], cn=GRAPH_TW['cn'], es=GRAPH_TW['es'], en=GRAPH_TW['en'], graph=True,
                 blocks=[], closed=[], rb=[], ynodes=[], svg=svg, bpos=bpos, vb=vb, cwd=cwd,
                 nodes={k: [round(v['p'][0], 1), round(v['p'][1], 1), v['kind'], v['stem']] for k, v in GE.NODES.items()},
-                edges={k: dict(a=v['a'], b=v['b'], pts=[[round(x, 1), round(y, 1)] for x, y in v['pts']], L=v['L'], R=v['R']) for k, v in GE.EDGES.items()})
+                edges={k: dict(a=v['a'], b=v['b'], pts=[[round(x, 1), round(y, 1)] for x, y in v['pts']], L=v['L'], R=v['R'], L2=v['L2'], R2=v['R2']) for k, v in GE.EDGES.items()})
 
 from graph_map import GRAPH as _G
 GRAPH_TW = dict(tw=_G['tw'], cn=_G['cn'], es=_G['es'], en=_G['en'])

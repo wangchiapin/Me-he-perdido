@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Road-graph engine for level 5 (non-grid map): geometry, turn rules, roundabout exits, drawing data."""
 import math, random
-from graph_map import GRAPH
+from graph_map import GRAPH, SECOND_POOL, SECOND_CANDIDATES
 
-K = 2.3                 # layout scale
+K = 2.6                 # layout scale
 RW = 19                 # half road width
 H = 35                  # half building tile
 STRAIGHT = 25           # within this many degrees of straight ahead = "straight"
@@ -13,7 +13,7 @@ NODES = {k: dict(p=(v['x'] * K, v['y'] * K), kind=v.get('kind', 'n'), stem=v.get
 EDGES = {}
 for e in GRAPH['edges']:
     a, b = NODES[e['a']]['p'], NODES[e['b']]['p']
-    EDGES[e['id']] = dict(a=e['a'], b=e['b'], pts=[a] + [(x * K, y * K) for x, y in e['via']] + [b], L=e['L'], R=e['R'])
+    EDGES[e['id']] = dict(a=e['a'], b=e['b'], pts=[a] + [(x * K, y * K) for x, y in e['via']] + [b], L=e['L'], R=e['R'], L2=None, R2=None)
 INC = {n: [e for e, v in EDGES.items() if n in (v['a'], v['b'])] for n in NODES}
 
 def brg(p, q):                      # screen bearing in degrees: 0 = east, 90 = south (clockwise)
@@ -95,22 +95,34 @@ def build_drawing():
             if v['kind'] == 'y' and math.hypot(cx - v['p'][0], cy - (v['p'][1] - 55)) < 92 + H * 0.6: return False
         return all(abs(cx - x) > 2 * H + 5 or abs(cy - y) > 2 * H + 5 for x, y in placed)
     bpos = {}
-    for eid, v in EDGES.items():
+    T1, T2 = (.3, .26, .34, .22, .38, .18, .42), (.72, .68, .76, .64, .8, .6, .84)
+    def place(v, side, ts):
+        sg = 1 if side == 'L' else -1; p = v['pts']
+        for off in (RW + H + 4, RW + H + 12, RW + H + 22, RW + H + 34):
+            for i in range(1, len(p)):
+                (x1, y1), (x2, y2) = p[i - 1], p[i]; dx, dy = x2 - x1, y2 - y1; l = math.hypot(dx, dy); nx, ny = dy / l, -dx / l
+                for t in ts:
+                    cx, cy = x1 + dx * t + nx * sg * off, y1 + dy * t + ny * sg * off
+                    if ok(cx, cy): return (cx, cy)
+        return None
+    for eid, v in EDGES.items():                      # first slot: where it fits, or dropped
         for side in 'LR':
             k = v[side]
             if not k: continue
-            sg = 1 if side == 'L' else -1; p = v['pts']; best = None
-            for off in (RW + H + 4, RW + H + 12, RW + H + 22, RW + H + 34):
-                for i in range(1, len(p)):
-                    (x1, y1), (x2, y2) = p[i - 1], p[i]; dx, dy = x2 - x1, y2 - y1; l = math.hypot(dx, dy); nx, ny = dy / l, -dx / l
-                    for t in (.5, .4, .6, .3, .7, .22, .78, .15, .85):
-                        cx, cy = x1 + dx * t + nx * sg * off, y1 + dy * t + ny * sg * off
-                        if ok(cx, cy): best = (cx, cy); break
-                    if best: break
-                if best: break
+            best = place(v, side, T1 + (.5, .4, .6, .7))
             if not best:
                 print('WARN no room for %s on %s' % (k, eid)); v[side] = None; continue
             placed.append(best); bpos[k] = [round(best[0], 1), round(best[1], 1)]
+    pool = list(SECOND_POOL)                          # second slot (long roads only): next name goes to the next place that has room
+    for eid, side in SECOND_CANDIDATES:
+        if not pool: break
+        v = EDGES[eid]
+        if not v[side]: continue
+        best = place(v, side, T2)
+        if not best: continue
+        k = pool.pop(0); v[side + '2'] = k
+        placed.append(best); bpos[k] = [round(best[0], 1), round(best[1], 1)]
+    if pool: print('WARN unused second buildings:', pool)
     h = []
     for v in EDGES.values(): h.append('<path d="%s" fill="none" stroke="#cfcabd" stroke-width="%d" stroke-linecap="round" stroke-linejoin="round"/>' % (pd(v['pts']), 2 * RW + 3))
     for v in EDGES.values(): h.append('<path d="%s" fill="none" stroke="#e7e3d9" stroke-width="%d" stroke-linecap="round" stroke-linejoin="round"/>' % (pd(v['pts']), 2 * RW))
