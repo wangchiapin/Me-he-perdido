@@ -84,7 +84,11 @@ def check_graph(q):
     if full_.count('過馬路') != len(crosses): return 'crossing text mismatch'
     for m in re.finditer('C', q['actions']):
         if q['actions'][m.end():m.end() + 1] != 'S': return 'crossing not followed by a walk'
-    bl, br = _fl(*last)
+    if GN[n][2] == 'm':
+        mm = G['mid'][n]; fwd = (via == mm['ea'])
+        bl, br = (mm['L'], mm['R']) if fwd else (mm['R'], mm['L'])
+    else:
+        bl, br = _fl(*last)
     if (bl if q['side'] == 'L' else br) != q['target']: return 'target not on stated side'
     return None
 for q in Q:
@@ -94,7 +98,7 @@ for q in Q:
 for e_, v in GE.items():
     for sd in ('L', 'R', 'L2', 'R2'):
         if v[sd] and v[sd] not in B: errs.append((e_, 'unknown building'))
-GBS = [v[s_] for v in GE.values() for s_ in ('L', 'R', 'L2', 'R2') if v[s_]]
+GBS = [v[s_] for v in GE.values() for s_ in ('L', 'R', 'L2', 'R2') if v[s_]] + [b_ for mm in G['mid'].values() for b_ in (mm['L'], mm['R']) if b_]
 if len(GBS) != len(set(GBS)): errs.append(('real', 'duplicate building on the graph map'))
 if set(G['bpos']) != set(GBS): errs.append(('real', 'building positions do not match the roads'))
 

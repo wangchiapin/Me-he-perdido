@@ -120,3 +120,9 @@ iPhone 版 Chrome 上，頁面可以捲動時，往下捲之後有時回不到�
 - `<html>` 加 `html{color-scheme:light}`。
 
 兩項一起改後，手機 Chrome 測試恢復正常；尚未分開測是哪一項有效。新增頁面請照這個寫。
+
+
+## Nivel 5: paradas frente a las tiendas / 第五級：店前停下
+- En las calles largas del 真實街區 hay una segunda tienda; cada tienda es una **parada**: 直走 avanza solo hasta la siguiente parada (tienda, esquina o rotonda). En una parada no se puede girar ni cruzar.
+- Frases nuevas: 「直走到咖啡店前面」. Con 「直走到第N個路口」「直走到圓環」 se pasan las tiendas sin parar en ellas en la frase, pero hay que pulsar 直走 una vez por parada.
+- 繁中：第 5 級較長的路多了第二間店，「直走」一次只走到下一間店／路口／圓環；店前不能轉彎或過馬路。

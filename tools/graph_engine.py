@@ -80,7 +80,13 @@ class GSim:
 # ---------- drawing ----------
 def pd(p): return 'M' + ' L'.join('%.1f,%.1f' % q for q in p)
 
+_DRAW = None
 def build_drawing():
+    global _DRAW
+    if _DRAW is None: _DRAW = _build_drawing()
+    return _DRAW
+
+def _build_drawing():
     """returns (svg_base, bpos, viewBox, cwd) ; buildings are drawn by the game from bpos"""
     segs = [(p[i - 1], p[i]) for v in EDGES.values() for p in [v['pts']] for i in range(1, len(p))]
     def dseg(px, py, a, b):
@@ -96,14 +102,14 @@ def build_drawing():
         return all(abs(cx - x) > 2 * H + 5 or abs(cy - y) > 2 * H + 5 for x, y in placed)
     bpos = {}
     T1, T2 = (.3, .26, .34, .22, .38, .18, .42), (.72, .68, .76, .64, .8, .6, .84)
-    def place(v, side, ts):
+    def place(v, side, ts, far=None):
         sg = 1 if side == 'L' else -1; p = v['pts']
         for off in (RW + H + 4, RW + H + 12, RW + H + 22, RW + H + 34):
             for i in range(1, len(p)):
                 (x1, y1), (x2, y2) = p[i - 1], p[i]; dx, dy = x2 - x1, y2 - y1; l = math.hypot(dx, dy); nx, ny = dy / l, -dx / l
                 for t in ts:
                     cx, cy = x1 + dx * t + nx * sg * off, y1 + dy * t + ny * sg * off
-                    if ok(cx, cy): return (cx, cy)
+                    if ok(cx, cy) and (far is None or far((cx, cy))): return (cx, cy)
         return None
     for eid, v in EDGES.items():                      # first slot: where it fits, or dropped
         for side in 'LR':
@@ -118,7 +124,8 @@ def build_drawing():
         if not pool: break
         v = EDGES[eid]
         if not v[side]: continue
-        best = place(v, side, T2)
+        firsts = [_proj(v['pts'], bpos[v[sd]])[1] for sd in 'LR' if v[sd]]
+        best = place(v, side, T2, lambda pt: all(abs(_proj(v['pts'], pt)[1] - f) > 150 for f in firsts))
         if not best: continue
         k = pool.pop(0); v[side + '2'] = k
         placed.append(best); bpos[k] = [round(best[0], 1), round(best[1], 1)]
@@ -184,3 +191,69 @@ def build_drawing():
     vx, vy = min(xs) - H - 14, min(ys) - H - 14
     vb = [round(vx), round(vy), round(max(xs) + H + 14 - vx), round(max(ys) + H + 14 - vy)]
     return ''.join(h), bpos, vb, cwd
+
+
+# ---------- shop stops: roads with second buildings get a stop in front of every shop ----------
+def _proj(pts, pt):
+    """(distance along the polyline, point on it) closest to pt"""
+    best = None; acc = 0.0
+    for i in range(1, len(pts)):
+        (x1, y1), (x2, y2) = pts[i - 1], pts[i]; dx, dy = x2 - x1, y2 - y1; l = math.hypot(dx, dy)
+        t = max(0, min(1, ((pt[0] - x1) * dx + (pt[1] - y1) * dy) / (l * l)))
+        x, y = x1 + dx * t, y1 + dy * t; d = math.hypot(pt[0] - x, pt[1] - y)
+        if not best or d < best[0]: best = (d, acc + l * t, (x, y), i, t)
+        acc += l
+    return best
+
+def subdivide():
+    """Split each road that has a second building into pieces with a stop (node kind 'm') in front of each shop.
+    A stop node carries the buildings beside it: L / R as seen walking a -> b; ea / eb = the pieces towards a / b."""
+    bpos = build_drawing()[1]
+    for eid in list(EDGES):
+        v = EDGES[eid]
+        if not (v['L2'] or v['R2']): continue
+        slots = []
+        for sides in (('L', 'R'), ('L2', 'R2')):
+            ps = [_proj(v['pts'], bpos[v[sd]]) for sd in sides if v[sd]]
+            if ps: slots.append((sum(p[1] for p in ps) / len(ps), sides, ps))
+        pts = v['pts']; cuts = []
+        for pos, sides, ps in slots:
+            acc = 0.0; pt = None
+            for i in range(1, len(pts)):
+                l = math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])
+                if acc + l >= pos or i == len(pts) - 1:
+                    t = max(0, min(1, (pos - acc) / l)); pt = (pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t); seg = i; break
+                acc += l
+            cuts.append((seg, pt, sides))
+        names = ['%sm%d' % (eid, i + 1) for i in range(len(cuts))]
+        prev, prev_seg, chain = v['a'], 0, []
+        nodes = [v['a']] + names + [v['b']]
+        pieces = []
+        for i in range(len(nodes) - 1):
+            lo = nodes[i]; hi = nodes[i + 1]
+            seg_lo = 0 if i == 0 else cuts[i - 1][0]
+            seg_hi = len(pts) - 1 if i == len(nodes) - 2 else cuts[i][0]
+            start = [pts[0]] if i == 0 else [cuts[i - 1][1]]
+            mid_pts = [pts[k] for k in range(seg_lo if i == 0 else seg_lo, seg_hi) if k >= (1 if i == 0 else seg_lo)]
+            mid_pts = [p for p in pts[(1 if i == 0 else seg_lo):seg_hi]] if True else mid_pts
+            end = [pts[-1]] if i == len(nodes) - 2 else [cuts[i][1]]
+            pieces.append(start + mid_pts + end)
+        del EDGES[eid]
+        for n_ in (v['a'], v['b']): INC[n_] = [e for e in INC[n_] if e != eid]
+        ids = ['%s%s' % (eid, 'abc'[i]) for i in range(len(pieces))]
+        for i, pc in enumerate(pieces):
+            EDGES[ids[i]] = dict(a=nodes[i], b=nodes[i + 1], pts=pc, L=None, R=None, L2=None, R2=None)
+        for i, nm in enumerate(names):
+            sides = cuts[i][2]
+            NODES[nm] = dict(p=cuts[i][1], kind='m', stem=None, L=v[sides[0]], R=v[sides[1]], ea=ids[i], eb=ids[i + 1])
+        for i, nid in enumerate(nodes):
+            INC[nid] = INC.get(nid, [])
+        for i, e_ in enumerate(ids):
+            for n_ in (nodes[i], nodes[i + 1]):
+                if e_ not in INC.setdefault(n_, []): INC[n_].append(e_)
+
+def besides(node, via, face):
+    """(left, right) buildings beside a stop node, for a walker who arrived by `via` (or faces `face`)"""
+    nd = NODES[node]
+    fwd = (via == nd['ea']) if via else (face == nd['eb'])
+    return (nd['L'], nd['R']) if fwd else (nd['R'], nd['L'])

@@ -36,6 +36,15 @@ with sync_playwright() as p:
         pg.evaluate("__askdir.submit()")
         if pg.evaluate("__askdir.S.correct") != 1: bad += 1
     chk(bad == 0, 'all %d routes answered correctly via act() (bad=%d)' % (len(qs), bad))
+    # level 5: a shop stop is a stop - no turning or crossing there, 直走 moves on to the next stop
+    qsh = next(q for q in qs if q['level'] == 5 and any('前面' in p['tw'] for p in q['parts']) and q['actions'][0] == 'S')
+    pg.evaluate("q=>__askdir.loadSpecific(q)", qsh)
+    pg.evaluate("__askdir.act('S')")
+    n1 = pg.evaluate("__askdir.S.pos.n")
+    chk(pg.evaluate("__askdir.DATA.maps.real.nodes[__askdir.S.pos.n][2]") == 'm', 'first 直走 stops at a shop (node kind m)')
+    pg.evaluate("__askdir.act('L')"); pg.evaluate("__askdir.act('R')"); pg.evaluate("__askdir.act('C')")
+    chk(pg.evaluate("__askdir.S.pos.n") == n1 and pg.evaluate("__askdir.S.actions.length") == 1, 'no turn / cross at a shop stop')
+    chk(sum(1 for q in qs if q['level'] == 5 and any('前面' in p['tw'] for p in q['parts'])) >= 20, 'level 5 has plenty of shop-stop sentences')
     # wrong crossing
     q = next(q for q in qs if q['crosses'])
     pg.evaluate("q=>__askdir.loadSpecific(q)", q)

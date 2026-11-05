@@ -309,6 +309,11 @@ def render_step(st, con, level, rng):
         return dict(kind=k, tw=ptw + s_[0] + '走', cn=pcn + s_[1] + '走', py=ppy + s_[2] + ' zǒu', es=pes + s_[3], en=pen + s_[4])
     if k == 'cross':
         return dict(kind=k, tw='過馬路', cn='过马路', py='guò mǎ lù', es='cruza la calle', en='cross the street')
+    if k == 'shop':
+        b = B[st['b']]
+        return dict(kind=k, tw=ptw + '直走到' + b['tw'] + '前面', cn=pcn + '直走到' + b['cn'] + '前面',
+                    py=ppy + 'zhí zǒu dào ' + b['py'] + ' qián miàn',
+                    es=pes + 'sigue recto hasta ' + b['es_art'], en=pen + 'go straight to ' + b['en_art'])
     if k == 'pass':
         b, h, t = B[st['b']], HAND[st['side']], TURN[st['turn']]
         tw = ptw + '一直走，' + h['tw'] + '是' + b['tw']
@@ -554,7 +559,20 @@ GPATTERNS = [
     ['turn', 'torb', 'round', 'go1'], ['toy', 'fork', 'go1'], ['go1', 'toy', 'fork', 'go1'], ['turn', 'toy', 'fork', 'go1'],
     ['pass', 'go'], ['go', 'turn', 'go'], ['go', 'pass', 'go'], ['turn', 'pass', 'go'],
     ['passx', 'go1'], ['turn', 'passx', 'go1'],
+    ['shop'], ['shop'], ['turn', 'shop'], ['go', 'shop'], ['shop', 'shop'], ['go1', 'shop'], ['turn', 'go1', 'shop'],
+    ['shop', 'go1', 'turn', 'go1'], ['shop', 'go', 'turn', 'go1'], ['turn', 'shop', 'go1'], ['torb', 'round', 'shop'],
 ]
+
+def adv(sim):                       # walk on until a real junction / roundabout / end (the shop stops are passed)
+    if not sim.move(): return False
+    while GE.NODES[sim.node]['kind'] == 'm':
+        if not sim.move(): return False
+    return True
+
+def beside(sim):                    # (left, right) buildings next to where the walker stands / has just walked
+    if GE.NODES[sim.node]['kind'] == 'm': return GE.besides(sim.node, sim.via, sim.face)
+    ed, frm = sim.last
+    return GE.flank(ed, frm)
 
 def try_build_graph(rng):
     pat = rng.choice(GPATTERNS)
@@ -569,7 +587,7 @@ def try_build_graph(rng):
         elif kind == 'go':
             k = rng.choice([1, 1, 2])
             for _ in range(k):
-                if not sim.move() or GE.deg(sim.node) < 3: return None
+                if not adv(sim) or GE.deg(sim.node) < 3: return None
             total += k
             steps.append(dict(kind='go', n=k, next=(k == 1 and any(st['kind'] == 'go' for st in steps))))
         elif kind == 'turn':
@@ -577,7 +595,7 @@ def try_build_graph(rng):
             if not sim.turn(t): return None
             steps.append(dict(kind='turn', t=t))
         elif kind in ('torb', 'toy'):
-            if not sim.move(): return None
+            if not adv(sim): return None
             if kind == 'torb' and not sim.at_rb(): return None
             if kind == 'toy' and not sim.at_y_from_stem(): return None
             total += 1; steps.append(dict(kind=kind))
@@ -589,17 +607,25 @@ def try_build_graph(rng):
         elif kind == 'fork':
             if prev != 'toy': return None
             t = rng.choice('LR')
-            if not sim.turn(t) or not sim.move(): return None
+            if not sim.turn(t) or not adv(sim): return None
             total += 1; steps.append(dict(kind='fork', t=t))
+        elif kind == 'shop':
+            if not sim.move() or GE.NODES[sim.node]['kind'] != 'm': return None
+            fl = beside(sim)
+            opts_ = [(sd, k_) for sd, k_ in zip('LR', fl) if k_]
+            if not opts_: return None
+            sd, bk = rng.choice(opts_)
+            if bk in named: return None
+            named.append(bk); total += 1
+            steps.append(dict(kind='shop', b=bk, side=sd))
         elif kind == 'cross':
             if prev != 'go' or not sim.cross(): return None
             steps.append(dict(kind='cross'))
         elif kind in ('pass', 'passx'):
             side = rng.choice('LR'); k = rng.choice([1, 1, 2])
             for _ in range(k):
-                if not sim.move(): return None
-            ed, frm = sim.last
-            fl = GE.flank(ed, frm)
+                if not adv(sim): return None
+            fl = beside(sim)
             bkey = fl[0] if side == 'L' else fl[1]
             if not bkey: return None
             opp = fl[1] if side == 'L' else fl[0]
@@ -612,14 +638,13 @@ def try_build_graph(rng):
             okey = opp if (opp and rng.random() < 0.55) else None
             total += k; named += [bkey] + ([okey] if okey else [])
             steps.append(dict(kind='pass', side=side, b=bkey, opp=okey, turn=t))
-        if kind in ('go1', 'go', 'turn', 'pass', 'passx', 'fork', 'cross') and (sim.at_rb() or sim.at_y_from_stem()):
+        if kind in ('go1', 'go', 'turn', 'pass', 'passx', 'fork', 'cross', 'shop') and (sim.at_rb() or sim.at_y_from_stem()):
             return None
         prev = kind if kind != 'go1' else 'go'
-    if pat[-1] not in ('go', 'go1') or sim.last is None: return None
+    if pat[-1] not in ('go', 'go1', 'shop') or sim.last is None: return None
     if not counting_ok(steps): return None
     if total < 2 or total > MAX_MOVES[5] or sim.node == n: return None
-    ed, frm = sim.last
-    fl = GE.flank(ed, frm)
+    fl = beside(sim)
     sides = [s_ for s_, v in zip('LR', fl) if v]
     if not sides: return None
     side = rng.choice(sides)
@@ -637,7 +662,7 @@ def try_build_graph(rng):
 def graph_map_data():
     svg, bpos, vb, cwd = GE.build_drawing()
     return dict(tw=GRAPH_TW['tw'], cn=GRAPH_TW['cn'], es=GRAPH_TW['es'], en=GRAPH_TW['en'], graph=True,
-                blocks=[], closed=[], rb=[], ynodes=[], svg=svg, bpos=bpos, vb=vb, cwd=cwd,
+                blocks=[], closed=[], rb=[], ynodes=[], mid={k: dict(L=v['L'], R=v['R'], ea=v['ea'], eb=v['eb']) for k, v in GE.NODES.items() if v['kind'] == 'm'}, svg=svg, bpos=bpos, vb=vb, cwd=cwd,
                 nodes={k: [round(v['p'][0], 1), round(v['p'][1], 1), v['kind'], v['stem']] for k, v in GE.NODES.items()},
                 edges={k: dict(a=v['a'], b=v['b'], pts=[[round(x, 1), round(y, 1)] for x, y in v['pts']], L=v['L'], R=v['R'], L2=v['L2'], R2=v['R2']) for k, v in GE.EDGES.items()})
 
@@ -648,6 +673,7 @@ def main(per=12, per5=72, seed=20261020):
     rng = random.Random(seed)
     out = []
     GE.build_drawing()          # drops building slots that have no room (so the sentences never name them)
+    GE.subdivide()              # a stop in front of every shop on the longer roads
     for level in (1, 2, 3, 4, 5):
         for mp in (('real',) if level == 5 else BASIC):
             seen, made, tries, want = set(), 0, 0, (per5 if level == 5 else per)
