@@ -73,8 +73,14 @@ input.name.err{border-color:var(--bad)}
 .maphead{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 2px}
 .mapname{font-size:12px;color:var(--muted);flex:1 1 auto;min-width:0}
 .maphead>span{display:flex;gap:6px;flex:none}
-#btn-vocab,#btn-cam{padding:3px 10px}
-#btn-vocab{font-size:12.5px}
+#btn-cam{padding:3px 10px}
+#btn-vocab{flex:none;padding:5px 10px;font-size:12.5px;border-color:var(--ink)}
+#btn-restart{white-space:nowrap}
+@media(max-width:340px){#btn-restart{padding:6px 7px}}
+.sentrow.s0{align-items:stretch}
+.sentrow.s0 #btn-vocab{font-size:13px}
+.tools{align-items:stretch}
+#btn-reveal2{flex:1 1 0;min-width:0}
 #map.big{max-height:44vh}
 #map{width:100%;height:auto;max-height:38vh;display:block;margin:0 auto}
 #map.shake{animation:shake .3s}
@@ -232,14 +238,15 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
     <div class="sentrow"><button class="mini" id="btn-reveal"></button><div class="zh hidden" id="zh"></div><button class="mini" id="btn-say"></button></div>
     <div class="pyl" id="pyl"></div>
     <div class="trl" id="trl"></div>
-    <div class="tools">
+    <div class="tools" id="tools">
       <button class="mini hidden" id="btn-reveal2"></button>
+      <button class="mini" id="btn-vocab"></button>
       <button class="mini hidden" id="btn-npart"></button>
     </div>
   </div>
 
   <div class="mapwrap">
-    <div class="maphead"><div class="mapname" id="mapname"></div><span><button class="mini hidden" id="btn-cam"></button> <button class="mini" id="btn-vocab"></button></span></div>
+    <div class="maphead"><div class="mapname" id="mapname"></div><span><button class="mini hidden" id="btn-cam"></button></span></div>
     <svg id="map" xmlns="http://www.w3.org/2000/svg" role="img"></svg>
   </div>
   <div class="hint hidden" id="hint"></div>
@@ -427,7 +434,7 @@ const UI = {
       '↺ Si te equivocas, pulsa «Reintentar» para volver al inicio.',
       '⚙ En Ajustes puedes cambiar la escritura, el idioma, la lectura y la velocidad. El ranking está en la pantalla de inicio.',
     ],
-    board: 'Clasificación', restart: '🏠 Menú', leaveT: '¿Salir de esta ronda?', leaveMsg: 'El progreso y los puntos de ahora no se guardarán.', leaveKeep: 'Seguir jugando', leaveRe: 'Reiniciar esta ronda', leaveHome: 'Ir al menú principal',
+    board: 'Clasificación', restart: 'Menú', vocabBtn: '📖 Vocabulario', leaveT: '¿Salir de esta ronda?', leaveMsg: 'El progreso y los puntos de ahora no se guardarán.', leaveKeep: 'Seguir jugando', leaveRe: 'Reiniciar esta ronda', leaveHome: 'Ir al menú principal',
     q: 'Pregunta {n}/{N}', pts: '{s} puntos',
     listen: '🔊 Escuchar', seeText: '👁 Ver texto', seeMore: '👁 Ver lectura y traducción', seeRead: '👁 Ver lectura', seeTrans: '👁 Ver traducción', left: 'Izquierda', straight: 'Recto', right: 'Derecha',
     reset: '↺ Reintentar', arrived: '✓ ¡Llegué!', noRoad: 'No hay camino adelante.',
@@ -473,7 +480,7 @@ const UI = {
       '↺ If you go wrong, tap “Try again” to go back to the start.',
       '⚙ In Settings you can change the script, language, phonetics and speech speed. The leaderboard is on the start screen.',
     ],
-    board: 'Leaderboard', restart: '🏠 Menu', leaveT: 'Leave this round?', leaveMsg: 'Your current progress and score will not be saved.', leaveKeep: 'Keep playing', leaveRe: 'Restart this round', leaveHome: 'Back to main menu',
+    board: 'Leaderboard', restart: 'Menu', vocabBtn: '📖 Vocabulary', leaveT: 'Leave this round?', leaveMsg: 'Your current progress and score will not be saved.', leaveKeep: 'Keep playing', leaveRe: 'Restart this round', leaveHome: 'Back to main menu',
     q: 'Question {n}/{N}', pts: '{s} points',
     listen: '🔊 Listen', seeText: '👁 Show text', seeMore: '👁 Show reading & translation', seeRead: '👁 Show reading', seeTrans: '👁 Show translation', left: 'Left', straight: 'Straight', right: 'Right',
     reset: '↺ Try again', arrived: "✓ I'm here!", noRoad: 'No road ahead.',
@@ -519,7 +526,7 @@ const UI = {
       '↺ 走錯了，按「重走」回到起點重來。',
       '⚙ 在「設定」可以換字體、語言、讀音和語音速度。排行榜在開始頁。',
     ],
-    board: '排行榜', restart: '🏠 主選單', leaveT: '要離開這一輪嗎？', leaveMsg: '目前的進度和分數不會被記錄。', leaveKeep: '繼續玩', leaveRe: '重新開始這一輪', leaveHome: '回主選單',
+    board: '排行榜', restart: '主選單', vocabBtn: '📖 詞彙', leaveT: '要離開這一輪嗎？', leaveMsg: '目前的進度和分數不會被記錄。', leaveKeep: '繼續玩', leaveRe: '重新開始這一輪', leaveHome: '回主選單',
     q: '第 {n}/{N} 題', pts: '{s} 分',
     listen: '🔊 聽', seeText: '👁 看文字', seeMore: '👁 看讀音和翻譯', seeRead: '👁 看讀音', seeTrans: '👁 看翻譯', left: '', straight: '', right: '',
     reset: '↺ 重走', arrived: '✓ 我到了！', noRoad: '前面沒有路。',
@@ -892,7 +899,7 @@ function applyGameLabels() {
   $('#btn-restart').textContent = T('restart');
   $('#lvname').textContent = T('lv')[S.level - 1];
   $('#btn-say').textContent = T('listen');
-  $('#btn-vocab').textContent = '📖 ' + T('vocab');
+  setVocabLabel();
   const mk = (id, ic, key) => {
     const b = $(id);
     b.innerHTML = '<span class="ic">' + ic + '</span><span class="cn"></span><span class="pyb"></span><span class="sb"></span>';
@@ -910,6 +917,7 @@ function applyGameLabels() {
   const h = T('hint' + S.level, { straight: '<b>' + W('straight') + '</b>', cross: '<b>' + W('cross') + '</b>' });
   $('#hint').innerHTML = bh(h);
 }
+function setVocabLabel() { $('#btn-vocab').textContent = window.innerWidth <= 360 ? '📖' : T('vocabBtn'); $('#btn-vocab').title = flat(T('vocab')); $('#btn-vocab').setAttribute('aria-label', flat(T('vocab'))); }
 function renderSentence() {
   const q = S.q, parts = q.parts, last = parts.length - 1, k = sk();
   const upto = (S.locked || !S.partMode) ? last : S.partIdx;
@@ -926,6 +934,10 @@ function renderSentence() {
   $('#trl').textContent = hasTr ? vis.map(p => p[S.lang]).join(' ') : ''; $('#trl').classList.toggle('hidden', !hasTr || !showAux);
   // step 0: the button sits where the text will appear; step 1: a second button offers reading + translation
   const r1 = $('#btn-reveal'), r2 = $('#btn-reveal2');
+  const row = $('.sentrow'), vb = $('#btn-vocab'), step0 = !(S.locked || rev >= 1);
+  row.classList.toggle('s0', step0);
+  if (step0) { if (vb.parentNode !== row) row.insertBefore(vb, $('#btn-say')); }
+  else if (vb.parentNode !== $('#tools')) $('#tools').insertBefore(vb, $('#btn-npart'));
   r1.classList.toggle('hidden', S.locked || rev >= 1);
   r1.textContent = T('seeText');
   r2.classList.toggle('hidden', S.locked || rev !== 1 || (!hasRead && !hasTr));
@@ -1653,6 +1665,7 @@ function bind() {
   const reveal = () => { if (S.locked || !S.q || S.rev >= 2) return; S.rev++; renderSentence(); };
   $('#btn-reveal').onclick = reveal; $('#btn-reveal2').onclick = reveal;
   $('#btn-vocab').onclick = toggleVocab;
+  window.addEventListener('resize', setVocabLabel);
   $('#btn-restart').onclick = () => { stopSpeech(); leaveAt = Date.now(); openModal('leave'); };
   $('#lv-keep').onclick = closeModal;
   $('#lv-re').onclick = () => { leaveAt = 0; stopSpeech(); closeModal(); startGame(S.level); };
