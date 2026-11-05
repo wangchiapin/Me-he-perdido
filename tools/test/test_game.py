@@ -19,8 +19,15 @@ with sync_playwright() as p:
     pg.click('.lv >> nth=0')
     chk(pg.evaluate("document.querySelector('#s-start').classList.contains('on')"), 'empty name refused')
     pg.fill('#name', 'Ana')
-    # map choice chips
-    chk(pg.locator('#c-map .chip').count() == 8, '8 map chips (random + 7)')
+    # start screen: map picker is a dropdown; page is short
+    chk(pg.evaluate("document.querySelector('#mapsel').tagName")=='SELECT' and pg.locator('#mapsel option').count()==8, 'map picker is a dropdown with 8 options')
+    pg.select_option('#mapsel', 'night')
+    chk(pg.evaluate("__askdir.S.map") == 'night', 'dropdown sets map')
+    pg.select_option('#mapsel', 'any')
+    chk(pg.evaluate("__askdir.S.map") == 'any', 'random map restored')
+    chk(pg.input_value('#name') == 'Ana', 'typed name stays')
+    pg.fill('#name', 'Ana')
+    chk(pg.evaluate("document.documentElement.scrollHeight") <= 860, 'start screen is compact (%s px)' % pg.evaluate("document.documentElement.scrollHeight"))
     # all questions via act()
     qs = pg.evaluate("__askdir.DATA.questions")
     chk(len(qs) == 360, '360 questions')

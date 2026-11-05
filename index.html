@@ -17,9 +17,10 @@ body{touch-action:pan-y pinch-zoom}
 #app{max-width:520px;margin:0 auto;padding:12px 14px calc(18px + env(safe-area-inset-bottom))}
 .screen{display:none}.screen.on{display:block}
 .hidden{display:none!important}
-h1{font-size:26px;margin:0;letter-spacing:.06em;font-weight:600}
-.plaque{display:inline-block;margin:14px 0 0 2px;padding:6px 18px;border:2.5px solid var(--ink);border-radius:12px;background:var(--card);box-shadow:0 3px 0 var(--ink)}
-.hero{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px 8px 4px}
+h1{font-size:21px;margin:0;letter-spacing:.06em;font-weight:600}
+.plaque{flex:none;display:inline-block;margin:0 0 3px 2px;padding:5px 12px;border:2.5px solid var(--ink);border-radius:12px;background:var(--card);box-shadow:0 3px 0 var(--ink)}
+.headrow{display:flex;align-items:center;gap:12px;margin-top:2px}
+.hero{flex:1 1 auto;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:5px 6px 2px}
 .hero svg{display:block;width:100%;height:auto}
 .walker{transform:translate(40px,73px);animation:stroll 7s ease-in-out infinite}
 @keyframes stroll{0%,8%{transform:translate(40px,73px)}78%,100%{transform:translate(216px,73px)}}
@@ -33,15 +34,18 @@ input.name.err{border-color:var(--bad)}
 .chips{display:flex;flex-wrap:wrap;gap:7px}
 .chip{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer}
 .chip.on{border-color:var(--ink);background:var(--ink);color:#fff}
-.levels{display:grid;gap:9px;margin-top:16px;position:relative;padding-left:38px}
-.levels::before{content:'';position:absolute;left:15px;top:24px;bottom:24px;width:4px;border-radius:2px;background:var(--ink);opacity:.85}
-.lv{display:flex;align-items:center;gap:12px;text-align:left;border:1.5px solid var(--ink);background:var(--card);border-radius:16px;padding:12px 14px;cursor:pointer;width:100%}
+.selwrap{position:relative}
+.selwrap::after{content:'▾';position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none}
+.mapsel{appearance:none;-webkit-appearance:none;width:100%;border:1.5px solid var(--ink);background:var(--card);border-radius:14px;padding:11px 38px 11px 14px;font-size:15px;color:var(--ink);cursor:pointer}
+.levels{display:grid;gap:7px;margin-top:12px;position:relative;padding-left:31px}
+.levels::before{content:'';position:absolute;left:12px;top:20px;bottom:20px;width:3px;border-radius:2px;background:var(--ink);opacity:.85}
+.lv{display:flex;align-items:center;gap:12px;text-align:left;border:1.5px solid var(--ink);background:var(--card);border-radius:13px;padding:6px 12px;cursor:pointer;width:100%}
 .lv:active{background:var(--ink);color:#fff}
 .lv{position:relative}
-.lv .n{position:absolute;left:-38px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:var(--bg);border:3px solid var(--ink);display:grid;place-items:center;font-size:15px;font-weight:700;color:var(--ink)}
+.lv .n{position:absolute;left:-31px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;background:var(--bg);border:2.5px solid var(--ink);display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--ink)}
 .lv:last-child .n{background:var(--ink);color:#fff}
-.lv .t{font-size:16px;font-weight:600}
-.lv .d{font-size:12.5px;color:var(--muted)}
+.lv .t{font-size:14.5px;font-weight:600}
+.lv .d{font-size:11.5px;color:var(--muted)}
 .lv:active .d{color:#ddd}
 .lv .t .bi,.lv .t .bz,.lv .t .bf{display:inline}.lv .t .bf::before{content:' \00b7  '}
 .btn{border:1.5px solid var(--ink);background:var(--ink);color:#fff;border-radius:14px;padding:11px 16px;font-size:15px;cursor:pointer}
@@ -177,7 +181,7 @@ table.lb td:nth-child(1){width:30px;color:var(--muted)}
 table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table.lb th:nth-child(4){text-align:right}
 .iconbar{display:flex;gap:6px;align-items:center}
 .iconbar .mini{padding:5px 9px;font-size:16px;line-height:1}
-.startbar{display:flex;justify-content:flex-end;margin-bottom:-6px}
+.startbar{display:flex;justify-content:flex-end;margin-bottom:8px}
 .topr{display:flex;align-items:center;gap:6px;justify-content:flex-end}
 .modal{position:fixed;inset:0;background:rgba(43,43,43,.38);z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--bg);width:100%;max-width:520px;max-height:86vh;overflow:auto;border-radius:20px 20px 0 0;padding:14px 16px calc(20px + env(safe-area-inset-bottom))}
@@ -212,14 +216,13 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
 <!-- ============ START ============ -->
 <section id="s-start" class="screen on">
   <div class="startbar"><span class="iconbar"><button class="mini" id="i-set"></button><button class="mini" id="i-help"></button></span></div>
-  <div class="plaque"><h1 id="ttl">問路小達人</h1></div>
-  <div class="hero" id="hero"></div>
+  <div class="headrow"><div class="plaque"><h1 id="ttl">問路小達人</h1></div><div class="hero" id="hero"></div></div>
 
   <div class="lbl" id="l-name"></div>
   <input id="name" class="name" maxlength="14" autocomplete="off">
 
   <div class="lbl" id="l-map"></div>
-  <div class="chips" id="c-map"></div>
+  <div class="selwrap"><select id="mapsel" class="mapsel"></select></div>
 
   <div class="lbl" id="l-level"></div>
   <div class="levels" id="levels"></div>
@@ -906,7 +909,9 @@ function renderStart() {
   $('#l-lang').textContent = T('lang');
   chips('#c-lang', [{ v: 'es', label: '中文＋' + (isZh() ? '西班牙文' : 'Español') }, { v: 'en', label: '中文＋' + (isZh() ? '英文' : 'English') }, { v: 'zh', label: '只有中文' }], S.lang, v => { S.lang = v; saveSettings(); renderStart(); });
   $('#l-map').textContent = T('map');
-  chips('#c-map', [{ v: 'any', label: T('mapAny') }].concat(Object.keys(DATA.maps).map(k => ({ v: k, label: mapLabel(k) }))), S.map, v => { S.map = v; saveSettings(); renderStart(); });
+  const ms = $('#mapsel'); ms.innerHTML = '';
+  [['any', flat(T('mapAny'))]].concat(Object.keys(DATA.maps).map(k => [k, flat(mapLabel(k))])).forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; ms.appendChild(o); });
+  ms.value = S.map;
   $('#l-show').textContent = T('show');
   chips('#c-show', [
     { v: 'tx', label: T('showText'), on: S.showAll },
@@ -1720,6 +1725,7 @@ function bind() {
   const reveal = () => { if (S.locked || !S.q || S.rev >= 2) return; S.rev++; renderSentence(); };
   $('#btn-reveal').onclick = reveal; $('#btn-reveal2').onclick = reveal;
   $('#btn-vocab').onclick = toggleVocab;
+  $('#mapsel').onchange = e => { S.map = e.target.value; saveSettings(); };
   window.addEventListener('resize', setVocabLabel);
   $('#btn-restart').onclick = () => { stopSpeech(); leaveAt = Date.now(); openModal('leave'); };
   $('#lv-keep').onclick = closeModal;
@@ -1735,7 +1741,7 @@ function bind() {
   $('#r-board').onclick = () => openBoard(S.level);
   $('#r-home').onclick = () => { renderStart(); show('s-start'); };
   $('#b-back').onclick = () => { renderStart(); show('s-start'); };
-  $('#name').addEventListener('input', () => $('#name').classList.remove('err'));
+  $('#name').addEventListener('input', () => { $('#name').classList.remove('err'); S.name = $('#name').value; });
   document.addEventListener('keydown', e => {
     if (!$('#s-game').classList.contains('on') || e.target.tagName === 'INPUT') return;
     if (e.key === 'ArrowLeft') act('L'); else if (e.key === 'ArrowRight') act('R'); else if (e.key === 'ArrowUp') { e.preventDefault(); act('S'); }
