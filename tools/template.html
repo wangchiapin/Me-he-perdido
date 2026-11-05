@@ -112,13 +112,15 @@ input.name.err{border-color:var(--bad)}
 #dock{flex:none;padding-top:8px}
 #dock #controls{margin-top:0}
 #dock.off{display:none}
-#s-game.on{display:flex;flex-direction:column;height:calc(100dvh - 104px);min-height:520px}
+#s-game.on{display:flex;flex-direction:column;height:calc(100svh - 112px);min-height:420px}
+body:has(#s-game.on){padding-bottom:0}
+body:has(#s-game.on) #hgCopy{font-size:9px!important;line-height:1.3!important;padding:5px 6px calc(5px + env(safe-area-inset-bottom,0px))!important;white-space:nowrap;overflow:hidden}
 #s-game.on>*{flex:none}
-#s-game.on>.mapwrap{flex:1 1 auto;min-height:250px;display:flex;flex-direction:column}
+#s-game.on>.mapwrap{flex:1 1 auto;min-height:190px;display:flex;flex-direction:column}
 #s-game.on #map,#s-game.on #map.big{flex:1 1 auto;min-height:0;height:100%;max-height:none}
 #s-game.on.locked{height:auto;min-height:0}
 #s-game.on.locked>.mapwrap{flex:none;display:block}
-#s-game.on.locked #map,#s-game.on.locked #map.big{height:auto;max-height:38vh}
+#s-game.on.locked #map,#s-game.on.locked #map.big{height:auto;max-height:38svh}
 .row2 .btn{padding:8px}
 #controls.off,.row2.off{opacity:.35;pointer-events:none}
 #feedback{margin-top:10px}
