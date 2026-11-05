@@ -147,6 +147,17 @@ with sync_playwright() as p:
     chk(pg.evaluate("new Set(__askdir.S.qs.map(q=>q.map)).size")>=2, 'random map: one round mixes several maps')
     pg.evaluate("__askdir.startGame(5)")
     chk(pg.evaluate("__askdir.S.qs.every(q=>q.map==='real')"), 'level 5 always uses the real-streets map')
+    # building layouts are random per question; the star building of each map stays put
+    lay = pg.evaluate("""()=>{const o={};DATA_Q.filter(q=>q.level<5).forEach(q=>{(o[q.map]=o[q.map]||new Set()).add(JSON.stringify(q.blocks))});return Object.fromEntries(Object.entries(o).map(([k,v])=>[k,v.size]))}""".replace('DATA_Q','__askdir.DATA.questions'))
+    chk(all(n >= 10 for n in lay.values()) and len(lay) == 6, 'each basic map has many different building layouts %s' % lay)
+    chk(pg.evaluate("__askdir.DATA.questions.filter(q=>q.map==='station').every(q=>q.blocks[0][0]==='train')"), 'station: train station stays in place')
+    chk(pg.evaluate("__askdir.DATA.questions.filter(q=>q.map==='campus').every(q=>q.blocks[0][0]==='school')"), 'campus: school stays in place')
+    # the drawn map and the dictionary follow the question's own layout
+    pg.evaluate("__askdir.S.map='any'")
+    pg.evaluate("__askdir.startGame(2)")
+    mine = pg.evaluate("__askdir.S.q.blocks.flat().join(',')")
+    drawn = pg.evaluate("[...document.querySelectorAll('#map .bld')].map(g=>g.dataset.k).join(',')")
+    chk(mine == drawn, 'map is drawn with the question layout')
     # map filter + full game
     pg.evaluate("__askdir.S.map='night'")
     pg.evaluate("__askdir.startGame(3)")

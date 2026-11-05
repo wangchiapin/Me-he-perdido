@@ -156,7 +156,7 @@ for q in Q:
         mx, my = lx + DX[ld] / 2.0, ly + DY[ld] / 2.0
         sd = (ld + 3) % 4 if q['side'] == 'L' else (ld + 1) % 4
         bx, by = int(round(mx + 0.5 * DX[sd] - 0.5)), int(round(my + 0.5 * DY[sd] - 0.5))
-        if not (0 <= bx < 3 and 0 <= by < 3) or maps[q['map']]['blocks'][by][bx] != q['target']:
+        if not (0 <= bx < 3 and 0 <= by < 3) or (q.get('blocks') or maps[q['map']]['blocks'])[by][bx] != q['target']:
             errs.append((q['id'], 'target not on stated side'))
     if len(q['parts']) < 2: errs.append((q['id'], 'needs at least 2 parts'))
     for i, p in enumerate(q['parts']):
@@ -174,6 +174,16 @@ if len(ids) != len(set(ids)): errs.append(('-', 'duplicate ids'))
 for mp in maps:
     keys = [k for r in maps[mp]['blocks'] for k in r]
     if len(keys) != len(set(keys)) or any(k not in B for k in keys): errs.append((mp, 'map buildings not unique / unknown'))
+# every question's own layout: the same nine buildings as the map, the star building unmoved
+ANCH = {'station': 'train', 'night': 'temple', 'campus': 'school', 'hospital': 'hospital', 'metro': 'mrt'}
+for q in Q:
+    if q['level'] < 5:
+        base = maps[q['map']]['blocks']
+        lay = q.get('blocks')
+        if not lay: errs.append((q['id'], 'basic-map question without its own layout')); continue
+        if sorted(k for r in lay for k in r) != sorted(k for r in base for k in r): errs.append((q['id'], 'layout changes the set of buildings'))
+        a = ANCH.get(q['map'])
+        if a and any(base[y][x] == a and lay[y][x] != a for y in range(3) for x in range(3)): errs.append((q['id'], 'star building moved'))
 by, bym = {}, {}
 for q in Q:
     by[q['level']] = by.get(q['level'], 0) + 1

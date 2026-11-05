@@ -1074,7 +1074,7 @@ function renderMap() {
     }
   }
   for (let by = 0; by < 3; by++) for (let bx = 0; bx < 3; bx++) {
-    const key = m.blocks[by][bx], cx = bx * SP + 50, cy = by * SP + 50;
+    const key = (q.blocks || m.blocks)[by][bx], cx = bx * SP + 50, cy = by * SP + 50;
     h += '<g class="bld" data-k="' + key + '"><rect x="' + (cx - 35) + '" y="' + (cy - 35) + '" width="70" height="70" rx="9"/>' + labelSvg(cx, cy, key) + '</g>';
   }
   // street furniture on the diagonal corners of every intersection: trees, and a traffic light on inner ones
@@ -1631,7 +1631,7 @@ function buildVocab() {
   fill('#vg1', ['straight', 'left', 'right', 'cross'].map(k => [W(k), WPY[k], (WTR[S.lang] || {})[k]]));
   fill('#vg3', USEFUL.map(u => [u[sk()], u.py, u[S.lang]]));
   const keys = [];
-  m.blocks.forEach(r => r.forEach(k => keys.push(k)));
+  (S.q.blocks || m.blocks).forEach(r => r.forEach(k => keys.push(k)));
   fill('#vg2', keys.map(k => { const b = DATA.buildings[k]; return [S.script === 'trad' ? b.tw : b.cn, b.py, b[S.lang]]; }));
 }
 // re-draw whatever screen is showing after the settings changed (e.g. in another tab)

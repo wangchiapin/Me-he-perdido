@@ -91,6 +91,21 @@ MAPS = {
 for _m in MAPS.values():
     _m.setdefault('rb', []); _m.setdefault('ynodes', [])
 BASIC = ('street', 'station', 'night', 'campus', 'hospital', 'metro')
+# The "star" building of each map stays where it is (the closed roads and the map's name are built around it);
+# the other buildings are shuffled for every question. The street map has no star, so all nine move.
+ANCHOR = {'station': 'train', 'night': 'temple', 'campus': 'school', 'hospital': 'hospital', 'metro': 'mrt'}
+BASE_BLOCKS = {k: [list(r) for r in MAPS[k]['blocks']] for k in BASIC}
+
+def shuffled_blocks(mp, rng):
+    flat = [k for r in BASE_BLOCKS[mp] for k in r]
+    keep = [i for i, k in enumerate(flat) if k == ANCHOR.get(mp)]
+    free = [i for i in range(9) if i not in keep]
+    vals = [flat[i] for i in free]
+    rng.shuffle(vals)
+    out = list(flat)
+    for i, v in zip(free, vals):
+        out[i] = v
+    return [out[0:3], out[3:6], out[6:9]]
 
 # ---------- phrase pieces ----------
 TURN = {
@@ -588,9 +603,13 @@ def main(per=12, per5=72, seed=20261020):
             seen, made, tries, want = set(), 0, 0, (per5 if level == 5 else per)
             while made < want and tries < 60000:
                 tries += 1
+                if level < 5:
+                    MAPS[mp]['blocks'] = shuffled_blocks(mp, rng)      # a new building layout for this try
                 q = try_build_graph(rng) if level == 5 else try_build(level, mp, rng)
                 if not q:
                     continue
+                if level < 5:
+                    q['blocks'] = [list(r) for r in MAPS[mp]['blocks']]
                 key = ''.join(p['tw'] for p in q['parts'])
                 if key in seen:
                     continue
@@ -600,6 +619,8 @@ def main(per=12, per5=72, seed=20261020):
                 out.append(q)
             if made < want:
                 print('WARN: only %d for %s L%d' % (made, mp, level), file=sys.stderr)
+            if mp in BASE_BLOCKS:
+                MAPS[mp]['blocks'] = [list(r) for r in BASE_BLOCKS[mp]]
     return out
 
 if __name__ == '__main__':
