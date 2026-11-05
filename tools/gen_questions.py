@@ -135,6 +135,7 @@ CON = [
     ('然後', '然后', 'rán hòu', 'luego', 'then'),
     ('再', '再', 'zài', 'después', 'next'),
     ('最後', '最后', 'zuì hòu', 'por último', 'finally'),
+    ('然後再', '然后再', 'rán hòu zài', 'luego', 'then'),
 ]
 
 def cap(s):
@@ -232,9 +233,14 @@ class Sim:
         return True
 
 # ---------- rendering of steps into clauses ----------
-def assign_connectors(steps, level):
+def assign_connectors(steps, level, rng=None):
     n = len(steps)
-    cons, alt = [None] * n, 0
+    cons, prev = [None] * n, None
+    def mid():                                  # 然後 / 再 / 然後再, never the same one twice in a row
+        nonlocal prev
+        c = rng.choice([x for x in (1, 2, 4) if x != prev])
+        prev = c
+        return c
     has_xian = bool(steps) and steps[0]['kind'] in ('turn', 'round', 'fork')      # the sentence starts with 先…
     for i, st in enumerate(steps):
         k = st['kind']
@@ -246,18 +252,16 @@ def assign_connectors(steps, level):
             elif i == n - 1 and n >= 3:
                 con = 3
             else:
-                con = 1 if alt % 2 == 0 else 2
-                alt += 1
+                con = mid()
         else:
             if k in ('turn', 'round', 'fork'):
                 con = 0 if i == 0 else None
             elif i == 0:
                 con = None
             elif i == n - 1:
-                con = 3 if has_xian else 2          # 最後 only after 先/然後; otherwise 再
+                con = 3 if has_xian else rng.choice([2, 4])   # 最後 only after 先; otherwise 再 / 然後再
             else:
-                con = 1 if alt % 2 == 0 else 2
-                alt += 1
+                con = mid()
         cons[i] = con
     return cons
 
@@ -528,7 +532,7 @@ def try_build(level, mp, rng):
                 extra = rng.choice(nbrs)
     if tkey in named or (extra and extra[1] in named):
         return None
-    cons = assign_connectors(steps, level)
+    cons = assign_connectors(steps, level, rng)
     clauses = [render_step(st, cons[i], level, rng) for i, st in enumerate(steps)]
     parts = make_parts(clauses, final_clause(tkey, side, extra))
     return dict(
@@ -619,7 +623,7 @@ def try_build_graph(rng):
     other = fl[1] if side == 'L' else fl[0]
     extra = ('opp', other) if (other and rng.random() < 0.5) else None
     if tkey in named or (extra and extra[1] in named): return None
-    cons = assign_connectors(steps, 5)
+    cons = assign_connectors(steps, 5, rng)
     clauses = [render_step(st, cons[i], 5, rng) for i, st in enumerate(steps)]
     parts = make_parts(clauses, final_clause(tkey, side, extra))
     return dict(level=5, map='real', graph=True, start=[n, e], end=[sim.node, sim.via], actions=sim.actions,
