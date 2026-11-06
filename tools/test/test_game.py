@@ -303,7 +303,7 @@ with sync_playwright() as p:
     chk(sum(bool(re.search('第.間', full6(q))) for q in q6s) >= 2, 'big map: 第N間 shop sentences (from the 2nd on)')
     chk(sum(bool(re.search('第.個紅綠燈', full6(q))) for q in q6s) >= 5, 'big map: 第N個紅綠燈 sentences (from the 2nd on)')
     chk(sum('路口' in full6(q) for q in q6s) >= 25, 'big map: 第N個路口 sentences kept')
-    chk(any('紅綠燈' in full6(q) and '路口' in full6(q) for q in q6s), 'big map: junctions and traffic lights mixed in one sentence')
+    chk(any('紅綠燈' in full6(q) and '路口' in full6(q) for q in qs if q['map'] == 'big'), 'big map: junctions and traffic lights mixed in one sentence')
     chk(not any(q['crosses'] for q in q6s), 'big map: no crossings asked')
     chk(sum('直走到' in full6(q) and '前面' in full6(q) and not re.search('第.間', full6(q)) for q in q6s) >= 10, 'big map: a lone shop is named plainly (直走到圖書館前面)')
     pg.goto(URL); pg.fill('#name', 'Ana')

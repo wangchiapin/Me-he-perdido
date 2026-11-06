@@ -916,7 +916,7 @@ def main(per=12, per_real=72, per_big=72, seed=20261020):
         for mp in BASIC:
             batch(out, rng, level, mp, want, RECIPES[rkey])
     GE.build_drawing()          # drops building slots that have no room (so the sentences never name them)
-    GE.subdivide()              # a stop in front of every shop on the longer roads
+    GE.subdivide(all_roads=True)   # a stop in front of every shop, same rule as the big map
     for level, want in ((3, per_real), (4, 24)):
         batch(out, rng, level, 'real', want)
     MAPDATA['real'] = graph_map_data()
