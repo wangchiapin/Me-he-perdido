@@ -439,12 +439,14 @@ def make_parts(clauses, fin):
 _A = [['go1', 'turn', 'go1'], ['go1', 'turn', 'go1'], ['go1', 'turn', 'go1'],
       ['turn', 'go1', 'turn', 'go1'], ['turn', 'go1', 'turn', 'go1'], ['go1', 'turn', 'go1', 'turn', 'go1'],
       ['go1', 'turn', 'end'], ['go1', 'turn', 'end'], ['turn', 'end'], ['turn', 'go1', 'turn', 'end']]
-_B = [['go', 'turn', 'go'], ['go', 'turn', 'go'], ['turn', 'go', 'turn', 'go'],
-      ['golight', 'turn', 'go1'], ['golight', 'turn', 'go'], ['go', 'turn', 'golight'], ['turn', 'golight', 'turn', 'go1'], ['golight', 'turn', 'golight'],
-      ['golight', 'turn', 'go1'], ['go', 'turn', 'golight'], ['turn', 'golight', 'turn', 'go1'],
-      ['pass', 'go'], ['pass', 'go1'], ['turn', 'pass', 'go'], ['see', 'go'], ['see', 'go1'], ['turn', 'see', 'go1'], ['see', 'go1'], ['see', 'go'],
+_B = [['go', 'turn', 'go1'], ['go', 'turn', 'go1'], ['go', 'turn', 'go'], ['turn', 'go', 'turn', 'go'],
+      ['golight', 'turn', 'go1'], ['golight', 'turn', 'go1'], ['golight', 'turn', 'go1'], ['golight', 'turn', 'go'], ['go', 'turn', 'golight'], ['go', 'turn', 'golight'],
+      ['turn', 'golight', 'turn', 'go1'], ['turn', 'golight', 'turn', 'go1'], ['golight', 'turn', 'golight'], ['golight', 'turn', 'golight'],
+      ['turn', 'golight', 'turn', 'golight'], ['golight', 'turn', 'go', 'turn', 'go1'], ['go', 'turn', 'golight', 'turn', 'go1'],
+      ['pass', 'go1'], ['pass', 'go'], ['turn', 'pass', 'go'], ['see', 'go1'], ['see', 'go'], ['turn', 'see', 'go1'],
       ['passx', 'go1'], ['turn', 'passx', 'go1'],
-      ['viago', 'turn', 'go1'], ['viago', 'turn', 'go'], ['vialight', 'turn', 'go1'], ['turn', 'viago', 'turn', 'go1']]
+      ['viago', 'turn', 'go1'], ['viago', 'turn', 'go'], ['vialight', 'turn', 'go1'], ['vialight', 'turn', 'go1'], ['turn', 'viago', 'turn', 'go1'],
+      ['viago', 'turn', 'golight'], ['vialight', 'turn', 'go', 'turn', 'go1'], ['turn', 'viago', 'turn', 'golight']]
 _C = [['go', 'turn', 'pass', 'go'], ['pass', 'go', 'turn', 'go'], ['go', 'turn', 'go', 'pass', 'go'],
       ['passx', 'go1', 'turn', 'end'], ['turn', 'go1', 'turn', 'passx', 'go1'], ['pass', 'passx', 'go1'],
       ['turn', 'passx', 'go1', 'turn', 'go1'], ['go', 'turn', 'pass', 'end'],
@@ -455,10 +457,11 @@ RECIPES = {
     'C': dict(pats=_A + _B + _C, maxm=9, extra=0.9, lights=True, con=2),
 }
 MAX_MOVES = {'real': 6, 'big': 12}
+L4_MIN = {'grid': 7, 'graph': 9}       # level 4 only keeps the harder questions (the grid ones are at least as hard as a typical level 2 question)
 WEIGHT = {'go1': 1, 'turn': 1, 'end': 2, 'go': 2, 'golight': 3, 'pass': 3, 'torb': 2, 'round': 2, 'toy': 2, 'fork': 1, 'shop': 2, 'gostore': 4, 'cross': 1}
 
 def difficulty(steps, extra=None, bonus=0):
-    """a rough 'how hard is it' number: the game plays the 8 questions of a round from easy to hard"""
+    """a rough 'how hard is it' number: the game plays the 10 questions of a round from easy to hard"""
     d = bonus
     for st in steps:
         d += WEIGHT.get(st['kind'], 2)
@@ -747,9 +750,10 @@ def dup_types():
             if v[sd]: cnt[base_key(v[sd])] = cnt.get(base_key(v[sd]), 0) + 1
     return sorted(k for k, c in cnt.items() if c > 1)
 
-def try_build_graph(rng, mapkey, level):
+def try_build_graph(rng, mapkey, level, only=None):
     big = mapkey == 'big'
-    pat = rng.choice(BPATTERNS if big else GPATTERNS)
+    pool_ = [p_ for p_ in (BPATTERNS if big else GPATTERNS) if only is None or only in p_]
+    pat = rng.choice(pool_)
     dups = set(dup_types()) if big else set()
     n = rng.choice([k for k, v in GE.NODES.items() if v['kind'] == 'n'] if big else [k for k, v in GE.NODES.items() if v['kind'] != 'rb'])
     e = rng.choice(GE.INC[n])
@@ -910,19 +914,23 @@ def graph_map_data(g=None, **extra):
 from graph_map import GRAPH as _G, BIG, BIG_SECOND
 GRAPH_TW = dict(tw=_G['tw'], cn=_G['cn'], es=_G['es'], en=_G['en'])
 
-def batch(out, rng, level, mp, want, rc=None):
+def batch(out, rng, level, mp, want, rc=None, min_diff=0, quota=()):
     """make `want` different questions of one level on one map (rc = recipe for the grid maps, None = the road-graph maps)"""
     seen, made, tries = set(), 0, 0
     n_cross = n_end = 0
     cross_cap, end_cap = max(1, want // 4), max(1, want * 5 // 12)      # keep 過馬路 and 到底 from taking over (grid maps only)
+    todo = [[tok, word, n_] for tok, word, n_ in quota]        # (pattern token, word in the sentence, how many at least)
     while made < want and tries < 60000:
         tries += 1
+        forced = next((t_ for t_ in todo if t_[2] > 0), None)
         if rc:
             MAPS[mp]['blocks'] = shuffled_blocks(mp, rng)      # a new building layout for this try
             q = try_build(level, mp, rng, rc)
         else:
-            q = try_build_graph(rng, mp, level)
+            q = try_build_graph(rng, mp, level, forced[0] if forced else None)
         if not q:
+            continue
+        if q['diff'] < min_diff and not forced:
             continue
         if rc:
             q['blocks'] = [list(r) for r in MAPS[mp]['blocks']]
@@ -935,6 +943,9 @@ def batch(out, rng, level, mp, want, rc=None):
                 continue
             n_cross += 1 if q['crosses'] else 0
             n_end += 1 if has_end else 0
+        if forced and forced[1] not in key:
+            continue
+        if forced: forced[2] -= 1
         seen.add(key)
         made += 1
         q['id'] = '%s-L%d-%02d' % (mp, level, made)
@@ -949,15 +960,16 @@ def main(per=12, per_real=72, per_big=72, seed=20261020):
     out = []
     for level, rkey, want in ((1, 'A', per), (2, 'B', per), (4, 'C', 8)):     # grid maps: levels 1, 2 and the grid share of level 4
         for mp in BASIC:
-            batch(out, rng, level, mp, want, RECIPES[rkey])
+            batch(out, rng, level, mp, want, RECIPES[rkey], min_diff=L4_MIN['grid'] if level == 4 else 0)
     GE.build_drawing()          # drops building slots that have no room (so the sentences never name them)
     GE.subdivide(all_roads=True)   # a stop in front of every shop, same rule as the big map
-    for level, want in ((3, per_real), (4, 24)):
-        batch(out, rng, level, 'real', want)
+    for level, want in ((3, per_real), (4, 24)):          # the real-street map: a fixed number of roundabouts and Y junctions
+        batch(out, rng, level, 'real', want, min_diff=L4_MIN['graph'] if level == 4 else 0,
+              quota=(('round', '圓環', 10 if level == 3 else 5), ('fork', 'Y字路口', 10 if level == 3 else 5)))
     MAPDATA['real'] = graph_map_data()
     GE.load(BIG, [], BIG_SECOND); GE.build_drawing(); GE.subdivide(all_roads=True)       # switch to the big map
     for level, want in ((3, per_big), (4, 24)):
-        batch(out, rng, level, 'big', want)
+        batch(out, rng, level, 'big', want, min_diff=L4_MIN['graph'] if level == 4 else 0)
     MAPDATA['big'] = graph_map_data(BIG, camw=508, camh=531)
     out.sort(key=lambda q: q['level'])
     return out

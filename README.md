@@ -19,7 +19,7 @@ Escuchas una indicación, caminas por un mapa y llegas al destino.
 4. Cuando creas que llegaste, pulsa **¡Llegué!**
 5. Si te equivocas, el juego te muestra tu ruta y la ruta correcta, y puedes ver cómo se camina.
 
-Cada ronda tiene 8 preguntas y cada acierto vale 10 puntos. Hay clasificación por nivel.
+Cada ronda tiene 10 preguntas y cada acierto vale 10 puntos. Hay clasificación por nivel.
 
 **Importante:** izquierda y derecha dependen de hacia dónde mira el personaje (una persona o un animal visto desde arriba, distinto en cada pregunta), no de la pantalla. Ahí está la práctica. Al revelar la respuesta, el personaje se detiene junto al edificio de destino para que «a tu izquierda/derecha» coincida con el dibujo.
 

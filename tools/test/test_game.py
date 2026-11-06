@@ -200,7 +200,7 @@ with sync_playwright() as p:
     for lv_ in (1, 2, 4):
         pg.evaluate('l=>__askdir.startGame(l)', lv_)
         ds_ = pg.evaluate("__askdir.S.qs.map(q=>q.diff)")
-        chk(ds_ == sorted(ds_) and len(ds_) == 8, 'level %d round is sorted easy to hard %s' % (lv_, ds_))
+        chk(ds_ == sorted(ds_) and len(ds_) == 10, 'level %d round is sorted easy to hard %s' % (lv_, ds_))
     chk(any(pg.evaluate('()=>{__askdir.startGame(4);return __askdir.S.qs.some(q=>q.graph)&&__askdir.S.qs.some(q=>!q.graph)}') for _ in range(12)), 'level 4 rounds mix grid and road-graph questions')
     # building layouts are random per question; the star building of each map stays put
     lay = pg.evaluate("""()=>{const o={};DATA_Q.filter(q=>!q.graph).forEach(q=>{(o[q.map]=o[q.map]||new Set()).add(JSON.stringify(q.blocks))});return Object.fromEntries(Object.entries(o).map(([k,v])=>[k,v.size]))}""".replace('DATA_Q','__askdir.DATA.questions'))
@@ -216,9 +216,9 @@ with sync_playwright() as p:
     # map filter + full game
     pg.evaluate("__askdir.S.map='night'")
     pg.evaluate("__askdir.startGame(2)")
-    chk(pg.evaluate("__askdir.S.qs.every(q=>q.map==='night')") and pg.evaluate("__askdir.S.qs.length")==8, 'map filter, 8 questions')
+    chk(pg.evaluate("__askdir.S.qs.every(q=>q.map==='night')") and pg.evaluate("__askdir.S.qs.length")==10, 'map filter, 10 questions')
     # photo onerror removes figure
-    for i in range(8):
+    for i in range(10):
         qq = pg.evaluate("__askdir.S.q")
         for a in qq['actions']: pg.evaluate("a=>__askdir.act(a)", a)
         pg.evaluate("__askdir.submit()")
@@ -228,7 +228,7 @@ with sync_playwright() as p:
             pg.screenshot(path=SH + '/ok.png', full_page=True)
         pg.evaluate("__askdir.nextQuestion()")
     pg.wait_for_timeout(300)
-    chk(pg.inner_text('#r-score') == '80', 'perfect round = 80')
+    chk(pg.inner_text('#r-score') == '100', 'perfect round = 100')
     chk(pg.locator('#r-list').count() == 0 and pg.locator('#s-result li').count() == 0, 'result page has no per-question list')
     chk(pg.is_visible('#r-again') and pg.is_visible('#r-board') and pg.is_visible('#r-home'), 'result page keeps its three buttons')
     pg.screenshot(path=SH + '/result.png', full_page=True)
