@@ -383,7 +383,7 @@ const FIREBASE_CONFIG = {      // 連到 memorma-24dab（和翻牌記憶、收�
   messagingSenderId: "806709458465",
   appId: "1:806709458465:web:f0d12acb2f911f2f165560"
 };
-const LB_PREFIX = 'askDirections_L';   // Firestore collections: askDirections_L1 … L6
+const LB_PREFIX = 'askDirections_L';   // Firestore collections: askDirections_L1 … L4
 const GA_ID = '';               // GA4 measurement id, e.g. 'G-XXXXXXXXXX'
 
 /* ---------- helpers ---------- */
@@ -422,14 +422,14 @@ const UI = {
     slow: 'Lenta', normal: 'Normal', fast: 'Rápida',
     ph_pinyin: 'Pinyin', ph_zhuyin: 'Zhuyin 注音', ph_both: 'Pinyin + zhuyin', ph_off: 'Ninguna',
     level: 'Elige un nivel',
-    lv: ['Nivel 1', 'Nivel 2', 'Nivel 3', 'Nivel 4', 'Nivel 5', 'Nivel 6'],
-    lvd: ['Recto, izquierda y derecha', 'Contar esquinas y seguir hasta el final', 'Izquierda, derecha, enfrente, cruzar la calle', 'Indicaciones largas, todo junto', 'Barrio real: diagonales, rotonda, Y y paradas frente a las tiendas', 'Barrio grande: semáforos y «la segunda tienda de…»'],
+    lv: ['Nivel 1', 'Nivel 2', 'Nivel 3', 'Nivel 4'],
+    lvd: ['Recto, izquierda, derecha, hasta el final, enfrente / delante / detrás', 'Contar esquinas y semáforos, edificios como referencia, cruzar la calle', 'Barrio real y barrio grande: rotonda, Y, semáforos y tiendas repetidas', 'Todo mezclado'],
     settings: 'Ajustes', helpT: 'Cómo jugar', close: 'Cerrar',
     helpL: [
       '🎧 Pulsa «🔊 Escuchar» para oír las indicaciones. Si lo necesitas, pulsa «Ver texto» y después «Ver lectura y traducción».',
       '🚶 Camina con los botones de abajo: «Recto» te lleva hasta justo antes de la siguiente esquina o curva; «Izquierda» y «Derecha» giran en la esquina.',
-      '🚦 Desde el nivel 3, cuando oigas «cruzar la calle», llega a esa esquina y pulsa el botón de cruzar.',
-      '🔄 Nivel 5, rotondas: entra en la rotonda y pulsa el botón de la salida (se cuentan en sentido contrario a las agujas del reloj).',
+      '🚦 Desde el nivel 2, cuando oigas «cruzar la calle», llega a esa esquina y pulsa el botón de cruzar.',
+      '🔄 Niveles 3 y 4, rotondas: entra en la rotonda y pulsa el botón de la salida (se cuentan en sentido contrario a las agujas del reloj).',
       '✅ Al llegar al destino, pulsa «¡Llegué!». Si aciertas, ganas 10 puntos.',
       '↺ Si te equivocas, pulsa «Reintentar» para volver al inicio.',
       '⚙ En Ajustes puedes cambiar la escritura, el idioma, la lectura y la velocidad. El ranking está en la pantalla de inicio.',
@@ -442,12 +442,11 @@ const UI = {
     badFace: 'Llegaste al lugar correcto, pero miras hacia otro lado.',
     yourRoute: 'Tu ruta', rightRoute: 'Ruta correcta',
     watch: '▶ Ver la ruta', next: 'Siguiente →', finish: 'Ver resultado',
-    hint1: '{straight} = avanzar hasta justo antes de la siguiente esquina.',
-    hint2: 'Las esquinas se cuentan desde donde estás. «Hasta el final» = sigue recto hasta que la calle se acabe.',
-    hint3: 'Mira el mapa: ¿qué edificio queda a tu izquierda o a tu derecha mientras caminas? Si oyes {cross}, pulsa el botón de cruzar.',
+    hint1: '{straight} = avanzar hasta justo antes de la siguiente esquina. «Hasta el final» = sigue recto hasta que la calle se acabe. Mira qué edificio queda a tu lado, enfrente, delante o detrás del destino.',
+    hint2: 'Cuenta las esquinas desde donde estás; los semáforos 🚦 solo están en algunas esquinas, y si te piden semáforos solo cuentas las esquinas que lo tienen. Mira los edificios del camino: «pasa el banco», «al ver el banco». Si oyes {cross}, pulsa el botón de cruzar.',
     hint4: 'Combina todo lo aprendido. ¡Tú puedes!',
-    hint6: 'Mapa grande: la vista te sigue (🔍 / 🗺 para acercar o ver todo). Cuenta los semáforos 🚦 o las tiendas del mismo tipo: «la segunda tienda de conveniencia». No todas las esquinas tienen semáforo.',
-    hint5: 'Rotonda: se circula en sentido contrario a las agujas del reloj; la 1.ª salida es la primera calle después de por donde entraste. Pulsa el botón de la salida. Y: 靠左/靠右 = pulsa girar y luego recto. Con 🔍 / 🗺 acercas o alejas el mapa.',
+    hintB: 'Mapa grande: la vista te sigue (🔍 / 🗺 para acercar o ver todo). Cuenta los semáforos 🚦 o las tiendas del mismo tipo: «la segunda tienda de conveniencia»; sin número es la primera que encuentres. «Recto» se detiene delante de cada tienda: púlsalo otra vez para seguir. No todas las esquinas tienen semáforo.',
+    hintR: 'En algunas calles «Recto» se detiene delante de las tiendas: púlsalo otra vez para seguir. Rotonda: se circula en sentido contrario a las agujas del reloj; la 1.ª salida es la primera calle después de por donde entraste. Pulsa el botón de la salida. Y: 靠左/靠右 = pulsa girar y luego recto. Con 🔍 / 🗺 acercas o alejas el mapa.',
     result: 'Resultado', score: '{c} de {N} correctas', time: 'Tiempo: {t} s',
     again: 'Jugar de nuevo', home: 'Cambiar de nivel',
     best: 'Mejor puntuación de cada jugador (top 10).',
@@ -469,14 +468,14 @@ const UI = {
     slow: 'Slow', normal: 'Normal', fast: 'Fast',
     ph_pinyin: 'Pinyin', ph_zhuyin: 'Zhuyin 注音', ph_both: 'Pinyin + zhuyin', ph_off: 'None',
     level: 'Choose a level',
-    lv: ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6'],
-    lvd: ['Straight, left and right', 'Count intersections, go to the end', 'Left, right, across, cross the street', 'Longer directions, all together', 'Real streets: diagonals, roundabout, Y-fork, stops at the shops', 'Big map: traffic lights and “the second … shop”'],
+    lv: ['Level 1', 'Level 2', 'Level 3', 'Level 4'],
+    lvd: ['Straight, left, right, to the end, across / in front / behind', 'Count intersections and traffic lights, buildings as marks, cross the street', 'Real streets and big map: roundabout, Y-fork, traffic lights, repeated shops', 'Everything mixed'],
     settings: 'Settings', helpT: 'How to play', close: 'Close',
     helpL: [
       '🎧 Tap “🔊 Listen” to hear the directions. If you need help, tap “Show text”, then “Show reading & translation”.',
       '🚶 Walk with the buttons below: “Straight” takes you to just before the next intersection or bend; “Left” and “Right” turn you at the intersection.',
-      '🚦 From level 3, when you hear “cross the street”, walk to that intersection and tap the cross button.',
-      '🔄 Level 5, roundabouts: walk into the roundabout, then tap the exit button (exits are counted counter-clockwise).',
+      '🚦 From level 2, when you hear “cross the street”, walk to that intersection and tap the cross button.',
+      '🔄 Levels 3 and 4, roundabouts: walk into the roundabout, then tap the exit button (exits are counted counter-clockwise).',
       '✅ When you reach the destination, tap “I\'m here!”. A correct answer earns 10 points.',
       '↺ If you go wrong, tap “Try again” to go back to the start.',
       '⚙ In Settings you can change the script, language, phonetics and speech speed. The leaderboard is on the start screen.',
@@ -489,12 +488,11 @@ const UI = {
     badFace: "Right place, but you're facing the wrong way.",
     yourRoute: 'Your route', rightRoute: 'Correct route',
     watch: '▶ Watch the route', next: 'Next →', finish: 'See result',
-    hint1: '{straight} = walk to just before the next intersection.',
-    hint2: 'Count intersections from where you stand. “To the end” = keep going straight until the road ends.',
-    hint3: 'Check the map: which building is on your left or right as you walk? If you hear {cross}, press the cross button.',
+    hint1: '{straight} = walk to just before the next intersection. “To the end” = keep going straight until the road ends. Look at which building is beside, across from, in front of or behind the destination.',
+    hint2: 'Count intersections from where you stand; traffic lights 🚦 are only at some intersections, and when you are asked for traffic lights you count only those. Look at the buildings on the way: “pass the bank”, “when you see the bank”. If you hear {cross}, press the cross button.',
     hint4: 'Combine everything you have learned. You can do it!',
-    hint6: 'Big map: the view follows you (🔍 / 🗺 to zoom or see it all). Count the traffic lights 🚦 or the shops of one kind: “the second convenience store”. Not every junction has a traffic light.',
-    hint5: 'Roundabout: traffic goes counter-clockwise; the 1st exit is the first street after the one you came in by. Press the exit button. Y-junction: 靠左/靠右 = press turn, then straight. Use 🔍 / 🗺 to zoom the map.',
+    hintB: 'Big map: the view follows you (🔍 / 🗺 to zoom or see it all). Count the traffic lights 🚦 or the shops of one kind: “the second convenience store”; with no number it is the first one you meet. “Straight” stops in front of every shop: press it again to go on. Not every junction has a traffic light.',
+    hintR: 'On some streets “Straight” stops in front of the shops: press it again to go on. Roundabout: traffic goes counter-clockwise; the 1st exit is the first street after the one you came in by. Press the exit button. Y-junction: 靠左/靠右 = press turn, then straight. Use 🔍 / 🗺 to zoom the map.',
     result: 'Result', score: '{c} of {N} correct', time: 'Time: {t} s',
     again: 'Play again', home: 'Change level',
     best: "Each player's best score (top 10).",
@@ -516,14 +514,14 @@ const UI = {
     slow: '慢', normal: '中', fast: '快',
     ph_pinyin: '拼音', ph_zhuyin: '注音', ph_both: '拼音＋注音', ph_off: '不顯示',
     level: '選擇關卡',
-    lv: ['第一級', '第二級', '第三級', '第四級', '第五級', '第六級'],
-    lvd: ['直走、左轉、右轉', '數路口、直走到底', '左邊、右邊、對面、過馬路', '比較長的指路，全部一起用', '真實街區：斜路、圓環、Y字路口、店前停下', '大街區：紅綠燈、第幾間店'],
+    lv: ['第一級', '第二級', '第三級', '第四級'],
+    lvd: ['直走、左轉、右轉、一直走到底、對面／前面／後面', '數路口和紅綠燈、用建築物當參考、過馬路', '真實街區和大街區：圓環、Y字路口、紅綠燈、重複的店', '全部混合出題'],
     settings: '設定', helpT: '遊戲說明', close: '關閉',
     helpL: [
       '🎧 先按「🔊 聽」，聽指路的話。聽不懂再按「看文字」，還不懂再按「看讀音和翻譯」。',
       '🚶 用下面的按鈕走路：直走＝走到下一個路口或轉角前；左轉、右轉＝在路口轉向。',
-      '🚦 第三級以後，聽到「過馬路」就走到那個路口，按「過馬路」按鈕。',
-      '🔄 第五級的圓環：先走進圓環，再按出口按鈕（出口是逆時針數）。',
+      '🚦 第二級以後，聽到「過馬路」就走到那個路口，按「過馬路」按鈕。',
+      '🔄 第三、四級的圓環：先走進圓環，再按出口按鈕（出口是逆時針數）。',
       '✅ 走到目的地，按「我到了！」。答對得 10 分。',
       '↺ 走錯了，按「重走」回到起點重來。',
       '⚙ 在「設定」可以換字體、語言、讀音和語音速度。排行榜在開始頁。',
@@ -536,12 +534,11 @@ const UI = {
     badFace: '地點對了，但是面向的方向不對。',
     yourRoute: '你的路線', rightRoute: '正確路線',
     watch: '▶ 看路線', next: '下一題 →', finish: '看結果',
-    hint1: '{straight}＝走到下一個路口前。',
-    hint2: '路口從你站的地方開始數。「走到底」＝一直直走，直到這條路走不下去為止。',
-    hint3: '看地圖：走的時候，左手邊或右手邊是哪一棟建築？聽到{cross}要按「過馬路」。',
+    hint1: '{straight}＝走到下一個路口前。「走到底」＝一直直走，直到這條路走不下去為止。看清楚目的地旁邊、對面、前面和後面是什麼。',
+    hint2: '路口從你站的地方開始數；紅綠燈 🚦 只有部分路口才有，要數紅綠燈就只數有燈的路口。看路上的建築：「經過銀行」「看到銀行」。聽到{cross}要按「過馬路」。',
     hint4: '把學過的全部用上，你可以的！',
-    hint6: '大地圖：畫面會跟你一起移動（🔍 / 🗺 放大或看全圖）。要數紅綠燈 🚦，或同一種店的第幾間，例如「第二間便利商店」。不是每個路口都有紅綠燈。',
-    hint5: '圓環是逆時針繞：第一個出口就是從你進來的路開始，逆時針數的第一條路，按下面的出口按鈕。Y字路口：靠左／靠右＝按左轉或右轉，再按直走。地圖可以用 🔍 / 🗺 放大或看全圖。',
+    hintB: '大地圖：畫面會跟你一起移動（🔍 / 🗺 放大或看全圖）。要數紅綠燈 🚦，或同一種店的第幾間，例如「第二間便利商店」；沒有說第幾間，就是你遇到的第一間。直走會在每間店前面停下來，再按一次才會繼續走。不是每個路口都有紅綠燈。',
+    hintR: '有些路上，直走會在店前面停下來，再按一次才會繼續走。圓環是逆時針繞：第一個出口就是從你進來的路開始，逆時針數的第一條路，按下面的出口按鈕。Y字路口：靠左／靠右＝按左轉或右轉，再按直走。地圖可以用 🔍 / 🗺 放大或看全圖。',
     result: '結果', score: '答對 {c}/{N} 題', time: '時間：{t} 秒',
     again: '再玩一次', home: '換關卡',
     best: '每位玩家的最高分（前 10 名）。',
@@ -557,7 +554,7 @@ const UI = {
   },
 };
 // simplified-character version of the Chinese-only UI (made from the traditional one)
-const S2T = { '級': '级', '針': '针', '說': '说', '閉': '闭', '鈕': '钮', '從': '从', '進': '进', '項': '项', '問': '问', '聽': '听', '機': '机', '選': '选', '關': '关', '數': '数', '過': '过', '馬': '马', '綜': '综', '戰': '战', '邊': '边', '對': '对', '長': '长', '個': '个', '較': '较', '話': '话', '點': '点', '區': '区', '請': '请', '輸': '输', '體': '体', '語': '语', '讀': '读', '顯': '显', '鍵': '键', '點': '点', '榜': '榜', '題': '题', '裝': '装', '儲': '储', '這': '这', '臺': '台', '還': '还', '詞': '词', '彙': '汇', '圖': '图', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '線': '线', '錯': '错', '面': '面', '開': '开', '結': '结', '時': '时', '間': '间', '換': '换', '會': '会', '們': '们', '學': '学', '全': '全', '樣': '样', '幾': '几', '雙': '双', '當': '当', '築': '筑', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '別': '别', '對': '对', '應': '应', '給': '给', '蓋': '盖', '運': '运', '動': '动', '現': '现', '後': '后', '來': '来', '終': '终', '離': '离', '轉': '转', '帶': '带', '張': '张', '燈': '灯', '見': '见', '買': '买', '賣': '卖', '總': '总', '業': '业', '傳': '传', '極': '极', '處': '处', '準': '准', '須': '须', '標': '标', '導': '导', '歷': '历', '錄': '录', '無': '无', '難': '难', '電': '电', '腦': '脑', '為': '为', '與': '与', '確': '确', '鐘': '钟', '覺': '觉', '實': '实', '麵': '面', '館': '馆', '藥': '药', '書': '书', '車': '车', '買': '买', '軌': '轨', '號': '号', '單': '单', '務': '务', '員': '员', '辦': '办', '歡': '欢', '迎': '迎', '遊': '游', '戲': '戏', '樓': '楼', '層': '层', '導': '导', '檢': '检', '測': '测', '試': '试', '驗': '验', '紀': '纪', '錄': '录', '據': '据', '統': '统', '計': '计', '劃': '划', '設': '设', '備': '备', '類': '类', '種': '种', '終': '终', '義': '义', '網': '网', '頁': '页', '絡': '络', '連': '连', '續': '续', '擊': '击', '碼': '码', '終': '终', '則': '则', '規': '规', '範': '范', '圍': '围', '盡': '尽', '與': '与', '紅': '红', '綠': '绿', '畫': '画' };
+const S2T = { '級': '级', '針': '针', '說': '说', '閉': '闭', '鈕': '钮', '從': '从', '進': '进', '項': '项', '問': '问', '聽': '听', '機': '机', '選': '选', '關': '关', '數': '数', '過': '过', '馬': '马', '綜': '综', '戰': '战', '邊': '边', '對': '对', '長': '长', '個': '个', '較': '较', '話': '话', '點': '点', '區': '区', '請': '请', '輸': '输', '體': '体', '語': '语', '讀': '读', '顯': '显', '鍵': '键', '點': '点', '榜': '榜', '題': '题', '裝': '装', '儲': '储', '這': '这', '臺': '台', '還': '还', '詞': '词', '彙': '汇', '圖': '图', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '線': '线', '錯': '错', '面': '面', '開': '开', '結': '结', '時': '时', '間': '间', '換': '换', '會': '会', '們': '们', '學': '学', '全': '全', '樣': '样', '幾': '几', '雙': '双', '當': '当', '築': '筑', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '別': '别', '對': '对', '應': '应', '給': '给', '蓋': '盖', '運': '运', '動': '动', '現': '现', '後': '后', '來': '来', '終': '终', '離': '离', '轉': '转', '帶': '带', '張': '张', '燈': '灯', '經': '经', '繼': '继', '續': '续', '見': '见', '買': '买', '賣': '卖', '總': '总', '業': '业', '傳': '传', '極': '极', '處': '处', '準': '准', '須': '须', '標': '标', '導': '导', '歷': '历', '錄': '录', '無': '无', '難': '难', '電': '电', '腦': '脑', '為': '为', '與': '与', '確': '确', '鐘': '钟', '覺': '觉', '實': '实', '麵': '面', '館': '馆', '藥': '药', '書': '书', '車': '车', '買': '买', '軌': '轨', '號': '号', '單': '单', '務': '务', '員': '员', '辦': '办', '歡': '欢', '迎': '迎', '遊': '游', '戲': '戏', '樓': '楼', '層': '层', '導': '导', '檢': '检', '測': '测', '試': '试', '驗': '验', '紀': '纪', '錄': '录', '據': '据', '統': '统', '計': '计', '劃': '划', '設': '设', '備': '备', '類': '类', '種': '种', '終': '终', '義': '义', '網': '网', '頁': '页', '絡': '络', '連': '连', '續': '续', '擊': '击', '碼': '码', '終': '终', '則': '则', '規': '规', '範': '范', '圍': '围', '盡': '尽', '與': '与', '紅': '红', '綠': '绿', '畫': '画' };
 const zhSimp = o => { const r = {}; for (const k in o) r[k] = typeof o[k] === 'string' ? [...o[k]].map(c => S2T[c] || c).join('') : o[k].map(x => [...x].map(c => S2T[c] || c).join('')); return r; };
 UI.zhs = zhSimp(UI.zh);
 const WORDS = {
@@ -834,7 +831,7 @@ function openModal(kind) {
   if (kind === 'vocab') buildVocab();
   const hp = $('#pane-help'); hp.classList.toggle('hidden', kind !== 'help');
   if (kind === 'help') { hp.innerHTML = ''; T('helpL').forEach(t => { const li = document.createElement('li'); li.textContent = t; hp.appendChild(li); });
-    if (S.q && $('#s-game').classList.contains('on')) { const li = document.createElement('li'); li.innerHTML = '💡 ' + bh(T('hint' + S.level, { straight: '<b>' + W('straight') + '</b>', cross: '<b>' + W('cross') + '</b>' })); hp.appendChild(li); } }
+    if (S.q && $('#s-game').classList.contains('on')) { const li = document.createElement('li'); li.innerHTML = '💡 ' + bh(hintText()); hp.appendChild(li); } }
   $('#modal').classList.remove('hidden');
 }
 let leaveAt = 0;
@@ -864,7 +861,7 @@ function renderStart() {
   chips('#c-rate', ['slow', 'normal', 'fast'].map(v => ({ v, label: T(v) })), S.rate, v => { S.rate = v; saveSettings(); renderStart(); speak(S.script === 'trad' ? '直走，再右轉。' : '直走，再右转。'); });
   $('#l-level').textContent = T('level');
   const lv = $('#levels'); lv.innerHTML = '';
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 4; i++) {
     const b = document.createElement('button'); b.className = 'lv';
     b.innerHTML = '<span class="n">' + (i + 1) + '</span><span><span class="t"></span><br><span class="d"></span></span>';
     b.querySelector('.t').textContent = T('lv')[i];
@@ -882,7 +879,7 @@ function pickQuestions(level) {
   let pool = DATA.questions.filter(q => q.level === level && (S.map === 'any' || q.map === S.map));
   if (!pool.length) pool = DATA.questions.filter(q => q.level === level);
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-  return pool.slice(0, ROUNDS);
+  return pool.slice(0, ROUNDS).sort((a, b) => (a.diff || 0) - (b.diff || 0));      // each round goes from easy to hard
 }
 function startGame(level) {
   S.name = $('#name').value.trim();
@@ -895,6 +892,10 @@ function startGame(level) {
   loadQuestion();
   track('game_start', { level, map: S.map, parts: S.partMode ? 1 : 0, text: S.showAll ? 1 : 0 });
   try { window.HGPlays && HGPlays.start('L' + level, S.name); } catch (e) {}
+}
+function hintText() {              // the tip depends on the question: levels 3 and 4 mix different maps
+  const q = S.q, key = q && q.graph ? (q.map === 'big' ? 'hintB' : 'hintR') : 'hint' + S.level;
+  return T(key, { straight: '<b>' + W('straight') + '</b>', cross: '<b>' + W('cross') + '</b>' });
 }
 function applyGameLabels() {
   $('#btn-restart').textContent = T('restart');
@@ -909,14 +910,13 @@ function applyGameLabels() {
     b.querySelector('.sb').textContent = isZh() ? '' : T(key);
   };
   mk('#b-L', '↰', 'left'); mk('#b-S', '↑', 'straight'); mk('#b-R', '↱', 'right'); mk('#b-C', '≣', 'cross');
-  $('#b-C').classList.toggle('hidden', S.level < 3);
-  $('#controls').classList.toggle('c4', S.level >= 3);
-  $('#exits').classList.toggle('hidden', S.level < 5);
+  $('#b-C').classList.toggle('hidden', S.level < 2);
+  $('#controls').classList.toggle('c4', S.level >= 2);
+  $('#exits').classList.toggle('hidden', S.level < 3);
   [1, 2, 3, 4].forEach(k => { $('#b-' + k).innerHTML = '<span class="ic">⟳</span><span class="cn"></span>'; $('#b-' + k).querySelector('.cn').textContent = T('ex' + k); });
   $('#b-reset').textContent = T('reset');
   $('#b-go').textContent = T('arrived');
-  const h = T('hint' + S.level, { straight: '<b>' + W('straight') + '</b>', cross: '<b>' + W('cross') + '</b>' });
-  $('#hint').innerHTML = bh(h);
+  $('#hint').innerHTML = bh(hintText());
 }
 function setVocabLabel() { $('#btn-vocab').textContent = window.innerWidth <= 360 ? '📖' : T('vocabBtn'); $('#btn-vocab').title = flat(T('vocab')); $('#btn-vocab').setAttribute('aria-label', flat(T('vocab'))); }
 function renderSentence() {
@@ -959,7 +959,7 @@ function loadQuestion() {
   S.locked = false; S.busy = false; S.reveal = null; S.atGoal = false; S.rev = S.showAll ? 2 : 0;
   $('#feedback').classList.add('hidden'); $('#feedback').innerHTML = '';
   $('#controls').classList.remove('off'); $('#row2').classList.remove('off'); $('#dock').classList.remove('off'); $('#s-game').classList.remove('locked');
-  renderSentence(); renderMap(); redraw(); updateExits();
+  renderSentence(); renderMap(); redraw(); updateExits(); $('#hint').innerHTML = bh(hintText());
   S.qStart = Date.now();
   setTimeout(speakCurrent, 300);
 }
@@ -1079,17 +1079,20 @@ function renderMap() {
     const key = (q.blocks || m.blocks)[by][bx], cx = bx * SP + 50, cy = by * SP + 50;
     h += '<g class="bld" data-k="' + key + '"><rect x="' + (cx - 35) + '" y="' + (cy - 35) + '" width="70" height="70" rx="9"/>' + labelSvg(cx, cy, key) + '</g>';
   }
-  // street furniture on the diagonal corners of every intersection: trees, and a traffic light on inner ones
+  // street furniture on the diagonal corners of every intersection: trees, and traffic lights only at the junctions the question marks (levels 2 and 4)
+  const lit = new Set((q.lights || []).map(p => p[0] + ',' + p[1]));
   for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
     if (isRb(q.map, x, y) || isYn(q.map, x, y)) continue;
-    [[1, -1], [-1, -1], [1, 1], [-1, 1]].forEach(([dx, dy], i) => {
-      const bx = x + (dx > 0 ? 0 : -1), by = y + (dy < 0 ? -1 : 0);
-      if (bx < 0 || bx > 2 || by < 0 || by > 2) return;
+    const corners = [[1, -1], [-1, -1], [1, 1], [-1, 1]];
+    const okc = i => { const [dx, dy] = corners[i], bx = x + (dx > 0 ? 0 : -1), by = y + (dy < 0 ? -1 : 0); return bx >= 0 && bx <= 2 && by >= 0 && by <= 2; };
+    const lightAt = lit.has(x + ',' + y) ? [0, 3, 1, 2].filter(okc).slice(0, 2) : [];
+    corners.forEach(([dx, dy], i) => {
+      if (!okc(i)) return;
       const px = x * SP + dx * 15, py = y * SP + dy * 15;
       const hsh = (x * 7 + y * 13 + i * 5 + q.start[0]) % 4;
-      if (x > 0 && x < 3 && y > 0 && y < 3 && i === (x + y) % 4) {
-        h += '<g transform="translate(' + px + ',' + py + ')"><rect x="-1" y="-7" width="2" height="12" fill="#8a867c"/><rect x="-3" y="-9" width="6" height="9" rx="1.5" fill="#4b4a46"/><circle cy="-6.5" r="1.1" fill="#c98f86"/><circle cy="-4.5" r="1.1" fill="#e0c98f"/><circle cy="-2.5" r="1.1" fill="#9db39f"/></g>';
-      } else if (hsh === 0 || hsh === 2) {
+      if (lightAt.includes(i)) {
+        h += '<g transform="translate(' + px + ',' + py + ') scale(1.5)"><rect x="-1" y="-7" width="2" height="12" fill="#8a867c"/><rect x="-3" y="-9" width="6" height="9" rx="1.5" fill="#4b4a46"/><circle cy="-6.5" r="1.1" fill="#c98f86"/><circle cy="-4.5" r="1.1" fill="#e0c98f"/><circle cy="-2.5" r="1.1" fill="#9db39f"/></g>';
+      } else if (!lightAt.length && (hsh === 0 || hsh === 2)) {
         h += '<g transform="translate(' + px + ',' + py + ')"><circle r="4.8" fill="#a9bfa7" stroke="#8a867c" stroke-width=".6"/><circle cx="-1" cy="-1" r="1.6" fill="#bccdb9"/></g>';
       }
     });
@@ -1253,7 +1256,7 @@ function applyAction(pos, a) {
   return { x, y, d: pos.d, nodes };
 }
 function updateExits() {
-  const on = S.level >= 5 && S.q && (S.q.graph ? gM().nodes[S.pos.n][2] === 'rb' : isRb(S.q.map, S.pos.x, S.pos.y)) && !S.locked;
+  const on = S.level >= 3 && S.q && (S.q.graph ? gM().nodes[S.pos.n][2] === 'rb' : isRb(S.q.map, S.pos.x, S.pos.y)) && !S.locked;
   $('#exits').classList.toggle('off', !on);
 }
 function shakeMap(msg) {
@@ -1265,7 +1268,7 @@ function act(a) {
   if (S.actions.length >= 40) { toast('…'); return; }
   if (S.q.graph) return gAct(a);
   if (a === 'C') {
-    if (S.level < 3) return;
+    if (S.level < 2) return;
     if (isRb(S.q.map, S.pos.x, S.pos.y)) { toast(T('pickExit')); return; }
     if (S.cr) { toast(T('alreadyCrossed')); return; }
     if (!isOpen(S.q.map, S.pos.x, S.pos.y, S.pos.d)) { shakeMap(T('noRoad')); return; }
@@ -1274,7 +1277,7 @@ function act(a) {
     setAvatar(false); drawTrail(); return;
   }
   if (a === '1' || a === '2' || a === '3') {
-    if (S.level < 5) return;
+    if (S.level < 3) return;
     if (!isRb(S.q.map, S.pos.x, S.pos.y)) { toast(T('notRb')); return; }
     const np = applyAction(S.pos, a);
     if (!np) { toast(T('noExit')); return; }
@@ -1371,7 +1374,7 @@ function gCrossMark(c, cls) {
 function gAct(a) {
   const m = gM(), pos = S.pos, rb = m.nodes[pos.n][2] === 'rb';
   if (a === 'C') {
-    if (S.level < 3) return;
+    if (S.level < 2) return;
     if (rb) { toast(T('pickExit')); return; }
     if (S.cr) { toast(T('alreadyCrossed')); return; }
     if (!pos.face) { shakeMap(T('noRoad')); return; }
@@ -1586,7 +1589,7 @@ async function openBoard(level) {
   $('#b-title').textContent = '🏆 ' + T('board');
   $('#b-back').textContent = T('back');
   const tabs = $('#b-tabs'); tabs.innerHTML = '';
-  for (let i = 1; i <= 6; i++) {
+  for (let i = 1; i <= 4; i++) {
     const b = document.createElement('button'); b.className = 'chip' + (i === boardLevel ? ' on' : '');
     b.textContent = T('lv')[i - 1]; b.style.fontSize = '12px';
     b.onclick = () => openBoard(i); tabs.appendChild(b);
