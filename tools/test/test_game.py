@@ -61,7 +61,7 @@ with sync_playwright() as p:
     pg.evaluate("__askdir.act('S')")
     chk(pg.evaluate("[__askdir.S.pos.x,__askdir.S.pos.y,__askdir.S.actions.length]") == [0,1,0], 'cannot walk along a closed road')
     # roundabout (real-streets map): exit button refused outside, S/L/R refused inside, real DOM buttons work
-    qr = next(q for q in qs if q['map']=='real' and 'S1' in q['actions'][:2] or (q['map']=='real' and q['actions'][:2]=='S3'))
+    qr = next(q for q in qs if q['map']=='real' and len(q['actions'])>1 and q['actions'][0]=='S' and q['actions'][1] in '1234')
     pg.evaluate("q=>__askdir.loadSpecific(q)", qr)
     pg.evaluate("__askdir.act('1')")
     chk(pg.evaluate("__askdir.S.actions.length") == 0, 'exit button refused outside roundabout')

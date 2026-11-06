@@ -352,7 +352,7 @@ def render_step(st, con, level, rng):
         return dict(kind=k, tw=ptw + '直走到' + b['tw'] + '前面', cn=pcn + '直走到' + b['cn'] + '前面',
                     py=ppy + 'zhí zǒu dào ' + b['py'] + ' qián miàn',
                     es=pes + 'sigue recto hasta ' + b['es_art'], en=pen + 'go straight to ' + b['en_art'])
-    if k == 'pass' and st.get('see'):                    # 看到X就右轉  (turn at the first junction after X)
+    if k == 'pass' and st.get('see'):                    # 看到X就右轉  (turn at the junction where X's stretch begins)
         b, t = B[st['b']], TURN[st['turn']]
         return dict(kind=k, tw=ptw + '一直走，看到' + b['tw'] + '就' + t['tw'], cn=pcn + '一直走，看到' + b['cn'] + '就' + t['cn'],
                     py=ppy + 'yì zhí zǒu, kàn dào ' + b['py'] + ' jiù ' + t['py'],
@@ -576,9 +576,36 @@ def try_build(level, mp, rng, rc):
             if prev != 'go' or not sim.cross():
                 return None
             steps.append(dict(kind='cross'))
-        elif kind in ('pass', 'passx', 'see'):
+        elif kind == 'see':                   # 看到X就轉: turn at the junction where X's stretch begins (X is beside the road just ahead)
+            cands, cx, cy, k = [], sim.x, sim.y, 0
+            while is_open(mp, cx, cy, sim.d):
+                if k >= 1 and not straight_through(mp, cx, cy, sim.d):
+                    ahead, ax, ay = [], cx, cy
+                    while is_open(mp, ax, ay, sim.d):
+                        f = flank(mp, ax, ay, sim.d)
+                        ahead += [f[sd_][0] for sd_ in 'LR' if f[sd_]]
+                        ax, ay = ax + DX[sim.d], ay + DY[sim.d]
+                        if not straight_through(mp, ax, ay, sim.d): break
+                    cands += [(k, cx, cy, b_) for b_ in ahead]
+                cx, cy = cx + DX[sim.d], cy + DY[sim.d]
+                if not straight_through(mp, cx, cy, sim.d): k += 1
+            if not cands:
+                return None
+            k, tx, ty, bkey = rng.choice(cands)
+            for _ in range(k):
+                sim.move()
+            if (sim.x, sim.y) != (tx, ty):
+                return None
+            total += k
+            turn = rng.choice('LR')
+            sim.turn(turn)
+            if not is_open(mp, sim.x, sim.y, sim.d):
+                return None
+            named += [bkey]
+            steps.append(dict(kind='pass', side='L', b=bkey, opp=None, turn=turn, see=True, k=k))
+        elif kind in ('pass', 'passx'):
             xing = (kind == 'passx')          # "過了X就過馬路" instead of "過了X就左轉"
-            see = (kind == 'see')             # "看到X就右轉": the same junction, said without the side
+            see = False
             side = rng.choice('LR')
             cands, cx, cy, k = [], sim.x, sim.y, 0
             while is_open(mp, cx, cy, sim.d):
@@ -819,15 +846,23 @@ def try_build_graph(rng, mapkey, level):
             if prev != 'go' or not sim.cross(): return None
             steps.append(dict(kind='cross'))
         elif kind in ('pass', 'passx', 'see'):
-            side = rng.choice('LR'); k = rng.choice([1, 1, 2]); see = kind == 'see'; si = 0 if side == 'L' else 1
+            side = rng.choice('LR'); see = kind == 'see'; k = rng.choice([1, 2] if see else [1, 1, 2]); si = 0 if side == 'L' else 1
             for _ in range(k):
                 grp = adv_collect(sim)            # the buildings passed on the last stretch (shop stops and the roadside)
                 if grp is None: return None
-            pairs = [g_ for g_ in grp if g_[si] and base_key(g_[si]) not in dups]
-            if not pairs: return None
-            pr = rng.choice(pairs)
-            bkey = pr[si]
-            opp = pr[1 - si]
+            if see:                               # 看到X就轉: X is beside the stretch AHEAD; turn at its near junction (look ahead without moving)
+                grp = adv_collect(copy.deepcopy(sim))
+                if grp is None: return None
+                pairs = [g_ for g_ in grp if any(x_ and base_key(x_) not in dups for x_ in g_)]
+                if not pairs: return None
+                pr = rng.choice(pairs); bkey = rng.choice([x_ for x_ in pr if x_ and base_key(x_) not in dups]); si = pr.index(bkey) if bkey in pr else si
+                opp = None
+            else:
+                pairs = [g_ for g_ in grp if g_[si] and base_key(g_[si]) not in dups]
+                if not pairs: return None
+                pr = rng.choice(pairs)
+                bkey = pr[si]
+            if not see: opp = pr[1 - si]
             if kind == 'passx':
                 if not sim.cross(): return None
                 t = 'C'

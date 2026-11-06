@@ -148,6 +148,13 @@ def check_plan(q):
                     grp.append(pair_())
                     if GN[n][2] != 'm': break
             si = 0 if st['side'] == 'L' else 1
+            if st.get('see'):                 # 看到X就轉: X is beside the stretch AHEAD of the junction where we turn (peek, then restore)
+                sv = (n, via, h, face, lastedge); grp = []
+                while True:
+                    if not step(): return 'plan: see: no stretch ahead'
+                    grp.append(pair_())
+                    if GN[n][2] != 'm': break
+                n, via, h, face, lastedge = sv
             if not any((st['b'] in g_) if st.get('see') else (g_[si] == st['b']) for g_ in grp): return 'plan: the passed building is not on the stretch'
             if st['turn'] == 'C':
                 if not eat('C') or face is None or len(INC[n]) < 3: return 'plan: bad crossing'
@@ -228,6 +235,13 @@ def check_gplan(q):
                 fl = walk()
                 if fl is None: return 'gplan: pass'
             si = 0 if st['side'] == 'L' else 1
+            if st.get('see'):                 # 看到X就轉: X is beside the stretch ahead of the turning junction (peek, then restore)
+                sx, sy = x, y; fl = []
+                if not is_open(m, x, y, d): return 'gplan: see: no stretch ahead'
+                while True:
+                    fl.append(flk(x, y, d)); x, y = x + DX[d], y + DY[d]
+                    if not (deg(m, x, y) == 2 and is_open(m, x, y, d)): break
+                x, y = sx, sy
             if not any((st['b'] in g_) if st.get('see') else (g_[si] == st['b']) for g_ in fl): return 'gplan: the passed building is not on the last stretch'
             if st['turn'] == 'C':
                 if not eat('C') or not is_open(m, x, y, d) or deg(m, x, y) < 3: return 'gplan: bad crossing'
