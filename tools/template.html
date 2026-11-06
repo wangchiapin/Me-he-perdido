@@ -879,7 +879,9 @@ function pickQuestions(level) {
   let pool = DATA.questions.filter(q => q.level === level && (S.map === 'any' || q.map === S.map));
   if (!pool.length) pool = DATA.questions.filter(q => q.level === level);
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-  return pool.slice(0, ROUNDS).sort((a, b) => (a.diff || 0) - (b.diff || 0));      // each round goes from easy to hard
+  const lg = pool.filter(q => q.long).slice(0, level >= 3 ? 2 : 0);              // levels 3 and 4: every round has at least two long walks
+  const pick = lg.concat(pool.filter(q => !lg.includes(q))).slice(0, ROUNDS);
+  return pick.sort((a, b) => (a.diff || 0) - (b.diff || 0));      // each round goes from easy to hard
 }
 function startGame(level) {
   S.name = $('#name').value.trim();

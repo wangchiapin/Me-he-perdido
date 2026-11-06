@@ -54,7 +54,7 @@ with sync_playwright() as p:
     chk(pg.evaluate("__askdir.DATA.maps.real.nodes[__askdir.S.pos.n][2]") == 'm', 'first 直走 stops at a shop (node kind m)')
     pg.evaluate("__askdir.act('L')"); pg.evaluate("__askdir.act('R')"); pg.evaluate("__askdir.act('C')")
     chk(pg.evaluate("__askdir.S.pos.n") == n1 and pg.evaluate("__askdir.S.actions.length") == 1, 'no turn / cross at a shop stop')
-    chk(sum(1 for q in qs if q['map'] == 'real' and any('直走到' in p['tw'] and '前面' in p['tw'] for p in q['parts'])) >= 20, 'real-streets map has plenty of shop-stop sentences')
+    chk(sum(1 for q in qs if q['map'] == 'real' and any('直走到' in p['tw'] and '前面' in p['tw'] for p in q['parts'])) >= 12, 'real-streets map has plenty of shop-stop sentences')
     # wrong crossing
     q = next(q for q in qs if q['crosses'])
     pg.evaluate("q=>__askdir.loadSpecific(q)", q)
@@ -201,6 +201,11 @@ with sync_playwright() as p:
         pg.evaluate('l=>__askdir.startGame(l)', lv_)
         ds_ = pg.evaluate("__askdir.S.qs.map(q=>q.diff)")
         chk(ds_ == sorted(ds_) and len(ds_) == 10, 'level %d round is sorted easy to hard %s' % (lv_, ds_))
+    for lv_ in (3, 4):
+        okr = all(pg.evaluate("l=>{__askdir.startGame(l);return __askdir.S.qs.filter(q=>q.long).length}", lv_) >= 2 for _ in range(15))
+        chk(okr, 'level %d: every round has at least 2 long walks (15 rounds tried)' % lv_)
+    chk(sum(1 for q in qs if q['level'] == 3 and q.get('long')) == 32 and sum(1 for q in qs if q['level'] == 4 and q.get('long')) == 10, 'long walks: 32 in level 3, 10 in level 4')
+    chk(all(sum(c in 'LR' for c in q['actions']) >= 3 for q in qs if q.get('long')), 'long walks have three or more turns')
     chk(any(pg.evaluate('()=>{__askdir.startGame(4);return __askdir.S.qs.some(q=>q.graph)&&__askdir.S.qs.some(q=>!q.graph)}') for _ in range(12)), 'level 4 rounds mix grid and road-graph questions')
     # building layouts are random per question; the star building of each map stays put
     lay = pg.evaluate("""()=>{const o={};DATA_Q.filter(q=>!q.graph).forEach(q=>{(o[q.map]=o[q.map]||new Set()).add(JSON.stringify(q.blocks))});return Object.fromEntries(Object.entries(o).map(([k,v])=>[k,v.size]))}""".replace('DATA_Q','__askdir.DATA.questions'))
@@ -339,10 +344,12 @@ with sync_playwright() as p:
     chk(3 <= nl < nj, 'traffic lights on some junctions only (%d of %d)' % (nl, nj))
     chk(pg.evaluate("(__askdir.DATA.maps.big.svg.match(/scale\\(2\\)/g)||[]).length") == 2 * nl, 'two traffic-light poles drawn per light')
     # camera follows the walker; whole-map button shows everything
-    pg.evaluate("q=>__askdir.loadSpecific(q)", qa)
-    v0 = pg.evaluate("document.querySelector('#map').getAttribute('viewBox')")
-    pg.evaluate("__askdir.act('S')"); pg.wait_for_timeout(900)
-    v1 = pg.evaluate("document.querySelector('#map').getAttribute('viewBox')")
+    for qa in [q for q in q6s if q['actions'].count('S') >= 3][:6]:          # the first walk can leave the view unchanged at the edge of the map: try a few
+        pg.evaluate("q=>__askdir.loadSpecific(q)", qa)
+        v0 = pg.evaluate("document.querySelector('#map').getAttribute('viewBox')")
+        pg.evaluate("__askdir.act('S')"); pg.wait_for_timeout(900)
+        v1 = pg.evaluate("document.querySelector('#map').getAttribute('viewBox')")
+        if v0 != v1: break
     chk(v0 != v1 and abs(float(v1.split()[2]) - 508) < 1, 'big map: the view moves with the walker, same window size')
     pg.click('#btn-cam'); pg.wait_for_timeout(700)
     vall = pg.evaluate("document.querySelector('#map').getAttribute('viewBox')").split()

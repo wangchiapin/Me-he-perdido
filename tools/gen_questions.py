@@ -719,6 +719,15 @@ BPATTERNS = [       # level 6 (the big map): count traffic lights, junctions and
     ['viago', 'turn', 'go1'], ['vialight', 'turn', 'go1'], ['vialight', 'turn', 'gostore'], ['turn', 'viago', 'turn', 'gostore'], ['see', 'golight', 'turn', 'go1'], ['see', 'go'], ['turn', 'see', 'turn', 'go1'],
 ]
 
+LONG_G = [['go', 'turn', 'go', 'turn', 'go1'], ['turn', 'go', 'turn', 'go', 'turn', 'go1'], ['go1', 'turn', 'go1', 'turn', 'go1', 'turn', 'go1'],
+          ['go', 'turn', 'pass', 'go', 'turn', 'go1'], ['viago', 'turn', 'go', 'turn', 'go1'], ['shop', 'go', 'turn', 'go', 'turn', 'go1'],
+          ['turn', 'go', 'turn', 'shop', 'go', 'turn', 'go1'], ['go', 'turn', 'go1', 'turn', 'see', 'go1']]          # real-street map: three or more turns
+LONG_B = [['golight', 'turn', 'go', 'turn', 'golight', 'turn', 'go1'], ['golight', 'turn', 'gostore', 'go', 'turn', 'go1'],
+          ['go', 'turn', 'golight', 'turn', 'go', 'turn', 'go1'], ['gostore', 'go', 'turn', 'golight', 'turn', 'gostore'],
+          ['viago', 'turn', 'golight', 'turn', 'go', 'turn', 'go1'], ['turn', 'golight', 'turn', 'go', 'turn', 'golight', 'turn', 'go1'],
+          ['golight', 'turn', 'go', 'turn', 'gostore'], ['turn', 'golight', 'turn', 'gostore', 'go', 'turn', 'go1']]  # big map: a long walk across town
+LONG_MAX = {'real': 12, 'big': 22}
+
 def adv(sim):                       # walk on until a real junction / roundabout / end (the shop stops are passed)
     if not sim.move(): return False
     while GE.NODES[sim.node]['kind'] == 'm':
@@ -750,9 +759,9 @@ def dup_types():
             if v[sd]: cnt[base_key(v[sd])] = cnt.get(base_key(v[sd]), 0) + 1
     return sorted(k for k, c in cnt.items() if c > 1)
 
-def try_build_graph(rng, mapkey, level, only=None):
+def try_build_graph(rng, mapkey, level, only=None, long_=False):
     big = mapkey == 'big'
-    pool_ = [p_ for p_ in (BPATTERNS if big else GPATTERNS) if only is None or only in p_]
+    pool_ = [p_ for p_ in ((LONG_B if big else LONG_G) if long_ else (BPATTERNS if big else GPATTERNS)) if only is None or only in p_]
     pat = rng.choice(pool_)
     dups = set(dup_types()) if big else set()
     n = rng.choice([k for k, v in GE.NODES.items() if v['kind'] == 'n'] if big else [k for k, v in GE.NODES.items() if v['kind'] != 'rb'])
@@ -881,7 +890,8 @@ def try_build_graph(rng, mapkey, level, only=None):
         prev = kind if kind not in ('go1', 'viago') else 'go'
     if pat[-1] not in ('go', 'go1', 'shop', 'golight', 'gostore', 'viago', 'vialight') or sim.last is None: return None
     if not counting_ok(steps): return None
-    if total < 2 or total > MAX_MOVES[mapkey] or sim.node == n: return None
+    if total < 2 or total > (LONG_MAX if long_ else MAX_MOVES)[mapkey] or sim.node == n: return None
+    if long_ and sum(a_ in 'LR' for a_ in sim.actions) < 3: return None
     fl = beside(sim)
     sides = [s_ for s_, v in zip('LR', fl) if v]
     if not sides: return None
@@ -897,6 +907,7 @@ def try_build_graph(rng, mapkey, level, only=None):
     q = dict(level=level, map=mapkey, graph=True, start=[n, e], end=[sim.node, sim.via], actions=sim.actions,
              path=[[round(x, 1), round(y, 1)] for x, y in sim.path], crosses=sim.crosses,
              target=tkey, side=side, parts=parts, diff=difficulty(steps, extra, 5 if big else 3))
+    if long_: q['long'] = True
     if all(st['kind'] in PLAN_KINDS for st in steps):      # what the sentence asks for (checked independently by verify_questions.py)
         q['plan'] = [dict(kind=st['kind'], **{k_: st[k_] for k_ in ('n', 'b', 'key', 't', 'via', 'side', 'turn', 'see', 'k') if k_ in st}) for st in steps]
     return q
@@ -914,7 +925,7 @@ def graph_map_data(g=None, **extra):
 from graph_map import GRAPH as _G, BIG, BIG_SECOND
 GRAPH_TW = dict(tw=_G['tw'], cn=_G['cn'], es=_G['es'], en=_G['en'])
 
-def batch(out, rng, level, mp, want, rc=None, min_diff=0, quota=()):
+def batch(out, rng, level, mp, want, rc=None, min_diff=0, quota=(), long_=False):
     """make `want` different questions of one level on one map (rc = recipe for the grid maps, None = the road-graph maps)"""
     seen, made, tries = set(), 0, 0
     n_cross = n_end = 0
@@ -927,7 +938,7 @@ def batch(out, rng, level, mp, want, rc=None, min_diff=0, quota=()):
             MAPS[mp]['blocks'] = shuffled_blocks(mp, rng)      # a new building layout for this try
             q = try_build(level, mp, rng, rc)
         else:
-            q = try_build_graph(rng, mp, level, forced[0] if forced else None)
+            q = try_build_graph(rng, mp, level, forced[0] if forced else None, long_)
         if not q:
             continue
         if q['diff'] < min_diff and not forced:
@@ -948,7 +959,7 @@ def batch(out, rng, level, mp, want, rc=None, min_diff=0, quota=()):
         if forced: forced[2] -= 1
         seen.add(key)
         made += 1
-        q['id'] = '%s-L%d-%02d' % (mp, level, made)
+        q['id'] = '%s-L%d-%s%02d' % (mp, level, 'x' if long_ else '', made)
         out.append(q)
     if made < want:
         print('WARN: only %d for %s L%d' % (made, mp, level), file=sys.stderr)
@@ -963,13 +974,15 @@ def main(per=12, per_real=72, per_big=72, seed=20261020):
             batch(out, rng, level, mp, want, RECIPES[rkey], min_diff=L4_MIN['grid'] if level == 4 else 0)
     GE.build_drawing()          # drops building slots that have no room (so the sentences never name them)
     GE.subdivide(all_roads=True)   # a stop in front of every shop, same rule as the big map
-    for level, want in ((3, per_real), (4, 24)):          # the real-street map: a fixed number of roundabouts and Y junctions
-        batch(out, rng, level, 'real', want, min_diff=L4_MIN['graph'] if level == 4 else 0,
+    for level, want, nlong in ((3, per_real, 12), (4, 24, 4)):          # the real-street map: a fixed number of roundabouts and Y junctions + some long walks
+        batch(out, rng, level, 'real', want - nlong, min_diff=L4_MIN['graph'] if level == 4 else 0,
               quota=(('round', '圓環', 10 if level == 3 else 5), ('fork', 'Y字路口', 10 if level == 3 else 5)))
+        batch(out, rng, level, 'real', nlong, long_=True)
     MAPDATA['real'] = graph_map_data()
     GE.load(BIG, [], BIG_SECOND); GE.build_drawing(); GE.subdivide(all_roads=True)       # switch to the big map
-    for level, want in ((3, per_big), (4, 24)):
-        batch(out, rng, level, 'big', want, min_diff=L4_MIN['graph'] if level == 4 else 0)
+    for level, want, nlong in ((3, per_big, 20), (4, 24, 6)):
+        batch(out, rng, level, 'big', want - nlong, min_diff=L4_MIN['graph'] if level == 4 else 0)
+        batch(out, rng, level, 'big', nlong, long_=True)
     MAPDATA['big'] = graph_map_data(BIG, camw=508, camh=531)
     out.sort(key=lambda q: q['level'])
     return out
