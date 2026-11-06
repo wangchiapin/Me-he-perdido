@@ -36,6 +36,16 @@ with sync_playwright() as p:
         pg.evaluate("__askdir.submit()")
         if pg.evaluate("__askdir.S.correct") != 1: bad += 1
     chk(bad == 0, 'all %d routes answered correctly via act() (bad=%d)' % (len(qs), bad))
+    # extra turn at the end corner: still right when the target stays on the stated side of the road you face
+    qh = next(q for q in qs if q['id'] == 'hospital-L1-03')       # 先左轉，然後再一直走到底。診所就在你的右手邊。
+    def run_end(extra):
+        pg.evaluate("q=>__askdir.loadSpecific(q)", qh)
+        for a in qh['actions'] + extra: pg.evaluate("a=>__askdir.act(a)", a)
+        pg.evaluate("__askdir.submit()")
+        return pg.evaluate("[__askdir.S.correct, __askdir.S.reveal.faceOK]")
+    chk(run_end('R') == [1, True], 'extra right turn at the end (target still on the right) is accepted')
+    chk(run_end('L')[0] == 0, 'turning the other way at the end (target not on the right) is still wrong')
+    chk(run_end('RR')[0] == 0, 'turning back (target on the left) is still wrong')
     # real-streets map: a shop stop is a stop - no turning or crossing there, 直走 moves on to the next stop
     qsh = next(q for q in qs if q['map'] == 'real' and any('直走到' in p['tw'] and '前面' in p['tw'] for p in q['parts']) and q['actions'][0] == 'S')
     pg.evaluate("q=>__askdir.loadSpecific(q)", qsh)

@@ -1505,7 +1505,14 @@ function submit() {
   if (S.locked || S.busy || !S.q) return;
   const q = S.q, p = S.pos;
   const sameNode = q.graph ? p.n === q.end[0] : (p.x === q.end[0] && p.y === q.end[1]);
-  const faceOK = q.graph ? p.via === q.end[1] : p.d === q.end[2];
+  // grid maps: a different facing at the end corner still counts when the target is on the stated side of the road you now face
+  const sideOK = () => {
+    if (q.graph || !q.side || !isOpen(q.map, p.x, p.y, p.d)) return false;
+    const sd = (p.d + (q.side === 'L' ? 3 : 1)) % 4, mx = p.x + DXS[p.d] / 2, my = p.y + DYS[p.d] / 2;
+    const bx = Math.round(mx + 0.5 * DXS[sd] - 0.5), by = Math.round(my + 0.5 * DYS[sd] - 0.5);
+    return bx >= 0 && bx < 3 && by >= 0 && by < 3 && (q.blocks || DATA.maps[q.map].blocks)[by][bx] === q.target;
+  };
+  const faceOK = q.graph ? p.via === q.end[1] : (p.d === q.end[2] || (sameNode && sideOK()));
   const crossOK = JSON.stringify(S.crosses) === JSON.stringify(q.crosses);
   const ok = sameNode && faceOK && crossOK;
   S.locked = true;
