@@ -7,7 +7,7 @@ Output: questions.json  (read by verify_questions.py and build.py)
 
 Action codes in `actions`:  S = walk to next intersection, L / R = turn, C = cross the street
 """
-import json, random, sys
+import json, random, sys, copy
 
 DX = [0, 1, 0, -1]      # N E S W
 DY = [-1, 0, 1, 0]
@@ -141,6 +141,22 @@ CON = [
     ('最後', '最后', 'zuì hòu', 'por último', 'finally'),
     ('然後再', '然后再', 'rán hòu zài', 'luego', 'then'),
 ]
+
+# level 6: count traffic lights / shops of one kind
+LIGHT = {
+    1: dict(tw='第一個紅綠燈', cn='第一个红绿灯', py='dì yī ge hóng lǜ dēng', es='el primer semáforo', en='the first traffic light'),
+    2: dict(tw='第二個紅綠燈', cn='第二个红绿灯', py='dì èr ge hóng lǜ dēng', es='el segundo semáforo', en='the second traffic light'),
+    3: dict(tw='第三個紅綠燈', cn='第三个红绿灯', py='dì sān ge hóng lǜ dēng', es='el tercer semáforo', en='the third traffic light'),
+}
+SHOP_ORD = {
+    1: dict(tw='第一間', cn='第一间', py='dì yī jiān', m='primer', f='primera', en='first'),
+    2: dict(tw='第二間', cn='第二间', py='dì èr jiān', m='segundo', f='segunda', en='second'),
+    3: dict(tw='第三間', cn='第三间', py='dì sān jiān', m='tercer', f='tercera', en='third'),
+}
+
+def base_key(k):
+    """'conv_2' -> 'conv' (a second shop of the same kind on the big map)"""
+    return k.split('_')[0]
 
 def cap(s):
     return s[0].upper() + s[1:] if s else s
@@ -307,6 +323,17 @@ def render_step(st, con, level, rng):
     if k == 'fork':
         s_ = {'L': ('靠左', '靠左', 'kào zuǒ', 've por la izquierda', 'keep left'), 'R': ('靠右', '靠右', 'kào yòu', 've por la derecha', 'keep right')}[st['t']]
         return dict(kind=k, tw=ptw + s_[0] + '走', cn=pcn + s_[1] + '走', py=ppy + s_[2] + ' zǒu', es=pes + s_[3], en=pen + s_[4])
+    if k == 'golight':
+        o = LIGHT[st['n']]
+        return dict(kind=k, tw=ptw + '直走到' + o['tw'], cn=pcn + '直走到' + o['cn'], py=ppy + 'zhí zǒu dào ' + o['py'],
+                    es=pes + 'sigue recto hasta ' + o['es'], en=pen + 'go straight to ' + o['en'])
+    if k == 'gostore':
+        b, o = B[st['b']], SHOP_ORD[st['n']]
+        art, rest = b['es_art'].split(' ', 1)
+        return dict(kind=k, tw=ptw + '直走到' + o['tw'] + b['tw'] + '前面', cn=pcn + '直走到' + o['cn'] + b['cn'] + '前面',
+                    py=ppy + 'zhí zǒu dào ' + o['py'] + ' ' + b['py'] + ' qián miàn',
+                    es=pes + 'sigue recto hasta ' + art + ' ' + o['m' if art == 'el' else 'f'] + ' ' + rest,
+                    en=pen + 'go straight to the ' + o['en'] + ' ' + b['en'])
     if k == 'cross':
         return dict(kind=k, tw='過馬路', cn='过马路', py='guò mǎ lù', es='cruza la calle', en='cross the street')
     if k == 'shop':
@@ -377,7 +404,7 @@ def make_parts(clauses, fin):
     parts, cur, moved = [], [], False
     for c in clauses:
         cur.append(c)
-        if c['kind'] in ('go1', 'go', 'pass', 'torb', 'toy', 'end'):
+        if c['kind'] in ('go1', 'go', 'pass', 'torb', 'toy', 'end', 'golight', 'gostore'):
             moved = True
         if c['kind'] in ('turn', 'pass', 'round', 'fork') and moved:
             parts.append(part_from(cur)); cur, moved = [], False
@@ -399,11 +426,18 @@ PATTERNS = {
         ['passx', 'go1', 'turn', 'end'], ['turn', 'go1', 'turn', 'passx', 'end'], ['pass', 'passx', 'end'],
         ['turn', 'passx', 'go1', 'turn', 'go1'], ['go', 'turn', 'pass', 'end']],
 }
-MAX_MOVES = {1: 4, 2: 5, 3: 6, 4: 8, 5: 6}
+MAX_MOVES = {1: 4, 2: 5, 3: 6, 4: 8, 5: 6, 6: 12}
 
 def counting_ok(steps):
     """one way of counting per sentence: never both 第一個 and 下一個, and no phrase twice"""
-    keys = [('next' if st.get('next') else st['n']) for st in steps if st['kind'] == 'go']
+    keys = []
+    for st in steps:
+        if st['kind'] == 'go':
+            keys.append('next' if st.get('next') else st['n'])
+        elif st['kind'] == 'golight':
+            keys.append(('light', st['n']))
+        elif st['kind'] == 'gostore':
+            keys.append(('store', st['b'], st['n']))
     if len(keys) != len(set(keys)):
         return False
     return not ('next' in keys and 1 in keys)
@@ -563,6 +597,16 @@ GPATTERNS = [
     ['shop', 'go1', 'turn', 'go1'], ['shop', 'go', 'turn', 'go1'], ['turn', 'shop', 'go1'], ['torb', 'round', 'shop'],
 ]
 
+BPATTERNS = [       # level 6 (the big map): count traffic lights, junctions and shops of one kind; always end in front of a shop.
+                    # (nobody turns in front of a shop, so a counted shop is followed by walking on to a junction)
+    ['golight', 'turn', 'go1'], ['golight', 'turn', 'go1'], ['go', 'turn', 'go1'], ['golight', 'turn', 'gostore'], ['golight', 'turn', 'gostore'],
+    ['golight', 'turn', 'golight', 'turn', 'go1'], ['go', 'turn', 'golight', 'turn', 'go1'], ['turn', 'golight', 'turn', 'gostore'],
+    ['gostore', 'go', 'turn', 'go1'], ['gostore', 'golight', 'turn', 'go1'], ['gostore', 'go', 'turn', 'gostore'],
+    ['turn', 'gostore', 'go', 'turn', 'go1'], ['go', 'turn', 'gostore', 'go', 'turn', 'go1'],
+    ['golight', 'turn', 'shop'], ['turn', 'golight', 'turn', 'go1'], ['turn', 'go', 'turn', 'gostore'], ['golight', 'turn', 'go', 'turn', 'gostore'],
+    ['turn', 'gostore'], ['go', 'turn', 'gostore'], ['gostore', 'golight', 'turn', 'gostore'],
+]
+
 def adv(sim):                       # walk on until a real junction / roundabout / end (the shop stops are passed)
     if not sim.move(): return False
     while GE.NODES[sim.node]['kind'] == 'm':
@@ -574,9 +618,20 @@ def beside(sim):                    # (left, right) buildings next to where the 
     ed, frm = sim.last
     return GE.flank(ed, frm)
 
-def try_build_graph(rng):
-    pat = rng.choice(GPATTERNS)
-    n = rng.choice([k for k, v in GE.NODES.items() if v['kind'] != 'rb'])
+def dup_types():
+    """kinds of shop that appear more than once on the active map (they can only be named by counting: 第二間…)"""
+    cnt = {}
+    for v in GE.NODES.values():
+        if v['kind'] != 'm': continue
+        for sd in ('L', 'R'):
+            if v[sd]: cnt[base_key(v[sd])] = cnt.get(base_key(v[sd]), 0) + 1
+    return sorted(k for k, c in cnt.items() if c > 1)
+
+def try_build_graph(rng, level=5):
+    big = level == 6
+    pat = rng.choice(BPATTERNS if big else GPATTERNS)
+    dups = set(dup_types()) if big else set()
+    n = rng.choice([k for k, v in GE.NODES.items() if v['kind'] == 'n'] if big else [k for k, v in GE.NODES.items() if v['kind'] != 'rb'])
     e = rng.choice(GE.INC[n])
     sim = GE.GSim(n, e)
     steps, named, total, prev = [], [], 0, None
@@ -594,6 +649,37 @@ def try_build_graph(rng):
             t = rng.choice('LR')
             if not sim.turn(t): return None
             steps.append(dict(kind='turn', t=t))
+        elif kind == 'golight':                     # level 6: walk on, counting only the junctions that have a traffic light
+            k = rng.choice([1, 2, 2, 3]); c = passes = 0
+            while c < k:
+                if not adv(sim) or GE.deg(sim.node) < 3: return None
+                passes += 1
+                if GE.NODES[sim.node]['light']: c += 1
+            if passes > 5: return None
+            total += passes
+            steps.append(dict(kind='golight', n=k))
+        elif kind == 'gostore':                     # level 6: walk on to the k-th shop of one kind (it must be on the road, one side only)
+            probe = copy.deepcopy(sim); seen_ = {}                  # look ahead: which repeated shops does this straight run pass?
+            for _ in range(8):
+                if not probe.move(): break
+                if GE.NODES[probe.node]['kind'] == 'm':
+                    for x in beside(probe):
+                        if x and base_key(x) in dups: seen_.setdefault(base_key(x), []).append(x)
+            avail = sorted(kk for kk, v_ in seen_.items() if len(set(v_)) == len(v_))
+            if not avail: return None
+            tkind = rng.choice(avail); k = rng.choice([x for x in (1, 2, 3) if x <= len(seen_[tkind])]); c = moves = 0
+            while c < k:
+                if not sim.move(): return None
+                moves += 1
+                if moves > 8: return None
+                if GE.NODES[sim.node]['kind'] == 'm':
+                    fl_ = beside(sim)
+                    has = [x for x in fl_ if x and base_key(x) == tkind]
+                    if len(has) == 2: return None   # same kind on both sides: not a clear count
+                    if has: c += 1
+            total += moves
+            named.append(has[0])
+            steps.append(dict(kind='gostore', b=tkind, n=k, key=has[0]))
         elif kind in ('torb', 'toy'):
             if not adv(sim): return None
             if kind == 'torb' and not sim.at_rb(): return None
@@ -615,7 +701,7 @@ def try_build_graph(rng):
             opts_ = [(sd, k_) for sd, k_ in zip('LR', fl) if k_]
             if not opts_: return None
             sd, bk = rng.choice(opts_)
-            if bk in named: return None
+            if bk in named or base_key(bk) in dups: return None
             named.append(bk); total += 1
             steps.append(dict(kind='shop', b=bk, side=sd))
         elif kind == 'cross':
@@ -627,7 +713,7 @@ def try_build_graph(rng):
                 if not adv(sim): return None
             fl = beside(sim)
             bkey = fl[0] if side == 'L' else fl[1]
-            if not bkey: return None
+            if not bkey or base_key(bkey) in dups: return None
             opp = fl[1] if side == 'L' else fl[0]
             if kind == 'passx':
                 if not sim.cross(): return None
@@ -635,55 +721,65 @@ def try_build_graph(rng):
             else:
                 t = rng.choice('LR')
                 if not sim.turn(t): return None
-            okey = opp if (opp and rng.random() < 0.55) else None
+            okey = opp if (opp and base_key(opp) not in dups and rng.random() < 0.55) else None
             total += k; named += [bkey] + ([okey] if okey else [])
             steps.append(dict(kind='pass', side=side, b=bkey, opp=okey, turn=t))
         if kind in ('go1', 'go', 'turn', 'pass', 'passx', 'fork', 'cross', 'shop') and (sim.at_rb() or sim.at_y_from_stem()):
             return None
         prev = kind if kind != 'go1' else 'go'
-    if pat[-1] not in ('go', 'go1', 'shop') or sim.last is None: return None
+    if pat[-1] not in ('go', 'go1', 'shop', 'golight', 'gostore') or sim.last is None: return None
     if not counting_ok(steps): return None
-    if total < 2 or total > MAX_MOVES[5] or sim.node == n: return None
+    if total < 2 or total > MAX_MOVES[level] or sim.node == n: return None
     fl = beside(sim)
     sides = [s_ for s_, v in zip('LR', fl) if v]
     if not sides: return None
     side = rng.choice(sides)
     tkey = fl[0] if side == 'L' else fl[1]
     other = fl[1] if side == 'L' else fl[0]
+    if other and base_key(other) in dups: other = None
     extra = ('opp', other) if (other and rng.random() < 0.5) else None
-    if tkey in named or (extra and extra[1] in named): return None
+    if not tkey or base_key(tkey) in dups or tkey in named or (extra and extra[1] in named): return None
     cons = assign_connectors(steps, 5, rng)
     clauses = [render_step(st, cons[i], 5, rng) for i, st in enumerate(steps)]
     parts = make_parts(clauses, final_clause(tkey, side, extra))
-    return dict(level=5, map='real', graph=True, start=[n, e], end=[sim.node, sim.via], actions=sim.actions,
-                path=[[round(x, 1), round(y, 1)] for x, y in sim.path], crosses=sim.crosses,
-                target=tkey, side=side, parts=parts)
+    q = dict(level=level, map='big' if big else 'real', graph=True, start=[n, e], end=[sim.node, sim.via], actions=sim.actions,
+             path=[[round(x, 1), round(y, 1)] for x, y in sim.path], crosses=sim.crosses,
+             target=tkey, side=side, parts=parts)
+    if big:
+        q['plan'] = [dict(kind=st['kind'], **{k_: st[k_] for k_ in ('n', 'b', 'key', 't') if k_ in st}) for st in steps]     # what the sentence asks for (checked independently by verify_questions.py)
+    return q
 
-def graph_map_data():
+MAPDATA = {}          # map key -> the data the game draws from (filled by main)
+
+def graph_map_data(g=None, **extra):
+    g = g or GRAPH_TW
     svg, bpos, vb, cwd = GE.build_drawing()
-    return dict(tw=GRAPH_TW['tw'], cn=GRAPH_TW['cn'], es=GRAPH_TW['es'], en=GRAPH_TW['en'], graph=True,
+    return dict(extra, tw=g['tw'], cn=g['cn'], es=g['es'], en=g['en'], graph=True, lights=sorted(k for k, v in GE.NODES.items() if v.get('light')),
                 blocks=[], closed=[], rb=[], ynodes=[], mid={k: dict(L=v['L'], R=v['R'], ea=v['ea'], eb=v['eb']) for k, v in GE.NODES.items() if v['kind'] == 'm'}, svg=svg, bpos=bpos, vb=vb, cwd=cwd,
                 nodes={k: [round(v['p'][0], 1), round(v['p'][1], 1), v['kind'], v['stem']] for k, v in GE.NODES.items()},
                 edges={k: dict(a=v['a'], b=v['b'], pts=[[round(x, 1), round(y, 1)] for x, y in v['pts']], L=v['L'], R=v['R'], L2=v['L2'], R2=v['R2']) for k, v in GE.EDGES.items()})
 
-from graph_map import GRAPH as _G
+from graph_map import GRAPH as _G, BIG, BIG_SECOND
 GRAPH_TW = dict(tw=_G['tw'], cn=_G['cn'], es=_G['es'], en=_G['en'])
 
-def main(per=12, per5=72, seed=20261020):
+def main(per=12, per5=72, per6=96, seed=20261020):
     rng = random.Random(seed)
     out = []
     GE.build_drawing()          # drops building slots that have no room (so the sentences never name them)
     GE.subdivide()              # a stop in front of every shop on the longer roads
-    for level in (1, 2, 3, 4, 5):
-        for mp in (('real',) if level == 5 else BASIC):
-            seen, made, tries, want = set(), 0, 0, (per5 if level == 5 else per)
+    for level in (1, 2, 3, 4, 5, 6):
+        if level == 6:                  # switch to the big map (level 5's map data is kept first)
+            MAPDATA['real'] = graph_map_data()
+            GE.load(BIG, [], BIG_SECOND); GE.build_drawing(); GE.subdivide(all_roads=True)
+        for mp in (('real',) if level == 5 else ('big',) if level == 6 else BASIC):
+            seen, made, tries, want = set(), 0, 0, (per6 if level == 6 else per5 if level == 5 else per)
             n_cross = n_end = 0
             cross_cap, end_cap = max(1, want // 4), max(1, want * 5 // 12)      # keep 過馬路 and 到底 from taking over
             while made < want and tries < 60000:
                 tries += 1
                 if level < 5:
                     MAPS[mp]['blocks'] = shuffled_blocks(mp, rng)      # a new building layout for this try
-                q = try_build_graph(rng) if level == 5 else try_build(level, mp, rng)
+                q = try_build_graph(rng, level) if level >= 5 else try_build(level, mp, rng)
                 if not q:
                     continue
                 if level < 5:
@@ -704,6 +800,7 @@ def main(per=12, per5=72, seed=20261020):
                 print('WARN: only %d for %s L%d' % (made, mp, level), file=sys.stderr)
             if mp in BASE_BLOCKS:
                 MAPS[mp]['blocks'] = [list(r) for r in BASE_BLOCKS[mp]]
+    MAPDATA['big'] = graph_map_data(BIG, camw=508, camh=531)
     return out
 
 if __name__ == '__main__':
@@ -711,7 +808,7 @@ if __name__ == '__main__':
     data = dict(buildings={k: dict(tw=v['tw'], cn=v['cn'], py=v['py'], es=v['es'], en=v['en']) for k, v in B.items()},
                 maps={k: dict(tw=v['tw'], cn=v['cn'], es=v['es'], en=v['en'], blocks=v['blocks'], closed=[list(c) for c in v['closed']], rb=[list(c) for c in v['rb']], ynodes=[list(c) for c in v['ynodes']]) for k, v in MAPS.items()},
                 questions=qs)
-    data['maps']['real'] = graph_map_data()
+    data['maps'].update(MAPDATA)
     with open('questions.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
     print('questions:', len(qs))

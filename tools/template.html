@@ -383,7 +383,7 @@ const FIREBASE_CONFIG = {      // 連到 memorma-24dab（和翻牌記憶、收�
   messagingSenderId: "806709458465",
   appId: "1:806709458465:web:f0d12acb2f911f2f165560"
 };
-const LB_PREFIX = 'askDirections_L';   // Firestore collections: askDirections_L1 … L5
+const LB_PREFIX = 'askDirections_L';   // Firestore collections: askDirections_L1 … L6
 const GA_ID = '';               // GA4 measurement id, e.g. 'G-XXXXXXXXXX'
 
 /* ---------- helpers ---------- */
@@ -422,8 +422,8 @@ const UI = {
     slow: 'Lenta', normal: 'Normal', fast: 'Rápida',
     ph_pinyin: 'Pinyin', ph_zhuyin: 'Zhuyin 注音', ph_both: 'Pinyin + zhuyin', ph_off: 'Ninguna',
     level: 'Elige un nivel',
-    lv: ['Nivel 1', 'Nivel 2', 'Nivel 3', 'Nivel 4', 'Nivel 5'],
-    lvd: ['Recto, izquierda y derecha', 'Contar esquinas y seguir hasta el final', 'Izquierda, derecha, enfrente, cruzar la calle', 'Indicaciones largas, todo junto', 'Barrio real: diagonales, rotonda, Y y paradas frente a las tiendas'],
+    lv: ['Nivel 1', 'Nivel 2', 'Nivel 3', 'Nivel 4', 'Nivel 5', 'Nivel 6'],
+    lvd: ['Recto, izquierda y derecha', 'Contar esquinas y seguir hasta el final', 'Izquierda, derecha, enfrente, cruzar la calle', 'Indicaciones largas, todo junto', 'Barrio real: diagonales, rotonda, Y y paradas frente a las tiendas', 'Barrio grande: semáforos y «la segunda tienda de…»'],
     settings: 'Ajustes', helpT: 'Cómo jugar', close: 'Cerrar',
     helpL: [
       '🎧 Pulsa «🔊 Escuchar» para oír las indicaciones. Si lo necesitas, pulsa «Ver texto» y después «Ver lectura y traducción».',
@@ -446,6 +446,7 @@ const UI = {
     hint2: 'Las esquinas se cuentan desde donde estás. «Hasta el final» = sigue recto hasta que la calle se acabe.',
     hint3: 'Mira el mapa: ¿qué edificio queda a tu izquierda o a tu derecha mientras caminas? Si oyes {cross}, pulsa el botón de cruzar.',
     hint4: 'Combina todo lo aprendido. ¡Tú puedes!',
+    hint6: 'Mapa grande: la vista te sigue (🔍 / 🗺 para acercar o ver todo). Cuenta los semáforos 🚦 o las tiendas del mismo tipo: «la segunda tienda de conveniencia». No todas las esquinas tienen semáforo.',
     hint5: 'Rotonda: se circula en sentido contrario a las agujas del reloj; la 1.ª salida es la primera calle después de por donde entraste. Pulsa el botón de la salida. Y: 靠左/靠右 = pulsa girar y luego recto. Con 🔍 / 🗺 acercas o alejas el mapa.',
     result: 'Resultado', score: '{c} de {N} correctas', time: 'Tiempo: {t} s',
     again: 'Jugar de nuevo', home: 'Cambiar de nivel',
@@ -468,8 +469,8 @@ const UI = {
     slow: 'Slow', normal: 'Normal', fast: 'Fast',
     ph_pinyin: 'Pinyin', ph_zhuyin: 'Zhuyin 注音', ph_both: 'Pinyin + zhuyin', ph_off: 'None',
     level: 'Choose a level',
-    lv: ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5'],
-    lvd: ['Straight, left and right', 'Count intersections, go to the end', 'Left, right, across, cross the street', 'Longer directions, all together', 'Real streets: diagonals, roundabout, Y-fork, stops at the shops'],
+    lv: ['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6'],
+    lvd: ['Straight, left and right', 'Count intersections, go to the end', 'Left, right, across, cross the street', 'Longer directions, all together', 'Real streets: diagonals, roundabout, Y-fork, stops at the shops', 'Big map: traffic lights and “the second … shop”'],
     settings: 'Settings', helpT: 'How to play', close: 'Close',
     helpL: [
       '🎧 Tap “🔊 Listen” to hear the directions. If you need help, tap “Show text”, then “Show reading & translation”.',
@@ -492,6 +493,7 @@ const UI = {
     hint2: 'Count intersections from where you stand. “To the end” = keep going straight until the road ends.',
     hint3: 'Check the map: which building is on your left or right as you walk? If you hear {cross}, press the cross button.',
     hint4: 'Combine everything you have learned. You can do it!',
+    hint6: 'Big map: the view follows you (🔍 / 🗺 to zoom or see it all). Count the traffic lights 🚦 or the shops of one kind: “the second convenience store”. Not every junction has a traffic light.',
     hint5: 'Roundabout: traffic goes counter-clockwise; the 1st exit is the first street after the one you came in by. Press the exit button. Y-junction: 靠左/靠右 = press turn, then straight. Use 🔍 / 🗺 to zoom the map.',
     result: 'Result', score: '{c} of {N} correct', time: 'Time: {t} s',
     again: 'Play again', home: 'Change level',
@@ -514,8 +516,8 @@ const UI = {
     slow: '慢', normal: '中', fast: '快',
     ph_pinyin: '拼音', ph_zhuyin: '注音', ph_both: '拼音＋注音', ph_off: '不顯示',
     level: '選擇關卡',
-    lv: ['第一級', '第二級', '第三級', '第四級', '第五級'],
-    lvd: ['直走、左轉、右轉', '數路口、直走到底', '左邊、右邊、對面、過馬路', '比較長的指路，全部一起用', '真實街區：斜路、圓環、Y字路口、店前停下'],
+    lv: ['第一級', '第二級', '第三級', '第四級', '第五級', '第六級'],
+    lvd: ['直走、左轉、右轉', '數路口、直走到底', '左邊、右邊、對面、過馬路', '比較長的指路，全部一起用', '真實街區：斜路、圓環、Y字路口、店前停下', '大街區：紅綠燈、第幾間店'],
     settings: '設定', helpT: '遊戲說明', close: '關閉',
     helpL: [
       '🎧 先按「🔊 聽」，聽指路的話。聽不懂再按「看文字」，還不懂再按「看讀音和翻譯」。',
@@ -538,6 +540,7 @@ const UI = {
     hint2: '路口從你站的地方開始數。「走到底」＝一直直走，直到這條路走不下去為止。',
     hint3: '看地圖：走的時候，左手邊或右手邊是哪一棟建築？聽到{cross}要按「過馬路」。',
     hint4: '把學過的全部用上，你可以的！',
+    hint6: '大地圖：畫面會跟你一起移動（🔍 / 🗺 放大或看全圖）。要數紅綠燈 🚦，或同一種店的第幾間，例如「第二間便利商店」。不是每個路口都有紅綠燈。',
     hint5: '圓環是逆時針繞：第一個出口就是從你進來的路開始，逆時針數的第一條路，按下面的出口按鈕。Y字路口：靠左／靠右＝按左轉或右轉，再按直走。地圖可以用 🔍 / 🗺 放大或看全圖。',
     result: '結果', score: '答對 {c}/{N} 題', time: '時間：{t} 秒',
     again: '再玩一次', home: '換關卡',
@@ -554,7 +557,7 @@ const UI = {
   },
 };
 // simplified-character version of the Chinese-only UI (made from the traditional one)
-const S2T = { '級': '级', '針': '针', '說': '说', '閉': '闭', '鈕': '钮', '從': '从', '進': '进', '項': '项', '問': '问', '聽': '听', '機': '机', '選': '选', '關': '关', '數': '数', '過': '过', '馬': '马', '綜': '综', '戰': '战', '邊': '边', '對': '对', '長': '长', '個': '个', '較': '较', '話': '话', '點': '点', '區': '区', '請': '请', '輸': '输', '體': '体', '語': '语', '讀': '读', '顯': '显', '鍵': '键', '點': '点', '榜': '榜', '題': '题', '裝': '装', '儲': '储', '這': '这', '臺': '台', '還': '还', '詞': '词', '彙': '汇', '圖': '图', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '線': '线', '錯': '错', '面': '面', '開': '开', '結': '结', '時': '时', '間': '间', '換': '换', '會': '会', '們': '们', '學': '学', '全': '全', '樣': '样', '幾': '几', '雙': '双', '當': '当', '築': '筑', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '別': '别', '對': '对', '應': '应', '給': '给', '蓋': '盖', '運': '运', '動': '动', '現': '现', '後': '后', '來': '来', '終': '终', '離': '离', '轉': '转', '帶': '带', '張': '张', '燈': '灯', '見': '见', '買': '买', '賣': '卖', '總': '总', '業': '业', '傳': '传', '極': '极', '處': '处', '準': '准', '須': '须', '標': '标', '導': '导', '歷': '历', '錄': '录', '無': '无', '難': '难', '電': '电', '腦': '脑', '為': '为', '與': '与', '確': '确', '鐘': '钟', '覺': '觉', '實': '实', '麵': '面', '館': '馆', '藥': '药', '書': '书', '車': '车', '買': '买', '軌': '轨', '號': '号', '單': '单', '務': '务', '員': '员', '辦': '办', '歡': '欢', '迎': '迎', '遊': '游', '戲': '戏', '樓': '楼', '層': '层', '導': '导', '檢': '检', '測': '测', '試': '试', '驗': '验', '紀': '纪', '錄': '录', '據': '据', '統': '统', '計': '计', '劃': '划', '設': '设', '備': '备', '類': '类', '種': '种', '終': '终', '義': '义', '網': '网', '頁': '页', '絡': '络', '連': '连', '續': '续', '擊': '击', '碼': '码', '終': '终', '則': '则', '規': '规', '範': '范', '圍': '围', '盡': '尽', '與': '与' };
+const S2T = { '級': '级', '針': '针', '說': '说', '閉': '闭', '鈕': '钮', '從': '从', '進': '进', '項': '项', '問': '问', '聽': '听', '機': '机', '選': '选', '關': '关', '數': '数', '過': '过', '馬': '马', '綜': '综', '戰': '战', '邊': '边', '對': '对', '長': '长', '個': '个', '較': '较', '話': '话', '點': '点', '區': '区', '請': '请', '輸': '输', '體': '体', '語': '语', '讀': '读', '顯': '显', '鍵': '键', '點': '点', '榜': '榜', '題': '题', '裝': '装', '儲': '储', '這': '这', '臺': '台', '還': '还', '詞': '词', '彙': '汇', '圖': '图', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '線': '线', '錯': '错', '面': '面', '開': '开', '結': '结', '時': '时', '間': '间', '換': '换', '會': '会', '們': '们', '學': '学', '全': '全', '樣': '样', '幾': '几', '雙': '双', '當': '当', '築': '筑', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '別': '别', '對': '对', '應': '应', '給': '给', '蓋': '盖', '運': '运', '動': '动', '現': '现', '後': '后', '來': '来', '終': '终', '離': '离', '轉': '转', '帶': '带', '張': '张', '燈': '灯', '見': '见', '買': '买', '賣': '卖', '總': '总', '業': '业', '傳': '传', '極': '极', '處': '处', '準': '准', '須': '须', '標': '标', '導': '导', '歷': '历', '錄': '录', '無': '无', '難': '难', '電': '电', '腦': '脑', '為': '为', '與': '与', '確': '确', '鐘': '钟', '覺': '觉', '實': '实', '麵': '面', '館': '馆', '藥': '药', '書': '书', '車': '车', '買': '买', '軌': '轨', '號': '号', '單': '单', '務': '务', '員': '员', '辦': '办', '歡': '欢', '迎': '迎', '遊': '游', '戲': '戏', '樓': '楼', '層': '层', '導': '导', '檢': '检', '測': '测', '試': '试', '驗': '验', '紀': '纪', '錄': '录', '據': '据', '統': '统', '計': '计', '劃': '划', '設': '设', '備': '备', '類': '类', '種': '种', '終': '终', '義': '义', '網': '网', '頁': '页', '絡': '络', '連': '连', '續': '续', '擊': '击', '碼': '码', '終': '终', '則': '则', '規': '规', '範': '范', '圍': '围', '盡': '尽', '與': '与', '紅': '红', '綠': '绿', '畫': '画' };
 const zhSimp = o => { const r = {}; for (const k in o) r[k] = typeof o[k] === 'string' ? [...o[k]].map(c => S2T[c] || c).join('') : o[k].map(x => [...x].map(c => S2T[c] || c).join('')); return r; };
 UI.zhs = zhSimp(UI.zh);
 const WORDS = {
@@ -861,7 +864,7 @@ function renderStart() {
   chips('#c-rate', ['slow', 'normal', 'fast'].map(v => ({ v, label: T(v) })), S.rate, v => { S.rate = v; saveSettings(); renderStart(); speak(S.script === 'trad' ? '直走，再右轉。' : '直走，再右转。'); });
   $('#l-level').textContent = T('level');
   const lv = $('#levels'); lv.innerHTML = '';
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     const b = document.createElement('button'); b.className = 'lv';
     b.innerHTML = '<span class="n">' + (i + 1) + '</span><span><span class="t"></span><br><span class="d"></span></span>';
     b.querySelector('.t').textContent = T('lv')[i];
@@ -966,7 +969,9 @@ function nextPart() {
 }
 
 /* ---------- map drawing ---------- */
+const BK = k => String(k).replace(/_\d+$/, '');     // 'conv_2' (a second shop of the same kind) -> 'conv'
 function labelSvg(cx, cy, key) {
+  key = BK(key);
   const b = DATA.buildings[key];
   const name = S.script === 'trad' ? b.tw : b.cn;
   // phonetic lines (pinyin and/or zhuyin), each split in two when the name has more than 2 syllables
@@ -1392,7 +1397,7 @@ let camCur = null, camRaf = 0;
 function camTarget() {
   const m = gM(), vb = m.vb;
   if (S.cam === 'all' || S.locked || !S.axy) return vb.slice();
-  const w = vb[2] * 0.56, h = vb[3] * 0.56;
+  const w = m.camw ? Math.min(m.camw, vb[2]) : vb[2] * 0.56, h = m.camh ? Math.min(m.camh, vb[3]) : vb[3] * 0.56;
   const x = Math.min(Math.max(S.axy[0] - w / 2, vb[0]), vb[0] + vb[2] - w), y = Math.min(Math.max(S.axy[1] - h / 2, vb[1]), vb[1] + vb[3] - h);
   return [x, y, w, h];
 }
@@ -1464,13 +1469,13 @@ function renderFeedback() {
   const fb = $('#feedback');
   let html = '<div class="fb ' + (ok ? 'ok' : 'bad') + '"><h3>' + (ok ? T('ok') : (!sameNode ? T('bad') : (!faceOK ? T('badFace') : T('badCross')))) + '</h3>';
   if (!ok) html += '<div class="leg"><span><i class="b"></i>' + T('yourRoute') + '</span><span><i class="g"></i>' + T('rightRoute') + '</span></div>';
-  html += '<figure class="photo"><img src="' + PHOTO_DIR + S.q.target + '.jpg" alt="" onerror="this.parentNode.remove()"><figcaption></figcaption></figure>';
+  html += '<figure class="photo"><img src="' + PHOTO_DIR + BK(S.q.target) + '.jpg" alt="" onerror="this.parentNode.remove()"><figcaption></figcaption></figure>';
   html += '<div class="fbbtns' + (ok ? ' one' : '') + '">';
   if (!ok) html += '<button class="btn ghost" id="fb-watch">' + T('watch') + '</button>';
   html += '<button class="btn" id="fb-next">' + (last ? T('finish') : T('next')) + '</button></div></div>';
   fb.innerHTML = html; fb.classList.remove('hidden');
   const cap = fb.querySelector('figcaption');
-  if (cap) { const b = DATA.buildings[S.q.target]; cap.textContent = b[sk()] + (showTrans() ? ' · ' + b[S.lang] : ''); }
+  if (cap) { const b = DATA.buildings[BK(S.q.target)]; cap.textContent = b[sk()] + (showTrans() ? ' · ' + b[S.lang] : ''); }
   const w = $('#fb-watch'); if (w) w.onclick = replay;
   $('#fb-next').onclick = nextQuestion;
 }
@@ -1581,7 +1586,7 @@ async function openBoard(level) {
   $('#b-title').textContent = '🏆 ' + T('board');
   $('#b-back').textContent = T('back');
   const tabs = $('#b-tabs'); tabs.innerHTML = '';
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 6; i++) {
     const b = document.createElement('button'); b.className = 'chip' + (i === boardLevel ? ' on' : '');
     b.textContent = T('lv')[i - 1]; b.style.fontSize = '12px';
     b.onclick = () => openBoard(i); tabs.appendChild(b);

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Road-graph engine for level 5 (non-grid map): geometry, turn rules, roundabout exits, drawing data."""
 import math, random
-from graph_map import GRAPH, SECOND_POOL, SECOND_CANDIDATES
+from graph_map import GRAPH, SECOND_POOL, SECOND_CANDIDATES, BIG, BIG_SECOND
 
 K = 2.6                 # layout scale
 RW = 19                 # half road width
@@ -9,12 +9,26 @@ H = 35                  # half building tile
 STRAIGHT = 25           # within this many degrees of straight ahead = "straight"
 MINTURN, MAXTURN = 20, 160   # a turn is a branch between these angles on that side
 
-NODES = {k: dict(p=(v['x'] * K, v['y'] * K), kind=v.get('kind', 'n'), stem=v.get('stem')) for k, v in GRAPH['nodes'].items()}
-EDGES = {}
-for e in GRAPH['edges']:
-    a, b = NODES[e['a']]['p'], NODES[e['b']]['p']
-    EDGES[e['id']] = dict(a=e['a'], b=e['b'], pts=[a] + [(x * K, y * K) for x, y in e['via']] + [b], L=e['L'], R=e['R'], L2=None, R2=None)
-INC = {n: [e for e, v in EDGES.items() if n in (v['a'], v['b'])] for n in NODES}
+# the active map (level 5: GRAPH, level 6: BIG). The dicts are cleared and refilled by load(), so every function sees the current map.
+NODES, EDGES, INC = {}, {}, {}
+SECOND = dict(pool=[], cands=[])
+_DRAW = None
+
+def load(g, pool=(), cands=()):
+    """make g the active road graph (pool / cands: where the second shops of the longer roads go; a candidate may name its shop)"""
+    global _DRAW
+    _DRAW = None
+    NODES.clear(); EDGES.clear(); INC.clear()
+    for k, v in g['nodes'].items():
+        NODES[k] = dict(p=(v['x'] * K, v['y'] * K), kind=v.get('kind', 'n'), stem=v.get('stem'), light=bool(v.get('light')))
+    for e in g['edges']:
+        a, b = NODES[e['a']]['p'], NODES[e['b']]['p']
+        EDGES[e['id']] = dict(a=e['a'], b=e['b'], pts=[a] + [(x * K, y * K) for x, y in e['via']] + [b], L=e['L'], R=e['R'], L2=None, R2=None)
+    for n in NODES:
+        INC[n] = [e for e, v in EDGES.items() if n in (v['a'], v['b'])]
+    SECOND['pool'] = list(pool); SECOND['cands'] = list(cands)
+
+load(GRAPH, SECOND_POOL, SECOND_CANDIDATES)
 
 def brg(p, q):                      # screen bearing in degrees: 0 = east, 90 = south (clockwise)
     return math.degrees(math.atan2(q[1] - p[1], q[0] - p[0]))
@@ -80,7 +94,6 @@ class GSim:
 # ---------- drawing ----------
 def pd(p): return 'M' + ' L'.join('%.1f,%.1f' % q for q in p)
 
-_DRAW = None
 def build_drawing():
     global _DRAW
     if _DRAW is None: _DRAW = _build_drawing()
@@ -92,7 +105,8 @@ def _build_drawing():
     def dseg(px, py, a, b):
         (x1, y1), (x2, y2) = a, b; dx, dy = x2 - x1, y2 - y1; l2 = dx * dx + dy * dy
         t = max(0, min(1, ((px - x1) * dx + (py - y1) * dy) / l2)); return math.hypot(px - x1 - t * dx, py - y1 - t * dy)
-    rb = [v['p'] for v in NODES.values() if v['kind'] == 'rb'][0]
+    rbs = [v['p'] for v in NODES.values() if v['kind'] == 'rb']
+    rb = rbs[0] if rbs else (-9999.0, -9999.0)         # (a map without a roundabout)
     placed = []
     def ok(cx, cy):
         if min(dseg(cx, cy, a, b) for a, b in segs) < RW + H * 0.9: return False
@@ -119,15 +133,19 @@ def _build_drawing():
             if not best:
                 print('WARN no room for %s on %s' % (k, eid)); v[side] = None; continue
             placed.append(best); bpos[k] = [round(best[0], 1), round(best[1], 1)]
-    pool = list(SECOND_POOL)                          # second slot (long roads only): next name goes to the next place that has room
-    for eid, side in SECOND_CANDIDATES:
-        if not pool: break
+    pool = list(SECOND['pool'])                       # second slot (long roads only): next name goes to the next place that has room
+    for cand in SECOND['cands']:
+        eid, side = cand[0], cand[1]
+        named_ = cand[2] if len(cand) > 2 else None   # level 6: the candidate says which shop goes there
+        if named_ is None and not pool: break
         v = EDGES[eid]
         if not v[side]: continue
         firsts = [_proj(v['pts'], bpos[v[sd]])[1] for sd in 'LR' if v[sd]]
         best = place(v, side, T2, lambda pt: all(abs(_proj(v['pts'], pt)[1] - f) > 150 for f in firsts))
-        if not best: continue
-        k = pool.pop(0); v[side + '2'] = k
+        if not best:
+            if named_: print('WARN no room for second shop %s on %s %s' % (named_, eid, side))
+            continue
+        k = named_ or pool.pop(0); v[side + '2'] = k
         placed.append(best); bpos[k] = [round(best[0], 1), round(best[1], 1)]
     if pool: print('WARN unused second buildings:', pool)
     h = []
@@ -175,6 +193,10 @@ def _build_drawing():
             for o in (-6, 0, 6):
                 px, py = x1 + ux * (dd + o), y1 + uy * (dd + o)
                 h.append('<path d="M%.1f,%.1f L%.1f,%.1f" stroke="#f8f6f0" stroke-width="3.4"/>' % (px - nx * RW * .95, py - ny * RW * .95, px + nx * RW * .95, py + ny * RW * .95))
+    for k, n in NODES.items():
+        if not n.get('light'): continue
+        for sx, sy in ((1, -1), (-1, 1)):
+            h.append('<g transform="translate(%.1f,%.1f) scale(2)"><rect x="-1" y="-7" width="2" height="12" fill="#8a867c"/><rect x="-3" y="-9" width="6" height="9" rx="1.5" fill="#4b4a46"/><circle cy="-6.5" r="1.1" fill="#c98f86"/><circle cy="-4.5" r="1.1" fill="#e0c98f"/><circle cy="-2.5" r="1.1" fill="#9db39f"/></g>' % (n['p'][0] + sx * 22, n['p'][1] + sy * 22))
     rnd = random.Random(7)
     for v in EDGES.values():
         p = v['pts']
@@ -205,17 +227,18 @@ def _proj(pts, pt):
         acc += l
     return best
 
-def subdivide():
+def subdivide(all_roads=False):
     """Split each road that has a second building into pieces with a stop (node kind 'm') in front of each shop.
     A stop node carries the buildings beside it: L / R as seen walking a -> b; ea / eb = the pieces towards a / b."""
     bpos = build_drawing()[1]
     for eid in list(EDGES):
         v = EDGES[eid]
-        if not (v['L2'] or v['R2']): continue
+        if not all_roads and not (v['L2'] or v['R2']): continue       # level 5: only roads with a second shop; level 6: every road with a shop
         slots = []
         for sides in (('L', 'R'), ('L2', 'R2')):
             ps = [_proj(v['pts'], bpos[v[sd]]) for sd in sides if v[sd]]
             if ps: slots.append((sum(p[1] for p in ps) / len(ps), sides, ps))
+        if not slots: continue
         pts = v['pts']; cuts = []
         for pos, sides, ps in slots:
             acc = 0.0; pt = None

@@ -35,8 +35,11 @@ for m in GM:
 
 
 import math
-G = maps['real']; GN, GE = G['nodes'], G['edges']
-INC = {n: [e for e, v in GE.items() if n in (v['a'], v['b'])] for n in GN}
+def use(mp):                       # check one road-graph map at a time
+    global G, GN, GE, INC
+    G = maps[mp]; GN, GE = G['nodes'], G['edges']
+    INC = {n: [e for e, v in GE.items() if n in (v['a'], v['b'])] for n in GN}
+use('real')
 def _p(e, frm): p = GE[e]['pts']; return p if GE[e]['a'] == frm else p[::-1]
 def _oth(e, n): return GE[e]['b'] if GE[e]['a'] == n else GE[e]['a']
 def _b(p, q): return math.degrees(math.atan2(q[1] - p[1], q[0] - p[0]))
@@ -91,16 +94,85 @@ def check_graph(q):
         bl, br = _fl(*last)
     if (bl if q['side'] == 'L' else br) != q['target']: return 'target not on stated side'
     return None
+def bk(k): return k.split('_')[0]      # 'conv_2' = a second shop of the same kind on the big map
+
+def check_plan(q):
+    """level 6: replay the actions against the sentence's own plan (traffic lights, junctions, the k-th shop of a kind)"""
+    GM_ = G['mid']
+    n, face = q['start']; via = None; h = _ob(n, face); acts = list(q['actions']); i = 0
+    def step():                       # one 直走: returns False if impossible
+        nonlocal n, via, h, face
+        if face is None: return False
+        frm = n; p = _p(face, frm); e = face; n = _oth(e, frm); via = e; h = _b(p[-2], p[-1]); face = None
+        c = [(abs(_ad(h, _ob(n, x))), x) for x in INC[n] if x != e and abs(_ad(h, _ob(n, x))) <= 25]
+        if c: face = min(c)[1]
+        return True
+    def beside_(): 
+        if GN[n][2] != 'm': return (None, None)
+        mm = GM_[n]; fwd = (via == mm['ea'])
+        return (mm['L'], mm['R']) if fwd else (mm['R'], mm['L'])
+    def eat(ch):
+        nonlocal i
+        if i >= len(acts) or acts[i] != ch: return False
+        i += 1; return True
+    for st in q['plan']:
+        k = st['kind']
+        if k == 'turn':
+            a = st['t']
+            if not eat(a): return 'plan: expected turn ' + a
+            c = [e for e in INC[n] if (20 < _ad(h, _ob(n, e)) < 160 if a == 'R' else -160 < _ad(h, _ob(n, e)) < -20)]
+            if len(c) != 1: return 'plan: bad turn'
+            face = c[0]; h = _ob(n, face)
+        elif k == 'go1':
+            if not eat('S') or not step(): return 'plan: go1'
+        elif k in ('go', 'golight'):
+            c = 0
+            while c < st['n']:
+                if not eat('S') or not step(): return 'plan: %s runs out of road' % k
+                if GN[n][2] == 'm': continue
+                if len(INC[n]) < 3: return 'plan: %s counted a corner' % k
+                if k == 'go' or G['lights'].count(n): c += 1
+            if k == 'golight' and n not in G['lights']: return 'plan: golight does not end at a light'
+        elif k == 'shop':
+            if not eat('S') or not step() or GN[n][2] != 'm': return 'plan: shop'
+        elif k == 'gostore':
+            c = 0
+            while c < st['n']:
+                if not eat('S') or not step(): return 'plan: gostore runs out of road'
+                if GN[n][2] == 'm':
+                    hit = [x for x in beside_() if x and bk(x) == st['b']]
+                    if len(hit) == 2: return 'plan: kind on both sides'
+                    if hit: c += 1
+            if st['key'] not in beside_(): return 'plan: gostore key not beside the stop'
+        else:
+            return 'plan: unknown step ' + k
+    if i != len(acts): return 'plan: actions left over'
+    return None
+
 for q in Q:
     if q.get('graph'):
-        r = check_graph(q)
+        use(q['map'])
+        r = check_graph(q) or (check_plan(q) if q.get('plan') else None)
         if r: errs.append((q['id'], r))
-for e_, v in GE.items():
-    for sd in ('L', 'R', 'L2', 'R2'):
-        if v[sd] and v[sd] not in B: errs.append((e_, 'unknown building'))
-GBS = [v[s_] for v in GE.values() for s_ in ('L', 'R', 'L2', 'R2') if v[s_]] + [b_ for mm in G['mid'].values() for b_ in (mm['L'], mm['R']) if b_]
-if len(GBS) != len(set(GBS)): errs.append(('real', 'duplicate building on the graph map'))
-if set(G['bpos']) != set(GBS): errs.append(('real', 'building positions do not match the roads'))
+        full_ = ''.join(p['tw'] for p in q['parts'])
+        if q['level'] == 6:
+            pl = q['plan']
+            if full_.count('紅綠燈') != sum(1 for s_ in pl if s_['kind'] == 'golight'): errs.append((q['id'], 'traffic light text count'))
+            if full_.count('間') != sum(1 for s_ in pl if s_['kind'] == 'gostore'): errs.append((q['id'], 'shop count text'))
+            if '過馬路' in full_ or q['crosses']: errs.append((q['id'], 'level 6 has no crossings'))
+for mp_, mv in maps.items():
+    if not mv.get('graph'): continue
+    use(mp_)
+    for e_, v in GE.items():
+        for sd in ('L', 'R', 'L2', 'R2'):
+            if v[sd] and bk(v[sd]) not in B: errs.append((e_, 'unknown building'))
+    GBS = [v[s_] for v in GE.values() for s_ in ('L', 'R', 'L2', 'R2') if v[s_]] + [b_ for mm in G['mid'].values() for b_ in (mm['L'], mm['R']) if b_]
+    if len(GBS) != len(set(GBS)): errs.append((mp_, 'duplicate building on the graph map'))
+    if set(G['bpos']) != set(GBS): errs.append((mp_, 'building positions do not match the roads'))
+    if mp_ == 'big':
+        degs = {n_: len(INC[n_]) for n_ in GN if GN[n_][2] == 'n'}
+        if any(n_ not in degs or degs[n_] < 3 for n_ in G['lights']): errs.append((mp_, 'a traffic light on a corner'))
+        if not (3 <= len(G['lights']) < len(degs)): errs.append((mp_, 'traffic lights should be on some, not all, nodes'))
 
 for q in Q:
     m = q['map']

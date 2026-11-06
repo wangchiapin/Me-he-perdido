@@ -32,6 +32,7 @@ Cada ronda tiene 8 preguntas y cada acierto vale 10 puntos. Hay clasificación p
 | Nivel 3 (第三級) | 對面、前面、後面, edificios como referencia y 過了…就過馬路 | 一直走，右手邊是銀行，過了銀行就過馬路。它前面是公園。 |
 | Nivel 4 (第四級) | Indicaciones largas con todo lo anterior | 直走到第一個路口，左轉，再一直走，右手邊是公園，過了公園就右轉，再直走到第二個路口。 |
 | Nivel 5 (第五級) | Barrio real sin cuadrícula: calles en diagonal y curvas, 圓環（第一～四個出口）、Y字路口（靠左／靠右）, y todo lo anterior | 直走到圓環，從第二個出口出去，左轉，最後直走。 |
+| Nivel 6 (第六級) | Mapa grande e irregular, con la vista siguiendo al personaje: semáforos (solo en algunas esquinas, al azar) y tiendas repetidas; se cuenta con 第N個紅綠燈, 第N個路口 y 第N間＋tienda (la 2.ª tienda de conveniencia) | 直走到第二個紅綠燈，右轉，再直走到第二間便利商店前面。 |
 
 Notas de vocabulario:
 - **直走** = avanzar hasta justo antes de la siguiente esquina (2/3 de la cuadra); girar entra en la esquina.
@@ -74,7 +75,7 @@ Cinco de los mapas básicos tienen calles cerradas (plazas peatonales) y callejo
 - 文字一開始是藏起來的：先用聽的，聽不懂再按「看文字」（只出現中文），還不懂再按「看讀音和翻譯」；答完題會全部顯示。設定裡的「一開始就顯示文字」可以改成一開始就全部顯示。
 - 其他功能：分段聽、真正的「過馬路」按鈕、6 張地圖、可放自己的街景照片；📖 小字典從畫面下方跳出來，不會被版權文字蓋住。
 - 地圖不用選：第 1～4 級每一輪隨機混用 6 張地圖，建築位置每一題都不一樣（車站、廟、學校、醫院、捷運站這些主角固定在原位，其他亂排；便利商店街全部亂排）。
-- 共 5 個關卡：方向詞 → 路口與一直走到底 → 位置詞（對面、前面、後面；過馬路從這級開始）→ 綜合挑戰 → 第五級「真實街區」（不是方格的街道：圓環、Y字路口、斜路與彎路）。
+- 共 6 個關卡（第六級見文末）：方向詞 → 路口與一直走到底 → 位置詞（對面、前面、後面；過馬路從這級開始）→ 綜合挑戰 → 第五級「真實街區」（不是方格的街道：圓環、Y字路口、斜路與彎路）。
 - 設定和其他遊戲共用（localStorage 的 `hanziGames.settings`）：繁體／簡體；語言選項是「中文＋Español」、「中文＋English」、「只有中文」，介面一律中文在上、外語小灰字在下（只有中文就沒有外語）；所有設定集中在右上角 ⚙，玩法說明在 ❓；讀音可選拼音（台灣讀音，預設）、注音、拼音＋注音或不顯示；語音速度慢 0.45／中 0.65／快 0.85。
 - 只有語言不是「中文」時才會顯示翻譯，沒有另外的翻譯開關。
 - 網址參數：`?name=名字&script=trad|simp（或 tw|cn）&lang=es|en|zh`。
@@ -92,7 +93,7 @@ Al pegar la URL en LINE o WhatsApp se muestra el nombre «問路小達人 · Pre
 ### Clasificación (Firebase)
 
 La clasificación en línea ya está conectada al proyecto `memorma-24dab` (compartido con Memorama y Ordena el Armario), con inicio de sesión anónimo; la configuración está en la constante `FIREBASE_CONFIG` al inicio del `<script>` de `index.html`. Si no se puede conectar, la clasificación se guarda solo en el dispositivo.
-Se usan las colecciones `askDirections_L1` … `askDirections_L5` (la L5 está permitida en la copia maestra de las reglas desde 2026-10-29; hay que pegarla en Firebase; hasta entonces la clasificación del nivel 5 se queda en el dispositivo) (un documento por dispositivo y nivel, solo se
+Se usan las colecciones `askDirections_L1` … `askDirections_L6` (la L6 hay que añadirla a la copia maestra de las reglas de memorma y pegarla en Firebase; hasta entonces la clasificación del nivel 6 se queda en el dispositivo; la L5 está permitida en la copia maestra de las reglas desde 2026-10-29; hay que pegarla en Firebase; hasta entonces la clasificación del nivel 5 se queda en el dispositivo) (un documento por dispositivo y nivel, solo se
 guarda la mejor puntuación; se muestran los 10 mejores). Las reglas de Firestore de ese proyecto ya permiten esas colecciones.
 Desde 2026-10-21 también se registran visitas, inicios y partidas terminadas (colecciones `visits` y `plays`; GA no cambia).
 Si usas GA4, escribe el identificador en `GA_ID`.
@@ -126,3 +127,9 @@ iPhone 版 Chrome 上，頁面可以捲動時，往下捲之後有時回不到�
 - En las calles largas del 真實街區 hay una segunda tienda; cada tienda es una **parada**: 直走 avanza solo hasta la siguiente parada (tienda, esquina o rotonda). En una parada no se puede girar ni cruzar.
 - Frases nuevas: 「直走到咖啡店前面」. Con 「直走到第N個路口」「直走到圓環」 se pasan las tiendas sin parar en ellas en la frase, pero hay que pulsar 直走 una vez por parada.
 - 繁中：第 5 級較長的路多了第二間店，「直走」一次只走到下一間店／路口／圓環；店前不能轉彎或過馬路。
+
+## Nivel 6: mapa grande / 第六級：大街區
+- 西文：El mapa **大街區** (`BIG` en `tools/graph_map.py`, mismo motor que el nivel 5) es grande e irregular (esquinas en ángulos distintos, una esquina recortada, calles torcidas) y la vista sigue al personaje con una ventana del mismo tamaño que en el nivel 5; los edificios tienen el mismo tamaño que siempre. Solo algunas esquinas (`_LIGHTS`) tienen semáforo. Hay tiendas del mismo tipo repetidas (los nombres con `_2`: `conv_2` = la 2.ª tienda de conveniencia; el juego quita el sufijo al dibujar).
+- Frases nuevas: 「直走到第二個紅綠燈」 (solo cuenta las esquinas con semáforo), 「直走到第二間便利商店前面」 (cuenta las tiendas de ese tipo a lo largo de la calle recta). 「第N個路口」 sigue valiendo y se puede mezclar. Una tienda que existe dos veces nunca se nombra sola (solo contando).
+- `questions.json` guarda en cada pregunta del nivel 6 un `plan` que `verify_questions.py` vuelve a recorrer por su cuenta (semáforos, esquinas y k-ésima tienda).
+- 繁中：第六級用一張大又不規則的地圖，畫面會跟著人物移動（視窗大小和第五級一樣，店家圖示大小不變）。只有部分路口有紅綠燈（隨機）。同一種店會出現兩間以上，句子用「第二個紅綠燈」「第二間便利商店」來數；店前不能轉彎，所以數完店還要再直走到路口才能轉。
