@@ -84,6 +84,8 @@ input.name.err{border-color:var(--bad)}
 #btn-cam{padding:3px 10px}
 #btn-vocab{flex:none;padding:5px 10px;font-size:12.5px;border-color:var(--ink)}
 #btn-restart{white-space:nowrap}
+#r-share{background:#fff;border-width:2px}
+#r-share[hidden]{display:none}
 @media(max-width:340px){#btn-restart{padding:6px 7px}}
 .sentrow.s0{align-items:stretch}
 .sentrow.s0 #btn-vocab{font-size:13px}
@@ -286,6 +288,7 @@ table.lb td:nth-child(3),table.lb td:nth-child(4),table.lb th:nth-child(3),table
     <button class="btn" id="r-again"></button>
     <button class="btn ghost" id="r-board"></button>
   </div>
+  <button class="btn ghost block" id="r-share" type="button" hidden></button>
   <button class="btn ghost block" id="r-home"></button>
 </section>
 
@@ -506,6 +509,7 @@ const UI = {
     hintR: 'En algunas calles «Recto» se detiene delante de las tiendas: púlsalo otra vez para seguir. Rotonda: se circula en sentido contrario a las agujas del reloj; la 1.ª salida es la primera calle después de por donde entraste. Pulsa el botón de la salida. Y: 靠左/靠右 = pulsa girar y luego recto. Con 🔍 / 🗺 acercas o alejas el mapa.',
     result: 'Resultado', score: '{c} de {N} correctas', time: 'Tiempo: {t} s',
     again: 'Jugar de nuevo', home: 'Cambiar de nivel',
+    share: 'Compartir resultado', shareCopied: 'Copiado', shareFail: 'No se pudo copiar',
     best: 'Mejor puntuación de cada jugador (top 10).',
     localNote: 'Clasificación de este dispositivo (Firebase aún no está conectado).',
     empty: 'Todavía no hay puntuaciones.', player: 'Jugador', pts2: 'Puntos', sec: 'Seg.',
@@ -552,6 +556,7 @@ const UI = {
     hintR: 'On some streets “Straight” stops in front of the shops: press it again to go on. Roundabout: traffic goes counter-clockwise; the 1st exit is the first street after the one you came in by. Press the exit button. Y-junction: 靠左/靠右 = press turn, then straight. Use 🔍 / 🗺 to zoom the map.',
     result: 'Result', score: '{c} of {N} correct', time: 'Time: {t} s',
     again: 'Play again', home: 'Change level',
+    share: 'Share result', shareCopied: 'Copied', shareFail: 'Copy failed',
     best: "Each player's best score (top 10).",
     localNote: "This device's leaderboard (Firebase is not connected yet).",
     empty: 'No scores yet.', player: 'Player', pts2: 'Score', sec: 'Sec.',
@@ -598,6 +603,7 @@ const UI = {
     hintR: '有些路上，直走會在店前面停下來，再按一次才會繼續走。圓環是逆時針繞：第一個出口就是從你進來的路開始，逆時針數的第一條路，按下面的出口按鈕。Y字路口：靠左／靠右＝按左轉或右轉，再按直走。地圖可以用 🔍 / 🗺 放大或看全圖。',
     result: '結果', score: '答對 {c}/{N} 題', time: '時間：{t} 秒',
     again: '再玩一次', home: '換關卡',
+    share: '分享成績', shareCopied: '已複製', shareFail: '複製失敗',
     best: '每位玩家的最高分（前 10 名）。',
     localNote: '這台裝置上的排行榜。',
     empty: '還沒有分數。', player: '玩家', pts2: '分數', sec: '秒',
@@ -611,7 +617,7 @@ const UI = {
   },
 };
 // simplified-character version of the Chinese-only UI (made from the traditional one)
-const S2T = { '級': '级', '針': '针', '說': '说', '閉': '闭', '鈕': '钮', '從': '从', '進': '进', '項': '项', '問': '问', '聽': '听', '機': '机', '選': '选', '關': '关', '數': '数', '過': '过', '馬': '马', '綜': '综', '戰': '战', '邊': '边', '對': '对', '長': '长', '個': '个', '較': '较', '話': '话', '點': '点', '區': '区', '請': '请', '輸': '输', '體': '体', '語': '语', '讀': '读', '顯': '显', '鍵': '键', '點': '点', '榜': '榜', '題': '题', '裝': '装', '儲': '储', '這': '这', '臺': '台', '還': '还', '詞': '词', '彙': '汇', '圖': '图', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '線': '线', '錯': '错', '面': '面', '開': '开', '結': '结', '時': '时', '間': '间', '換': '换', '會': '会', '們': '们', '學': '学', '全': '全', '樣': '样', '幾': '几', '雙': '双', '當': '当', '築': '筑', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '別': '别', '對': '对', '應': '应', '給': '给', '蓋': '盖', '運': '运', '動': '动', '現': '现', '後': '后', '來': '来', '終': '终', '離': '离', '轉': '转', '帶': '带', '張': '张', '燈': '灯', '經': '经', '繼': '继', '續': '续', '見': '见', '買': '买', '賣': '卖', '總': '总', '業': '业', '傳': '传', '極': '极', '處': '处', '準': '准', '須': '须', '標': '标', '導': '导', '歷': '历', '錄': '录', '無': '无', '難': '难', '電': '电', '腦': '脑', '為': '为', '與': '与', '確': '确', '鐘': '钟', '覺': '觉', '實': '实', '麵': '面', '館': '馆', '藥': '药', '書': '书', '車': '车', '買': '买', '軌': '轨', '號': '号', '單': '单', '務': '务', '員': '员', '辦': '办', '歡': '欢', '迎': '迎', '遊': '游', '戲': '戏', '樓': '楼', '層': '层', '導': '导', '檢': '检', '測': '测', '試': '试', '驗': '验', '紀': '纪', '錄': '录', '據': '据', '統': '统', '計': '计', '劃': '划', '設': '设', '備': '备', '類': '类', '種': '种', '終': '终', '義': '义', '網': '网', '頁': '页', '絡': '络', '連': '连', '續': '续', '擊': '击', '碼': '码', '終': '终', '則': '则', '規': '规', '範': '范', '圍': '围', '盡': '尽', '與': '与', '紅': '红', '綠': '绿', '畫': '画' };
+const S2T = { '績': '绩', '複': '复', '製': '制', '敗': '败', '級': '级', '針': '针', '說': '说', '閉': '闭', '鈕': '钮', '從': '从', '進': '进', '項': '项', '問': '问', '聽': '听', '機': '机', '選': '选', '關': '关', '數': '数', '過': '过', '馬': '马', '綜': '综', '戰': '战', '邊': '边', '對': '对', '長': '长', '個': '个', '較': '较', '話': '话', '點': '点', '區': '区', '請': '请', '輸': '输', '體': '体', '語': '语', '讀': '读', '顯': '显', '鍵': '键', '點': '点', '榜': '榜', '題': '题', '裝': '装', '儲': '储', '這': '这', '臺': '台', '還': '还', '詞': '词', '彙': '汇', '圖': '图', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '線': '线', '錯': '错', '面': '面', '開': '开', '結': '结', '時': '时', '間': '间', '換': '换', '會': '会', '們': '们', '學': '学', '全': '全', '樣': '样', '幾': '几', '雙': '双', '當': '当', '築': '筑', '麼': '么', '環': '环', '圓': '圆', '靠': '靠', '別': '别', '對': '对', '應': '应', '給': '给', '蓋': '盖', '運': '运', '動': '动', '現': '现', '後': '后', '來': '来', '終': '终', '離': '离', '轉': '转', '帶': '带', '張': '张', '燈': '灯', '經': '经', '繼': '继', '續': '续', '見': '见', '買': '买', '賣': '卖', '總': '总', '業': '业', '傳': '传', '極': '极', '處': '处', '準': '准', '須': '须', '標': '标', '導': '导', '歷': '历', '錄': '录', '無': '无', '難': '难', '電': '电', '腦': '脑', '為': '为', '與': '与', '確': '确', '鐘': '钟', '覺': '觉', '實': '实', '麵': '面', '館': '馆', '藥': '药', '書': '书', '車': '车', '買': '买', '軌': '轨', '號': '号', '單': '单', '務': '务', '員': '员', '辦': '办', '歡': '欢', '迎': '迎', '遊': '游', '戲': '戏', '樓': '楼', '層': '层', '導': '导', '檢': '检', '測': '测', '試': '试', '驗': '验', '紀': '纪', '錄': '录', '據': '据', '統': '统', '計': '计', '劃': '划', '設': '设', '備': '备', '類': '类', '種': '种', '終': '终', '義': '义', '網': '网', '頁': '页', '絡': '络', '連': '连', '續': '续', '擊': '击', '碼': '码', '終': '终', '則': '则', '規': '规', '範': '范', '圍': '围', '盡': '尽', '與': '与', '紅': '红', '綠': '绿', '畫': '画' };
 const zhSimp = o => { const r = {}; for (const k in o) r[k] = typeof o[k] === 'string' ? [...o[k]].map(c => S2T[c] || c).join('') : o[k].map(x => [...x].map(c => S2T[c] || c).join('')); return r; };
 UI.zhs = zhSimp(UI.zh);
 const WORDS = {
@@ -1647,6 +1653,51 @@ function paintResult() {
   $('#r-again').textContent = T('again');
   $('#r-board').textContent = '🏆 ' + T('board');
   $('#r-home').textContent = T('home');
+  $('#r-share').textContent = T('share'); $('#r-share').hidden = !(score > 0);
+}
+/* SHARE-BEGIN（來自 game-kit/parts/share.js） */
+const HGShare = (() => {
+  async function copyText(s) {
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(s); return true; } } catch (e) {}
+    try {
+      const ta = document.createElement('textarea'); ta.value = s; ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      const r = document.execCommand('copy'); ta.remove(); return !!r;
+    } catch (e) { return false; }
+  }
+  async function send({ title, text, url }) {
+    if (navigator.share) {
+      try { await navigator.share({ title, text, url }); return 'shared'; }
+      catch (e) { if (e && e.name === 'AbortError') return 'aborted'; }   // 其他錯誤改走複製
+    }
+    return (await copyText(text + '\n' + url)) ? 'copied' : 'failed';
+  }
+  return { copyText, send };
+})();
+/* SHARE-END */
+const SHARE_URL = 'https://wangchiapin.github.io/Me-he-perdido/?ref=share';   // 公開頁＋分享記號
+function shareMsg(score, c, N) {
+  const nm = (S.name || '').trim(), g = nm ? nm + ' ' : '';
+  if (S.lang === 'es') return (nm ? nm + ': ' : '') + '¡Saqué ' + score + ' puntos (' + c + ' de ' + N + ' correctas) en «Pregunta el camino»! Inténtalo tú también';
+  if (S.lang === 'en') return (nm ? nm + ': ' : '') + 'I scored ' + score + ' points (' + c + ' of ' + N + ' correct) in "Pregunta el camino"! Try it too';
+  if (S.script === 'simp') return g + '我在「问路小达人」答对 ' + c + '/' + N + ' 题，得 ' + score + ' 分！你也来试试';
+  return g + '我在「問路小達人」答對 ' + c + '/' + N + ' 題，得 ' + score + ' 分！你也來試試';
+}
+let shareBusy = false, shareTimer = 0;
+async function doShare() {
+  const score = S.correct * 10;
+  if (shareBusy || score <= 0) return;
+  shareBusy = true;
+  try {
+    const r = await HGShare.send({ title: '問路小達人 · Pregunta el camino', text: shareMsg(score, S.correct, S.qs.length), url: SHARE_URL });
+    if (r === 'copied' || r === 'failed') {
+      const b = $('#r-share');
+      b.textContent = T(r === 'copied' ? 'shareCopied' : 'shareFail');
+      clearTimeout(shareTimer);
+      shareTimer = setTimeout(() => { shareTimer = 0; b.textContent = T('share'); }, 2200);
+    }
+  } finally { shareBusy = false; }
 }
 let boardLevel = 1;
 async function openBoard(level) {
@@ -1743,6 +1794,7 @@ function bind() {
   $('#btn-board').onclick = () => openBoard(1);
   $('#r-again').onclick = () => startGame(S.level);
   $('#r-board').onclick = () => openBoard(S.level);
+  $('#r-share').onclick = doShare;
   $('#r-home').onclick = () => { renderStart(); show('s-start'); };
   $('#b-back').onclick = () => { renderStart(); show('s-start'); };
   $('#name').addEventListener('input', () => { $('#name').classList.remove('err'); S.name = $('#name').value; });
@@ -1758,7 +1810,7 @@ function loadSpecific(q) {   // used by the automated tests
   S.level = q.level; S.qs = [q]; S.qi = 0; S.correct = 0; S.results = []; S.totalMs = 0;
   show('s-game'); applyGameLabels(); loadQuestion();
 }
-window.__askdir = { S, DATA, act, submit, startGame, nextQuestion, nextPart, resetPos, loadSpecific, fullTxt, replay };
+window.__askdir = { S, DATA, act, submit, startGame, nextQuestion, nextPart, resetPos, loadSpecific, fullTxt, replay, finish };
 </script>
 <script>
 /* ===== 版權說明 ===== */
@@ -1802,6 +1854,19 @@ window.__askdir = { S, DATA, act, submit, startGame, nextQuestion, nextPart, res
   }
   var TZ = tzName();
 
+  /* ref：這個訪客是從哪裡進來的記號（例如 ?ref=share＝朋友分享的連結）。
+     只收英數字、底線、連字號，最長 16 字，統一小寫；其他一律忽略（規則也限制 1～16 字串）。
+     網址有 ?ref= 就記下並暫存在這個分頁（sessionStorage，同分頁的 iframe 讀得到、分頁關掉就消失）；
+     沒有就讀暫存。所以「首頁收到記號、遊戲頁（iframe）才寫紀錄」也記得到。 */
+  function cleanRef(x) { x = String(x == null ? '' : x).trim().toLowerCase(); return /^[a-z0-9_-]{1,16}$/.test(x) ? x : ''; }
+  function refName() {
+    var r = '';
+    try { r = cleanRef(new URLSearchParams(location.search).get('ref')); } catch (e) {}
+    try { if (r) sessionStorage.setItem('hg.ref', r); else r = cleanRef(sessionStorage.getItem('hg.ref')); } catch (e) {}
+    return r;
+  }
+  var REF = refName();
+
   function gid() { try { return (HG.gameFn ? HG.gameFn() : GAME) || GAME; } catch (e) { return GAME; } } // taiwan-life 這類共用引擎的遊戲可改寫 HGPlays.gameFn
   function day() { // 以台灣時間（UTC+8）算「哪一天」，方便老師對帳
     var d = new Date(Date.now() + 8 * 3600e3);
@@ -1842,6 +1907,7 @@ window.__askdir = { S, DATA, act, submit, startGame, nextQuestion, nextPart, res
         var id = d + '_' + g + '_' + L.uid;
         var v = { game: g, day: d, uid: L.uid, at: L.F.serverTimestamp() };
         if (TZ) v.tz = TZ;
+        if (REF) v.ref = REF;
         return L.F.setDoc(L.F.doc(L.db, 'visits', id), v)
           .then(function () { ls(key, d); });
       }).catch(function () {});
@@ -1854,6 +1920,7 @@ window.__askdir = { S, DATA, act, submit, startGame, nextQuestion, nextPart, res
         var data = { game: gid(), level: mine.level, uid: L.uid, name: getName(name), day: day(),
                      startedAt: L.F.serverTimestamp(), done: false };
         if (TZ) data.tz = TZ;
+        if (REF) data.ref = REF;
         return L.F.addDoc(L.F.collection(L.db, 'plays'), data).then(function (ref) {
           mine.id = ref.id; if (mine.pendingEnd) HG._finish(mine, mine.pendingEnd);
         });
